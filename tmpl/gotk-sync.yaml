@@ -7,7 +7,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: main
+    branch: develop
   url: ${BOOTSTRAP_GITHUB_REPOSITORY}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
