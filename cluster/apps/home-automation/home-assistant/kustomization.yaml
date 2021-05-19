@@ -5,3 +5,5 @@ kind: Kustomization
 resources:
   - config-pvc.yaml
   - helm-release.yaml
+  - code-server.enc.yaml
+  - home-assistant.enc.yaml
