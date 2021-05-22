@@ -40,8 +40,7 @@ spec:
     persistence:
       config:
         enabled: true
-        storageClass: "longhorn"
-        size: 3Gi
+        existingClaim: radarr-config
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
