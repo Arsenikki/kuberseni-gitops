@@ -29,7 +29,7 @@ spec:
     dnsPolicy: ClusterFirstWithHostNet
     service:
       type: LoadBalancer
-      loadBalancerIP: "${LB_HOME_ASSISTANT_IP}"
+      loadBalancerIP: "${HOME_ASSISTANT_LB}"
       externalTrafficPolicy: Local
     ingress:
       enabled: true
