@@ -15,3 +15,50 @@ spec:
         kind: HelmRepository
         name: traefik-charts
         namespace: flux-system
+  values:
+    deployment:
+      kind: Deployment
+      replicas: 1
+    service:
+      enabled: true
+      type: LoadBalancer
+      spec:
+        loadBalancerIP: "${TRAEFIK_LB}"
+        externalTrafficPolicy: Local
+    globalArguments:
+      - "--serverstransport.insecureskipverify=true"
+      - "--providers.kubernetesingress.ingressclass=traefik"
+    additionalArguments:
+      - "--providers.kubernetesingress.ingressendpoint.hostname=${SECRET_DOMAIN}"
+      - "--providers.kubernetesingress.ingressendpoint.ip=${TRAEFIK_LB}"
+    ports:
+      web:
+        redirectTo: websecure
+      websecure:
+        tls:
+          enabled: true
+          options: "default"
+    tlsOptions:
+      default:
+        minVersion: VersionTLS12
+        maxVersion: VersionTLS13
+        sniStrict: true
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+      fallbackApiVersion: v1
+    ingressRoute:
+      dashboard:
+        enabled: false
+    pilot:
+      enabled: true
+      token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
+    experimental:
+      plugins:
+        enabled: true
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 500m
+      limits:
+        memory: 500Mi
