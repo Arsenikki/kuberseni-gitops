@@ -28,7 +28,7 @@ spec:
     service:
       enabled: true
       type: LoadBalancer
-      loadBalancerIP: "${LB_PLEX_IP}"
+      loadBalancerIP: "${PLEX_LB}"
       externalTrafficPolicy: Local
       port:
         port: 32400

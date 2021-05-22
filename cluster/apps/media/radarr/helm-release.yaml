@@ -22,6 +22,10 @@ spec:
       tag: v3.1.1.4954
     env:
       TZ: "Europe/Helsinki"
+    service:
+      type: LoadBalancer
+      loadBalancerIP: "${RADARR_LB}"
+      externalTrafficPolicy: Local
     ingress:
       enabled: true
       annotations:

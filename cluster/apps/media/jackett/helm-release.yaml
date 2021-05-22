@@ -22,6 +22,10 @@ spec:
       tag: v0.18.22
     env:
       TZ: "Europe/Helsinki"
+    service:
+      type: LoadBalancer
+      loadBalancerIP: "${JACKETT_LB}"
+      externalTrafficPolicy: Local
     ingress:
       enabled: true
       annotations:
