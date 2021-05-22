@@ -2,9 +2,9 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
-  name: longhorn-charts
+  name: traefik-charts
   namespace: flux-system
 spec:
   interval: 30m
-  url: https://charts.longhorn.io
+  url: https://helm.traefik.io/traefik
   timeout: 2m
