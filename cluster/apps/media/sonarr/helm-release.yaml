@@ -22,10 +22,6 @@ spec:
       tag: v3.0.6.1196
     env:
       TZ: "Europe/Helsinki"
-    service:
-      type: LoadBalancer
-      loadBalancerIP: "${SONARR_LB}"
-      externalTrafficPolicy: Local
     ingress:
       enabled: true
       annotations:
@@ -44,10 +40,12 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: sonarr-config-v1
+        existingClaim: sonarr-config
     podSecurityContext:
-      supplementalGroups:
-        - 100
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
     #    additionalVolumeMounts:
     #      - name: media-rocinante
     #        mountPath: "/media-rocinante"

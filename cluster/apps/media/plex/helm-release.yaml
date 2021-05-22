@@ -22,9 +22,6 @@ spec:
       tag: v1.22.3.4392-d7c624def
     env:
       TZ: "Europe/Helsinki"
-    podSecurityContext:
-      supplementalGroups:
-        - 100
     service:
       enabled: true
       type: LoadBalancer
@@ -50,12 +47,17 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: plex-config-v1
+        existingClaim: plex-config
       tmp:
         enabled: true
         emptyDir:
           enabled: true
           medium: "Memory"
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
     #    additionalVolumeMounts:
     #      - name: media-rocinante
     #        mountPath: "/media-rocinante"

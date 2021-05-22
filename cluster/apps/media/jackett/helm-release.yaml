@@ -22,10 +22,6 @@ spec:
       tag: v0.18.22
     env:
       TZ: "Europe/Helsinki"
-    service:
-      type: LoadBalancer
-      loadBalancerIP: "${JACKETT_LB}"
-      externalTrafficPolicy: Local
     ingress:
       enabled: true
       annotations:
@@ -44,7 +40,12 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: jackett-config-v1
+        existingClaim: jackett-config
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
     resources:
       requests:
         memory: 100Mi
