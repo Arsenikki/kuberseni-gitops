@@ -32,8 +32,8 @@ spec:
             - path: /
               pathType: Prefix
       tls:
-        hosts:
-          - "sonarr.${SECRET_DOMAIN}"
+        - hosts:
+            - "sonarr.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true

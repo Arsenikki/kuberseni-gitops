@@ -32,8 +32,8 @@ spec:
             - path: /
               pathType: Prefix
       tls:
-        hosts:
-          - "radarr.${SECRET_DOMAIN}"
+        - hosts:
+            - "radarr.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true

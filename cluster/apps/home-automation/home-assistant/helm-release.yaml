@@ -83,8 +83,8 @@ spec:
                 - path: /
                   pathType: Prefix
           tls:
-            hosts:
-              - "homeassistant.vscode.${SECRET_DOMAIN}"
+            - hosts:
+                - "homeassistant.vscode.${SECRET_DOMAIN}"
         volumeMounts:
           - name: config
             mountPath: /config

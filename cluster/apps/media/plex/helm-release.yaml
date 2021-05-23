@@ -39,8 +39,8 @@ spec:
             - path: /
               pathType: Prefix
       tls:
-        hosts:
-          - "plex.${SECRET_DOMAIN}"
+        - hosts:
+            - "plex.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true

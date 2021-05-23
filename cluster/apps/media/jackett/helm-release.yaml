@@ -32,8 +32,8 @@ spec:
             - path: /
               pathType: Prefix
       tls:
-        hosts:
-          - "jackett.${SECRET_DOMAIN}"
+        - hosts:
+            - "jackett.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true
