@@ -35,16 +35,13 @@ spec:
       enabled: true
       annotations:
         kubernetes.io/ingress.class: "traefik"
-        kubernetes.io/tls-acme: "true"
-        cert-manager.io/cluster-issuer: letsencrypt-prod
       hosts:
         - host: "homeassistant.${SECRET_DOMAIN}"
           paths:
             - path: /
               pathType: Prefix
       tls:
-        - secretName: home-assistant-cert
-          hosts:
+        - hosts:
             - "homeassistant.${SECRET_DOMAIN}"
     prometheus:
       serviceMonitor:
@@ -80,17 +77,14 @@ spec:
           enabled: true
           annotations:
             kubernetes.io/ingress.class: "traefik"
-            kubernetes.io/tls-acme: "true"
-            cert-manager.io/cluster-issuer: letsencrypt-prod
           hosts:
             - host: "homeassistant.vscode.${SECRET_DOMAIN}"
               paths:
                 - path: /
                   pathType: Prefix
           tls:
-            - secretName: home-assistant-cert
-              hosts:
-                - "homeassistant.vscode.${SECRET_DOMAIN}"
+            hosts:
+              - "homeassistant.vscode.${SECRET_DOMAIN}"
         volumeMounts:
           - name: config
             mountPath: /config
