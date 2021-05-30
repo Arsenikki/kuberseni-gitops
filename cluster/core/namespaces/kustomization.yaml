@@ -7,3 +7,4 @@ resources:
   - longhorn-system.yaml
   - home-automation.yaml
   - media.yaml
+  - nextcloud.yaml
