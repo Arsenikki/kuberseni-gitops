@@ -1,0 +1,58 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: transmission
+  namespace: media
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://k8s-at-home.com/charts/
+      chart: transmission
+      version: 6.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home-charts
+        namespace: flux-system
+      interval: 5m
+  values:
+    image:
+      repository: ghcr.io/k8s-at-home/transmission
+      tag: v3.00
+    env:
+      TZ: "Europe/Helsinki"
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "traefik"
+      hosts:
+        - host: "transmission.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - "transmission.${SECRET_DOMAIN}"
+    persistence:
+      config:
+        enabled: true
+        existingClaim: transmission-config
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
+    additionalVolumeMounts:
+      - name: media-pvc
+        mountPath: "/mnt/hdd"
+    additionalVolumes:
+      - name: media-pvc
+        persistentVolumeClaim:
+          claimName: media-pvc
+    resources:
+      requests:
+        memory: 250Mi
+        cpu: 200m
+      limits:
+        memory: 500Mi
