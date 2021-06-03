@@ -38,18 +38,14 @@ spec:
       config:
         enabled: true
         existingClaim: transmission-config
+      media:
+        enabled: true
+        existingClaim: media-hdd
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-    additionalVolumeMounts:
-      - name: media-pvc
-        mountPath: "/"
-    additionalVolumes:
-      - name: media-pvc
-        persistentVolumeClaim:
-          claimName: media-pvc
     resources:
       requests:
         memory: 250Mi
