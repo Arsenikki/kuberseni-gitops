@@ -40,7 +40,7 @@ spec:
         existingClaim: transmission-config
       media:
         enabled: true
-        existingClaim: media-hdd
+        existingClaim: media-pvc
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
