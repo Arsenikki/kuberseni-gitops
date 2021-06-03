@@ -45,7 +45,7 @@ spec:
       fsGroupChangePolicy: OnRootMismatch
     additionalVolumeMounts:
       - name: media-pvc
-        mountPath: "/mnt/hdd"
+        mountPath: "/"
     additionalVolumes:
       - name: media-pvc
         persistentVolumeClaim:
