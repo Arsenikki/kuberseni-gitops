@@ -38,23 +38,14 @@ spec:
       config:
         enabled: true
         existingClaim: radarr-config
+      media:
+        enabled: true
+        existingClaim: media-pvc
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-    #    additionalVolumeMounts:
-    #      - name: media-rocinante
-    #        mountPath: "/media-rocinante"
-    #      - name: media-serenity
-    #        mountPath: "/media-serenity"
-    #    additionalVolumes:
-    #      - name: media-rocinante
-    #        persistentVolumeClaim:
-    #          claimName: nfs-media-rocinante-pvc
-    #      - name: media-serenity
-    #        persistentVolumeClaim:
-    #          claimName: nfs-media-serenity-pvc
     resources:
       requests:
         memory: 250Mi

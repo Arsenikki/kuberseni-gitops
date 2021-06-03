@@ -45,6 +45,9 @@ spec:
       config:
         enabled: true
         existingClaim: plex-config
+      media:
+        enabled: true
+        existingClaim: media-pvc
       tmp:
         enabled: true
         emptyDir:
@@ -55,20 +58,6 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-    #    additionalVolumeMounts:
-    #      - name: media-rocinante
-    #        mountPath: "/media-rocinante"
-    #        readOnly: true
-    #      - name: media-serenity
-    #        mountPath: "/media-serenity"
-    #        readOnly: true
-    #    additionalVolumes:
-    #      - name: media-rocinante
-    #        persistentVolumeClaim:
-    #          claimName: nfs-media-rocinante-pvc
-    #      - name: media-serenity
-    #        persistentVolumeClaim:
-    #          claimName: nfs-media-serenity-pvc
     resources:
       requests:
         gpu.intel.com/i915: 1
