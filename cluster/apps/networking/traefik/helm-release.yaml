@@ -29,6 +29,9 @@ spec:
     ports:
       web:
         redirectTo: websecure
+    logs:
+      general:
+        level: INFO
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
