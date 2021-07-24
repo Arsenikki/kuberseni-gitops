@@ -17,6 +17,8 @@ spec:
         namespace: flux-system
       interval: 5m
   values:
+    cookie:
+      domain: "arsenikki.casa"
     providers:
       google:
         # providers.google.enabled -- Enable the google provider
