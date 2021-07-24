@@ -81,7 +81,8 @@ spec:
       TZ: "Europe/Helsinki"
 
     # Provide a customized vpn configuration file to be used by the VPN.
-    configFile:# |-
+    configFile:
+      # |-
       # Some Example Config
       # remote greatvpnhost.com 8888
       # auth-user-pass
@@ -93,12 +94,14 @@ spec:
 
     # Provide custom up/down scripts that can be used by the vpnConf
     scripts:
-      up: # |-
+      up:
+      # |-
       # #!/bin/bash
       # echo "connected" > /shared/vpnstatus
-      down:# |-
-        # #!/bin/bash
-        # echo "disconnected" > /shared/vpnstatus
+      down:
+      # |-
+      # #!/bin/bash
+      # echo "disconnected" > /shared/vpnstatus
 
     # Optionally specify a livenessProbe, e.g. to check if the connection is still
     # being protected by the VPN
