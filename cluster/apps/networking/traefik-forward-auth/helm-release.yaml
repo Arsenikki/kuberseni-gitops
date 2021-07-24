@@ -27,5 +27,3 @@ spec:
         clientId: "${SECRET_TRAEFIK_GOOGLE_ID}"
         # providers.google.clientSecret -- Client Secret
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
-        # providers.google.prompt -- Space separated list of OpenID prompt options
-        prompt: ""
