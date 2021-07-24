@@ -23,7 +23,7 @@ spec:
       enabled: true
       type: LoadBalancer
       spec:
-        loadBalancerIP: "${TRAEFIK_LB}"
+        loadBalancerIP: "${TRAEFIK_LB"
         externalTrafficPolicy: Local
     globalArguments:
       - "--serverstransport.insecureskipverify=true"
