@@ -17,9 +17,9 @@ spec:
         namespace: flux-system
       interval: 5m
   values:
-    authHost: "auth.arsenikki.casa"
+    authHost: "auth.${SECRET_DOMAIN}"
     cookie:
-      domain: "arsenikki.casa"
+      domain: "${SECRET_DOMAIN}"
       insecure: "true"
     providers:
       google:
