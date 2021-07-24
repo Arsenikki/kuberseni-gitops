@@ -24,17 +24,12 @@ spec:
       type: LoadBalancer
       spec:
         loadBalancerIP: "${TRAEFIK_LB}"
-    additionalArguments:
-      - "--entrypoints.web.address=:8000"
-      - "--entrypoints.websecure.address=:8443"
-      - "--serversTransport.insecureSkipVerify=true"
     ports:
       web:
         redirectTo: websecure
       websecure:
-        port: 8443
         tls:
-          enabled: true
+        enabled: true
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
