@@ -25,13 +25,24 @@ spec:
       spec:
         loadBalancerIP: "${TRAEFIK_LB}"
     additionalArguments:
+      - "--entrypoints.http.address=:80"
+      - "--entryPoints.http.http.redirections.entryPoint.to=https"
+      - "--entryPoints.http.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.https.http.middlewares=networking-traefik-forward-auth"
       - "--serversTransport.insecureSkipVerify=true"
-    ports:
-      web:
-        redirectTo: websecure
+    # ports:
+    #   web:
+    #     port: 8000
+    #     expose: true
+    #     exposedPort: 80
+    #   websecure:
+    #     port: 8443
+    #     expose: true
+    #     exposedPort: 443
     logs:
       general:
-        level: INFO
+        level: ERROR
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
