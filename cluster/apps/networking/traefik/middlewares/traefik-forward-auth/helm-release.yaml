@@ -39,8 +39,7 @@ spec:
           paths:
             - /
       tls:
-        - secretName: auth-cert
-          hosts:
+        - hosts:
             - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
