@@ -31,13 +31,7 @@ spec:
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
     ingress:
       enabled: true
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-production
-        traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
       hosts:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
-    middleware:
-      enabled: true
-      name: forward-auth
