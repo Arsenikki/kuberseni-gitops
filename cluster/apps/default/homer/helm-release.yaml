@@ -26,9 +26,6 @@ spec:
         annotations:
           kubernetes.io/ingress.class: "traefik"
           traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
-          ingress.kubernetes.io/auth-type: "forward"
-          ingress.kubernetes.io/auth-url: "http://traefik-forward-auth.networking.svc.cluster.local:4181"
-          ingress.kubernetes.io/auth-response-headers: "X-Forwarded-User"
         hosts:
           - host: "homer.${SECRET_DOMAIN}"
             paths:
