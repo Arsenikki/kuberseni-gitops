@@ -31,8 +31,10 @@ spec:
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
     ingress:
       enabled: true
+      annotations:
+        kubernetes.io/ingress.class: traefik
       hosts:
-        host: "auth.${SECRET_DOMAIN}"
-        paths:
-          - path: /
-            pathType: Prefix
+        - host: "auth.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
