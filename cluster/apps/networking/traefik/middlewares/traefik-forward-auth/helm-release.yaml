@@ -31,8 +31,6 @@ spec:
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
     ingress:
       enabled: true
-      #      annotations:
-      #        traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
       hosts:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
@@ -41,6 +39,5 @@ spec:
         - secretName: "${SECRET_DOMAIN/./-}-tls"
           hosts:
             - "auth.${SECRET_DOMAIN}"
-    # middleware:
-    #   enabled: true
-    #   name: forward-auth
+    middleware:
+      enabled: true
