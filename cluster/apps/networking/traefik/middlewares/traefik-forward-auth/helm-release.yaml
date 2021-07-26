@@ -29,3 +29,11 @@ spec:
         clientId: "${SECRET_TRAEFIK_GOOGLE_ID}"
         # providers.google.clientSecret -- Client Secret
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
+    ingress:
+      main:
+        enabled: true
+        hosts:
+          host: "auth.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
