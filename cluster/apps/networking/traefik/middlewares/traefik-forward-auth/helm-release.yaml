@@ -38,9 +38,6 @@ spec:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
-      tls:
-        - hosts:
-            - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
       name: forward-auth
