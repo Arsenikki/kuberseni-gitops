@@ -26,6 +26,7 @@ spec:
       enabled: true
       annotations:
         kubernetes.io/ingress.class: "traefik"
+        test: "123"
       hosts:
         - host: "radarr.${SECRET_DOMAIN}"
           paths:
