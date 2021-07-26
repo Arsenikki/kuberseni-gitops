@@ -22,11 +22,8 @@ spec:
       domain: "${SECRET_DOMAIN}"
     providers:
       google:
-        # providers.google.enabled -- Enable the google provider
         enabled: true
-        # providers.google.clientId -- Client ID
         clientId: "${SECRET_TRAEFIK_GOOGLE_ID}"
-        # providers.google.clientSecret -- Client Secret
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
     ingress:
       enabled: true
@@ -34,10 +31,10 @@ spec:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
+      # Default secret stored in TLSStore
       tls:
-        - secretName: "${SECRET_DOMAIN/./-}-tls"
-          hosts:
-            - "auth.${SECRET_DOMAIN}"
+        hosts:
+          - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
     logging:
