@@ -40,7 +40,7 @@ spec:
           enabled: true
     logs:
       general:
-        level: "INFO"
+        level: "DEBUG"
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"

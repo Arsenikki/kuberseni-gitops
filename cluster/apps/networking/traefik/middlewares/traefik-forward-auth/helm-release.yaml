@@ -41,3 +41,5 @@ spec:
             - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
+    logging:
+      level: "debug"
