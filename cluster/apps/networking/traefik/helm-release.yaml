@@ -24,28 +24,29 @@ spec:
       type: LoadBalancer
       spec:
         loadBalancerIP: "${TRAEFIK_LB}"
+    # Enable HTTPS redirection on web entrypoint
     additionalArguments:
-      - "--entrypoints.http.address=:80"
-      - "--entryPoints.http.http.redirections.entryPoint.to=https"
-      - "--entryPoints.http.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.https.address=:443"
-      - "--entrypoints.https.http.middlewares=networking-traefik-forward-auth"
-      - "--serversTransport.insecureSkipVerify=true"
-    # ports:
-    #   web:
-    #     port: 8000
-    #     expose: true
-    #     exposedPort: 80
-    #   websecure:
-    #     port: 8443
-    #     expose: true
-    #     exposedPort: 443
+      - --entryPoints.web.http.redirections.entryPoint.to: websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme: https
+    ports:
+      web:
+        port: 80
+      websecure:
+        port: 443
     logs:
       general:
-        level: ERROR
+        level: "INFO"
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
+    securityContext:
+      capabilities:
+        drop: [ALL]
+        add: [NET_BIND_SERVICE]
+      readOnlyRootFilesystem: true
+      runAsGroup: 0
+      runAsNonRoot: false
+      runAsUser: 0
     resources:
       requests:
         memory: 100Mi
