@@ -37,6 +37,9 @@ spec:
         enabled: true
       kubernetesIngress:
         enabled: true
+        # Needed, as otherwise ingresses don't get IPs automatically
+        publishedService:
+          enabled: true
     logs:
       general:
         level: "INFO"
