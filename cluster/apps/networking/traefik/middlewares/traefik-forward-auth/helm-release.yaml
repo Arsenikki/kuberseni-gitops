@@ -20,6 +20,7 @@ spec:
     authHost: "auth.${SECRET_DOMAIN}"
     cookie:
       domain: "${SECRET_DOMAIN}"
+      insecure: "true"
     providers:
       google:
         # providers.google.enabled -- Enable the google provider
