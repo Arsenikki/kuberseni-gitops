@@ -43,4 +43,4 @@ spec:
             - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
-      name: forward-auth
+      name: traefik-forward-auth
