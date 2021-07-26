@@ -35,13 +35,13 @@ spec:
         cert-manager.io/cluster-issuer: letsencrypt-production
         traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
       hosts:
-        - host: auth.arsenikki.casa
+        - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
-    #      tls:
-    #        - secretName: auth-cert
-    #          hosts:
-    #            - "auth.arsenikki.casa"
+      tls:
+        - secretName: auth-cert
+          hosts:
+            - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
       name: forward-auth
