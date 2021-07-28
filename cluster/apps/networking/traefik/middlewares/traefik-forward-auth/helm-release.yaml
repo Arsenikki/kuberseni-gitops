@@ -23,8 +23,11 @@ spec:
       insecure: "true"
     providers:
       google:
+        # providers.google.enabled -- Enable the google provider
         enabled: true
+        # providers.google.clientId -- Client ID
         clientId: "${SECRET_TRAEFIK_GOOGLE_ID}"
+        # providers.google.clientSecret -- Client Secret
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
     ingress:
       enabled: true
