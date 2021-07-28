@@ -33,10 +33,7 @@ spec:
             paths:
               - path: /
                 pathType: Prefix
-        tls:
-          - secretName: "${SECRET_DOMAIN/./-}-tls"
-            hosts:
-              - "homer.${SECRET_DOMAIN}"
+        tls: {}
     persistence:
       config:
         enabled: true
