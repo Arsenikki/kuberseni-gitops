@@ -20,6 +20,7 @@ spec:
     authHost: "auth.${SECRET_DOMAIN}"
     cookie:
       domain: "${SECRET_DOMAIN}"
+      insecure: "true"
     providers:
       google:
         enabled: true
@@ -31,10 +32,10 @@ spec:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
-      # Default secret stored in TLSStore
       tls:
-        hosts:
-          - "auth.${SECRET_DOMAIN}"
+        - secretName: "${SECRET_DOMAIN/./-}-tls"
+          hosts:
+            - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
     logging:
