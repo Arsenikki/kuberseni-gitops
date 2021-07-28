@@ -32,10 +32,10 @@ spec:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
-      # Default secret stored in TLSStore
+      # Default secrets stored in TLSStore
       tls:
-        hosts:
-          - "auth.${SECRET_DOMAIN}"
+        - hosts:
+            - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
     logging:
