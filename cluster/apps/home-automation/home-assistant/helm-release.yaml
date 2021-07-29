@@ -38,7 +38,6 @@ spec:
       enabled: true
       annotations:
         kubernetes.io/ingress.class: traefik
-        traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
       hosts:
         - host: "homeassistant.${SECRET_DOMAIN}"
           paths:
