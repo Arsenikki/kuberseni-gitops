@@ -10,7 +10,7 @@ spec:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: sonarr
-      version: 11.1.0
+      version: 12.3.0
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
@@ -23,20 +23,19 @@ spec:
     env:
       TZ: "Europe/Helsinki"
     ingress:
-      enabled: true
-      annotations:
-        kubernetes.io/ingress.class: "traefik"
-        ingress.kubernetes.io/auth-type: forward
-        ingress.kubernetes.io/auth-url: https://traefik-forward-auth:4181
-        ingress.kubernetes.io/auth-response-headers: X-Forwarded-User
-      hosts:
-        - host: "sonarr.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - hosts:
-            - "sonarr.${SECRET_DOMAIN}"
+      main:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: "traefik"
+          traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
+        hosts:
+          - host: "sonarr.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - "sonarr.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true
