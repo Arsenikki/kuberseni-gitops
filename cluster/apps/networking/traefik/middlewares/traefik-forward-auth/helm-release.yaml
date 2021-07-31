@@ -29,6 +29,8 @@ spec:
         clientId: "${SECRET_TRAEFIK_GOOGLE_ID}"
         # providers.google.clientSecret -- Client Secret
         clientSecret: "${SECRET_TRAEFIK_GOOGLE_SECRET}"
+    restrictions:
+      whitelist: "${SECRET_AUTH_WHITELIST_EMAILS}"
     ingress:
       enabled: true
       hosts:
