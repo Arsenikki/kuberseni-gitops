@@ -51,11 +51,11 @@ spec:
         existingClaim: media-pvc
       tmp:
         enabled: true
+        size: 1Gi
         emptyDir:
           enabled: true
           medium: "Memory"
         accessMode: ReadWriteOnce
-
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
