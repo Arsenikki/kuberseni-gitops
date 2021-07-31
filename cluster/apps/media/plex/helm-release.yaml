@@ -54,6 +54,8 @@ spec:
         emptyDir:
           enabled: true
           medium: "Memory"
+        accessMode: ReadWriteOnce
+
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
