@@ -52,6 +52,7 @@ spec:
       tmp:
         enabled: true
         size: 1Gi
+        storageClass: "longhorn-slow"
         emptyDir:
           enabled: true
           medium: "Memory"
