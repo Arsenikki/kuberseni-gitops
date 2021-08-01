@@ -1,0 +1,9 @@
+# yamllint disable
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: vpn-wireguard-config
+  namespace: media
+stringData:
+  vpnConfigfile: ${SECRET_WIREGUARD_CONFIG}

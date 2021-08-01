@@ -65,9 +65,9 @@ spec:
         # WireGuard specific configuration
         wireguard:
           image:
-            repository: k8sathome/wireguard
+            repository: ghcr.io/k8s-at-home/wireguard
+            tag: v1.0.20210424
             pullPolicy: IfNotPresent
-            tag: 1.0.20200827
 
         # Set the VPN container securityContext
         securityContext:
@@ -81,17 +81,9 @@ spec:
         env:
           TZ: "Europe/Helsinki"
 
-        # Provide a customized vpn configuration file to be used by the VPN.
-        configFile:
-          # |-
-          # Some Example Config
-          # remote greatvpnhost.com 8888
-          # auth-user-pass
-          # Cipher AES
-
         # Reference an existing secret that contains the VPN configuration file
         # The chart expects it to be present under the "vpnConfigfile" key.
-        configFileSecret:
+        configFileSecret: vpn-wireguard-config
 
         # Provide custom up/down scripts that can be used by the vpnConf
         scripts:
@@ -115,23 +107,3 @@ spec:
         #  initialDelaySeconds: 30
         #  periodSeconds: 60
         #  failureThreshold: 1
-
-        # If set to true, will deploy a network policy that blocks all outbound
-        # traffic except traffic specified as allowed
-        networkPolicy:
-          enabled: false
-
-          # The egress configuration for your network policy, All outbound traffic
-          # From the pod will be blocked unless specified here. Your cluster must
-          # have a CNI that supports network policies (Canal, Calico, etc...)
-          # https://kubernetes.io/docs/concepts/services-networking/network-policies/
-          # https://github.com/ahmetb/kubernetes-network-policy-recipes
-          egress:
-            # - to:
-            #   - ipBlock:
-            #       cidr: 0.0.0.0/0
-            #   ports:
-            #   - port: 53
-            #     protocol: UDP
-            #   - port: 53
-            #     protocol: TCP
