@@ -81,6 +81,14 @@ spec:
         env:
           TZ: "Europe/Helsinki"
 
+        # Provide a customized vpn configuration file to be used by the VPN.
+        configFile:
+          # |-
+          # Some Example Config
+          # remote greatvpnhost.com 8888
+          # auth-user-pass
+          # Cipher AES
+
         # Reference an existing secret that contains the VPN configuration file
         # The chart expects it to be present under the "vpnConfigfile" key.
         configFileSecret: vpn-wireguard-config
