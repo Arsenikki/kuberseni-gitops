@@ -82,36 +82,14 @@ spec:
           TZ: "Europe/Helsinki"
 
         # Provide a customized vpn configuration file to be used by the VPN.
-        configFile:
-          # |-
-          # Some Example Config
-          # remote greatvpnhost.com 8888
-          # auth-user-pass
-          # Cipher AES
+        configFile: |-
+          [Interface]
+          Address = 10.5.170.200
+          PrivateKey = abc
+          DNS = 10.0.0.243,10.0.0.242
 
-        # Reference an existing secret that contains the VPN configuration file
-        # The chart expects it to be present under the "vpnConfigfile" key.
-        configFileSecret: vpn-wireguard-config
-
-        # Provide custom up/down scripts that can be used by the vpnConf
-        scripts:
-          up:
-          # |-
-          # #!/bin/bash
-          # echo "connected" > /shared/vpnstatus
-          down:
-          # |-
-          # #!/bin/bash
-          # echo "disconnected" > /shared/vpnstatus
-
-        # Optionally specify a livenessProbe, e.g. to check if the connection is still
-        # being protected by the VPN
-        livenessProbe: {}
-        # exec:
-        #    command:
-        #      - sh
-        #      - -c
-        #      - if [ $(curl -s https://ipinfo.io/country) == 'US' ]; then exit 0; else exit $?; fi
-        #  initialDelaySeconds: 30
-        #  periodSeconds: 60
-        #  failureThreshold: 1
+          [Peer]
+          PublicKey = def
+          Endpoint = 188.126.89.39:1337
+          AllowedIPs = 0.0.0.0/0
+          PersistentKeepalive = 25
