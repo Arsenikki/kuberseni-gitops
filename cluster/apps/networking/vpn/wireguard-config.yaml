@@ -6,4 +6,4 @@ metadata:
   name: vpn-wireguard-config
   namespace: media
 stringData:
-  vpnConfigfile: ${SECRET_WIREGUARD_CONFIG}
+  vpnConfigfile: "${SECRET_WIREGUARD_CONFIG}"
