@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
-  name: vpn-wireguard-config
+  name: test-config
   namespace: media
 stringData:
   asd: "${SECRET_DOMAIN}"
