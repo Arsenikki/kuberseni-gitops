@@ -66,7 +66,7 @@ spec:
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
-        enabled: false
+        enabled: true
 
         # VPN type: options are openvpn or wireguard
         type: wireguard
@@ -104,7 +104,6 @@ spec:
           Endpoint = 188.126.89.39:1337
           AllowedIPs = 0.0.0.0/0
           PersistentKeepalive = 25
-
         scripts:
           up: |-
             #!/bin/bash
