@@ -57,7 +57,7 @@ spec:
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
-        enabled: false
+        enabled: true
 
         # VPN type: options are openvpn or wireguard
         type: wireguard
