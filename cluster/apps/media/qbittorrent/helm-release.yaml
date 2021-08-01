@@ -2,15 +2,15 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: transmission
+  name: qbittorrent
   namespace: media
 spec:
   interval: 5m
   chart:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
-      chart: transmission
-      version: 7.1.0
+      chart: qbittorrent
+      version: 11.3.0
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
@@ -18,10 +18,27 @@ spec:
       interval: 5m
   values:
     image:
-      repository: ghcr.io/k8s-at-home/transmission
-      tag: v3.00
+      repository: ghcr.io/k8s-at-home/qbittorrent
+      tag: v4.3.5
+      pullPolicy: IfNotPresent
+
     env:
-      TZ: "Europe/Helsinki"
+      # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
+      # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
+      WAIT_FOR_VPN: "true"
+
+    persistence:
+      config:
+        enabled: true
+        type: emptyDir
+        mountPath: /config
+      # This should be enabled so that both the qBittorrent and Wireguard container have access to a shared volume mounted to /shared.
+      # It will be used to communicate between the two containers.
+      shared:
+        enabled: true
+        type: emptyDir
+        mountPath: /shared
+
     ingress:
       main:
         enabled: true
@@ -29,31 +46,20 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
         hosts:
-          - host: "transmission.${SECRET_DOMAIN}"
+          - host: "qbittorrent.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - hosts:
-              - "transmission.${SECRET_DOMAIN}"
-    persistence:
-      config:
-        enabled: true
-        existingClaim: transmission-config
-      media:
-        enabled: true
-        existingClaim: media-pvc
+              - "qbittorrent.${SECRET_DOMAIN}"
+
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-    resources:
-      requests:
-        memory: 250Mi
-        cpu: 200m
-      limits:
-        memory: 500Mi
+
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
@@ -87,9 +93,20 @@ spec:
           Address = 10.5.170.200
           PrivateKey = abc
           DNS = 10.0.0.243,10.0.0.242
+          PostUp = /config/up.sh %i
+          PreDown = /config/down.sh %i
 
           [Peer]
           PublicKey = def
           Endpoint = 188.126.89.39:1337
           AllowedIPs = 0.0.0.0/0
           PersistentKeepalive = 25
+
+        scripts:
+          up: |-
+            #!/bin/bash
+            echo "connected" > /shared/vpnstatus
+
+          down: |-
+            #!/bin/bash
+            echo "disconnected" > /shared/vpnstatus

@@ -5,4 +5,4 @@ resources:
   - plex
   - radarr
   - sonarr
-  - transmission
+  - qbittorrent
