@@ -21,7 +21,8 @@ spec:
       repository: ghcr.io/k8s-at-home/qbittorrent
       tag: v4.3.5
       pullPolicy: IfNotPresent
-
+    settings:
+      automaticPortSetup: true
     env:
       # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
       # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
@@ -38,6 +39,13 @@ spec:
         enabled: true
         type: emptyDir
         mountPath: /shared
+    additionalVolumeMounts:
+      - name: media-pv
+        mountPath: "/media"
+    additionalVolumes:
+      - name: media-pv
+        persistentVolumeClaim:
+          claimName: media-pvc
 
     ingress:
       main:
@@ -54,11 +62,12 @@ spec:
           - hosts:
               - "qbittorrent.${SECRET_DOMAIN}"
 
-    podSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-      fsGroupChangePolicy: OnRootMismatch
+    resources:
+      requests:
+        memory: 250Mi
+        cpu: 500m
+      limits:
+        memory: 6000Mi
 
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
