@@ -1,0 +1,83 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: vpn-gateway
+  namespace: networking
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://k8s-at-home.com/charts/
+      chart: pod-gateway
+      version: 3.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home-charts
+        namespace: flux-system
+      interval: 5m
+  # See https://github.com/k8s-at-home/charts/blob/master/charts/pod-gateway/values.yaml
+  values:
+    image:
+      repository: ghcr.io/k8s-at-home/pod-gateway
+      tag: v1.3.1
+    routed_namespaces:
+      - media
+    publicPorts:
+      # hostname assigned to the pod
+      - hostname: qbittorrent
+        # must be an integer between 2 and VXLAN_GATEWAY_FIRST_DYNAMIC_IP (20 by default)
+        IP: 10
+        ports:
+          - type: udp
+            port: 1337
+          - type: tcp
+            port: 1337
+    settings:
+      VPN_INTERFACE: wg0
+      # Prevent non VPN traffic to leave the gateway
+      VPN_BLOCK_OTHER_TRAFFIC: false
+      # -- If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
+      VPN_TRAFFIC_PORT: 443
+      # -- Traffic to these IPs will be send through the K8S gateway
+      VPN_LOCAL_CIDRS: 10.0.0.0/8 192.168.0.0/16
+    webhook:
+      image:
+        repository: ghcr.io/k8s-at-home/gateway-admision-controller
+        tag: v3.3.2
+      gatewayDefault: false
+      gatewayLabel: setGateway
+      gatewayAnnotation: setGateway
+      namespaceSelector:
+        matchLabels:
+          routed-gateway: "true"
+    livenessProbe:
+      exec:
+        command:
+          - sh
+          - -c
+          - if [ $(wget -q -O- https://ipinfo.io/country) == '${VPN_COUNTRY}' ]; then exit 0; else exit $?; fi
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      failureThreshold: 1
+    addons:
+      vpn:
+        enabled: true
+        type: wireguard
+        wireguard:
+          image:
+            repository: ghcr.io/k8s-at-home/wireguard
+            tag: v1.0.20210424
+            pullPolicy: IfNotPresent
+        securityContext:
+          runAsUser: 568
+          runAsGroup: 568
+        env:
+          TZ: Europe/Helsinki
+          KILLSWITCH: "false"
+        configFileSecret: vpn-gateway-vpnconfig
+        resources:
+          requests:
+            cpu: "0.001"
+            memory: 128Mi
+          limits:
+            memory: 512Mi

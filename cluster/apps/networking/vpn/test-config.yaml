@@ -1,9 +1,0 @@
-# yamllint disable
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: test-config
-  namespace: media
-stringData:
-  asd: "${SECRET_DOMAIN}"
