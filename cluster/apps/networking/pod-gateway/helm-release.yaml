@@ -29,9 +29,9 @@ spec:
         IP: 10
         ports:
           - type: udp
-            port: 1337
+            port: 18289
           - type: tcp
-            port: 1337
+            port: 18289
     settings:
       VPN_INTERFACE: wg0
       # Prevent non VPN traffic to leave the gateway
