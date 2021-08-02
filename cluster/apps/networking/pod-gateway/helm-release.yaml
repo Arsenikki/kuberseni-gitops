@@ -33,16 +33,16 @@ spec:
           - type: tcp
             port: 18289
     settings:
-      NOT_ROUTED_TO_GATEWAY_CIDRS: ${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_LOCAL_CIDR}
+      NOT_ROUTED_TO_GATEWAY_CIDRS: "10.0.0.0/8 192.168.0.0/16"
       # tun0 for openvpn, wg0 for wireguard
       VPN_INTERFACE: wg0
       # Prevent non VPN traffic to leave the gateway
       VPN_BLOCK_OTHER_TRAFFIC: true
       # If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
-      VPN_TRAFFIC_PORT: ${VPN_PORT}
+      VPN_TRAFFIC_PORT: "${VPN_PORT}"
       # Traffic to these IPs will be send through the K8S gateway
       # change if your K8S cluster or home network uses a different CIDR
-      VPN_LOCAL_CIDRS: ${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_LOCAL_CIDR}
+      VPN_LOCAL_CIDRS: "10.0.0.0/8 192.168.0.0/16"
     webhook:
       image:
         repository: ghcr.io/k8s-at-home/gateway-admision-controller
@@ -93,11 +93,9 @@ spec:
                     cidr: 0.0.0.0/0
               ports:
                 # VPN traffic port - change if your provider uses a different port
-                - port: ${VPN_PORT}
+                - port: "${VPN_PORT}"
                   protocol: UDP
             - to:
                 # Allow traffic within K8S - change if your K8S cluster uses a different CIDR
                 - ipBlock:
-                    cidr: ${NETWORK_K8S_CLUSTER_CIDR}
-                - ipBlock:
-                    cidr: ${NETWORK_K8S_SERVICE_CIDR}
+                    cidr: 10.0.0.0/8
