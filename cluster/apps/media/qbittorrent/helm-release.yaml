@@ -44,7 +44,16 @@ spec:
       media:
         enabled: true
         existingClaim: media-pvc
-
+    service:
+      bittorrent:
+        enabled: true
+        type: ClusterIP
+        ports:
+          bittorrent:
+            enabled: true
+            port: 18289
+            protocol: TCP
+            targetPort: 18289
     ingress:
       main:
         enabled: true
@@ -59,7 +68,9 @@ spec:
         tls:
           - hosts:
               - "qbittorrent.${SECRET_DOMAIN}"
-
+    podSecurityContext:
+      supplementalGroups:
+        - 65536
     resources:
       requests:
         memory: 250Mi
