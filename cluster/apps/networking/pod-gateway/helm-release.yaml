@@ -33,13 +33,16 @@ spec:
           - type: tcp
             port: 18289
     settings:
+      NOT_ROUTED_TO_GATEWAY_CIDRS: ${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_LOCAL_CIDR}
+      # tun0 for openvpn, wg0 for wireguard
       VPN_INTERFACE: wg0
       # Prevent non VPN traffic to leave the gateway
-      VPN_BLOCK_OTHER_TRAFFIC: false
-      # -- If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
-      VPN_TRAFFIC_PORT: 443
-      # -- Traffic to these IPs will be send through the K8S gateway
-      VPN_LOCAL_CIDRS: 10.0.0.0/8 192.168.0.0/16
+      VPN_BLOCK_OTHER_TRAFFIC: true
+      # If VPN_BLOCK_OTHER_TRAFFIC is true, allow VPN traffic over this port
+      VPN_TRAFFIC_PORT: ${VPN_PORT}
+      # Traffic to these IPs will be send through the K8S gateway
+      # change if your K8S cluster or home network uses a different CIDR
+      VPN_LOCAL_CIDRS: ${NETWORK_K8S_CLUSTER_CIDR} ${NETWORK_K8S_SERVICE_CIDR} ${NETWORK_LOCAL_CIDR}
     webhook:
       image:
         repository: ghcr.io/k8s-at-home/gateway-admision-controller
@@ -50,15 +53,15 @@ spec:
       namespaceSelector:
         matchLabels:
           routed-gateway: "true"
-    livenessProbe:
-      exec:
-        command:
-          - sh
-          - -c
-          - if [ $(wget -q -O- https://ipinfo.io/country) == '${VPN_COUNTRY}' ]; then exit 0; else exit $?; fi
-      initialDelaySeconds: 30
-      periodSeconds: 60
-      failureThreshold: 1
+    # livenessProbe:
+    #     exec:
+    #         command:
+    #             - sh
+    #             - -c
+    #             - if [ $(wget -q -O- https://ipinfo.io/country) == '${VPN_COUNTRY}' ]; then exit 0; else exit $?; fi
+    #     initialDelaySeconds: 30
+    #     periodSeconds: 60
+    #     failureThreshold: 1
     addons:
       vpn:
         enabled: true
@@ -73,6 +76,7 @@ spec:
           runAsGroup: 568
         env:
           TZ: Europe/Helsinki
+          IPTABLES_BACKEND: nft
           KILLSWITCH: "false"
         configFileSecret: vpn-gateway-vpnconfig
         resources:
@@ -81,3 +85,19 @@ spec:
             memory: 128Mi
           limits:
             memory: 512Mi
+        networkPolicy:
+          enabled: true
+          egress:
+            - to:
+                - ipBlock:
+                    cidr: 0.0.0.0/0
+              ports:
+                # VPN traffic port - change if your provider uses a different port
+                - port: ${VPN_PORT}
+                  protocol: UDP
+            - to:
+                # Allow traffic within K8S - change if your K8S cluster uses a different CIDR
+                - ipBlock:
+                    cidr: ${NETWORK_K8S_CLUSTER_CIDR}
+                - ipBlock:
+                    cidr: ${NETWORK_K8S_SERVICE_CIDR}
