@@ -28,7 +28,7 @@ spec:
       automaticPortSetup: true
     persistence:
       config:
-        enabled: true
+        enabled: false
         type: emptyDir
         mountPath: /config
       # This should be enabled so that both the qBittorrent and Wireguard container have access to a shared volume mounted to /shared.
@@ -83,13 +83,10 @@ spec:
         # See the documentation of the VPN image for all config values
         env:
           TZ: Europe/Helsinki
-        configFileSecret: qbittorrent-ovpn-config
-        # Set the VPN container securityContext
+        # Set the VPN container securityContext as ROOT
         securityContext:
-          capabilities:
-            add:
-              - NET_ADMIN
-              - SYS_MODULE
+          runAsGroup: 0
+          runAsUser: 0
         scripts:
           up: |-
             #!/bin/bash
