@@ -1,38 +1,62 @@
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: qbittorrent
-  namespace: media
+  name: qbittorrent-ovpn
+  namespace: tooling
 spec:
   interval: 5m
   chart:
     spec:
-      # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: qbittorrent
-      version: 11.3.0
+      version: "11.3.0"
       sourceRef:
         kind: HelmRepository
-        name: k8s-at-home-charts
+        name: k8s-at-home
         namespace: flux-system
-      interval: 5m
+      interval: 1m
   values:
-    image:
-      repository: ghcr.io/k8s-at-home/qbittorrent
-      tag: v4.3.5
-      pullPolicy: IfNotPresent
-    env:
-      # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
-      # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
-      WAIT_FOR_VPN: "true"
     settings:
-      automaticPortSetup: true
+      # -- Enables automatic port configuration at startup
+      # This sets the qbittorrent port to the value of `service.bittorrent.ports.bittorrent.port`.
+      automaticPortSetup: false
+    env:
+      # -- Set the container timezone
+      TZ: UTC
+      WAIT_FOR_VPN: "true"
+    service:
+      main:
+        ports:
+          http:
+            port: 8080
+      bittorrent:
+        enabled: false
+        type: ClusterIP
+        ports:
+          bittorrent:
+            enabled: true
+            port: 6881
+            protocol: TCP
+            targetPort: 6881
+    ingress:
+      main:
+        primary: true
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: "traefik"
+        hosts:
+          - host: qbittorrent.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+
+    # -- Configure persistence settings for the chart under this key.
+    # @default -- See values.yaml
     persistence:
       config:
-        enabled: false
-        type: emptyDir
+        enabled: true
+        size: 1Gi
         mountPath: /config
-      # This should be enabled so that both the qBittorrent and Wireguard container have access to a shared volume mounted to /shared.
-      # It will be used to communicate between the two containers.
       shared:
         enabled: true
         type: emptyDir
@@ -40,66 +64,61 @@ spec:
       media:
         enabled: true
         existingClaim: media-pvc
-    service:
-      bittorrent:
+        mountPath: /media
+      downloads:
         enabled: true
-        type: ClusterIP
-        ports:
-          bittorrent:
-            enabled: true
-            port: 18289
-            protocol: TCP
-            targetPort: 18289
-    ingress:
-      main:
-        enabled: true
-        annotations:
-          kubernetes.io/ingress.class: traefik
-          traefik.ingress.kubernetes.io/router.middlewares: networking-traefik-forward-auth@kubernetescrd
-        hosts:
-          - host: qbittorrent.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                pathType: Prefix
-        tls:
-          - hosts:
-              - qbittorrent.${SECRET_DOMAIN}
-    resources:
-      requests:
-        memory: 500Mi
-        cpu: 1000m
-      limits:
-        memory: 6000Mi
+        existingClaim: media-pvc
+        size: 100Gi
+        mountPath: /downloads
+    probes:
+      liveness:
+        enabled: false
+      readiness:
+        enabled: false
+      startup:
+        enabled: false
     addons:
-      # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
         enabled: true
+        # This Should be set to `openvpn`. This will set the add-on to use the default settings for OpenVPN based connections.
         type: openvpn
+
         openvpn:
-          image:
-            repository: dperson/openvpn-client
-            tag: latest
-        # All variables specified here will be added to the vpn sidecar container
-        # See the documentation of the VPN image for all config values
-        env:
-          TZ: Europe/Helsinki
-        # OpenVPN config secret
-        configFileSecret: qbittorrent-ovpn-config
-        # Set the VPN container securityContext as ROOT
+        # If the podSecurityContext is set to run as a different user, make sure to run the OpenVPN container as root.
+        # This is required for it to be able to read certain configuration files.
         securityContext:
           runAsGroup: 0
           runAsUser: 0
+
+        env:
+          # Set this environment variable to 'on' to make sure all traffic gets routed through the VPN container.
+          # Make sure to check the other environment variables for the OpenVPN image to see how you can exclude certain
+          # traffic from these firewall rules.
+          FIREWALL: ""
+          ROUTE: "10.42.0.0/16"
+          # ROUTE: '10.1.1.0/24'
+
+        # The .ovpn file provided by your VPN provider goes here.
+        #
+        # Any CA / certificate must either be placed inline, or provided through an additionalVolumeMount so that OpenVPN can find it.
+        #
+        # Pay close attention to the last 3 lines in this file. They must be added if you wish to run a script when the connection
+        # is opened / closed.
+        configFileSecret: qbittorrent-ovpn-config
+
+        # The scripts that get run when the VPN connection opens/closes are defined here.
+        # The default scripts will write a string to represent the current connection state to a file.
+        # Our qBittorrent image has a feature that can wait for this file to contain the word 'connected' before actually starting the application.
         scripts:
           up: |-
             #!/bin/bash
+            /etc/openvpn/up.sh
             echo "connected" > /shared/vpnstatus
+
           down: |-
             #!/bin/bash
+            /etc/openvpn/down.sh
             echo "disconnected" > /shared/vpnstatus
-  # valuesFrom:
-  #   - kind: Secret
-  #     name: qbittorrent-helm-values
-  #     valuesKey: values.yaml
   valuesFrom:
     - kind: Secret
       name: ovpn-qbittorrent-helm-values
