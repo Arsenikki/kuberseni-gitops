@@ -1,0 +1,121 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: qbittorrent
+      version: "11.3.0"
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home-charts
+        namespace: flux-system
+      interval: 1m
+  values:
+    settings:
+      # -- Enables automatic port configuration at startup
+      # This sets the qbittorrent port to the value of `service.bittorrent.ports.bittorrent.port`.
+      automaticPortSetup: false
+    env:
+      # -- Set the container timezone
+      TZ: "Europe/Helsinki"
+      WAIT_FOR_VPN: "true"
+    service:
+      main:
+        ports:
+          http:
+            port: 8080
+      bittorrent:
+        enabled: false
+        type: ClusterIP
+        ports:
+          bittorrent:
+            enabled: true
+            port: 6881
+            protocol: TCP
+            targetPort: 6881
+    ingress:
+      main:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: "traefik"
+        hosts:
+          - host: qbittorrent.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+
+    # -- Configure persistence settings for the chart under this key.
+    # @default -- See values.yaml
+    persistence:
+      config:
+        enabled: true
+        mountPath: /config
+        existingClaim: qbittorrent-config
+      # This should be enabled so that both the qBittorrent and Wireguard container have access to a shared volume mounted to /shared.
+      # It will be used to communicate between the two containers.
+      shared:
+        enabled: true
+        type: emptyDir
+        mountPath: /shared
+      media:
+        enabled: true
+        existingClaim: media-pvc
+    probes:
+      liveness:
+        enabled: false
+      readiness:
+        enabled: false
+      startup:
+        enabled: false
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
+    addons:
+      vpn:
+        enabled: true
+        # This Should be set to `openvpn`. This will set the add-on to use the default settings for OpenVPN based connections.
+        type: openvpn
+
+        openvpn:
+          image:
+            repository: dperson/openvpn-client
+            tag: latest
+        # If the podSecurityContext is set to run as a different user, make sure to run the OpenVPN container as root.
+        # This is required for it to be able to read certain configuration files.
+        securityContext:
+          runAsGroup: 0
+          runAsUser: 0
+
+        env:
+          # Set this environment variable to 'on' to make sure all traffic gets routed through the VPN container.
+          # Make sure to check the other environment variables for the OpenVPN image to see how you can exclude certain
+          # traffic from these firewall rules.
+          FIREWALL: "on"
+          ROUTE: "10.42.0.0/16"
+
+        configFileSecret: qbittorrent-ovpn-config
+
+        # The scripts that get run when the VPN connection opens/closes are defined here.
+        # The default scripts will write a string to represent the current connection state to a file.
+        # Our qBittorrent image has a feature that can wait for this file to contain the word 'connected' before actually starting the application.
+        scripts:
+          up: |-
+            #!/bin/bash
+            /etc/openvpn/up.sh
+            echo "connected" > /shared/vpnstatus
+
+          down: |-
+            #!/bin/bash
+            /etc/openvpn/down.sh
+            echo "disconnected" > /shared/vpnstatus
+  valuesFrom:
+    - kind: Secret
+      name: ovpn-qbittorrent-helm-values
+      valuesKey: values.yaml
