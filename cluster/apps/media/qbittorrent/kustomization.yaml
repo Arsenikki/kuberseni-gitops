@@ -5,3 +5,4 @@ resources:
   - helm-release.yaml
   - helm-values.yaml
   - ovpn-secret.yaml
+  - ovpn-helm-values.yaml
