@@ -76,9 +76,6 @@ spec:
         enabled: true
         type: openvpn
         openvpn:
-          auth: |
-            ${OPENVPN_USERNAME}
-            ${OPENVPN_PASSWORD}
           image:
             repository: dperson/openvpn-client
             tag: latest
@@ -104,3 +101,7 @@ spec:
   #   - kind: Secret
   #     name: qbittorrent-helm-values
   #     valuesKey: values.yaml
+  valuesFrom:
+    - kind: Secret
+      name: ovpn-qbittorrent-helm-values
+      valuesKey: values.yaml
