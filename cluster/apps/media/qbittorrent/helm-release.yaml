@@ -83,6 +83,8 @@ spec:
         # See the documentation of the VPN image for all config values
         env:
           TZ: Europe/Helsinki
+        # OpenVPN config secret
+        configFileSecret: qbittorrent-ovpn-config
         # Set the VPN container securityContext as ROOT
         securityContext:
           runAsGroup: 0
