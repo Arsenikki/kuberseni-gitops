@@ -1,4 +1,3 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -21,13 +20,10 @@ spec:
       repository: ghcr.io/k8s-at-home/qbittorrent
       tag: v4.3.5
       pullPolicy: IfNotPresent
-    hostname: qbittorrent
     env:
       # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
       # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
-      WAIT_FOR_VPN: "false"
-    podAnnotations:
-      setGateway: "true"
+      WAIT_FOR_VPN: "true"
     settings:
       automaticPortSetup: true
     persistence:
@@ -58,22 +54,61 @@ spec:
       main:
         enabled: true
         annotations:
-          kubernetes.io/ingress.class: "traefik"
-          traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
+          kubernetes.io/ingress.class: traefik
+          traefik.ingress.kubernetes.io/router.middlewares: networking-traefik-forward-auth@kubernetescrd
         hosts:
-          - host: "qbittorrent.${SECRET_DOMAIN}"
+          - host: qbittorrent.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - hosts:
-              - "qbittorrent.${SECRET_DOMAIN}"
-    podSecurityContext:
-      supplementalGroups:
-        - 65536
+              - qbittorrent.${SECRET_DOMAIN}
     resources:
       requests:
-        memory: 250Mi
-        cpu: 500m
+        memory: 500Mi
+        cpu: 1000m
       limits:
         memory: 6000Mi
+    addons:
+      # Enable running a VPN in the pod to route traffic through a VPN
+      vpn:
+        enabled: true
+        # VPN type: options are openvpn or wireguard
+        type: wireguard
+        # WireGuard specific configuration
+        wireguard:
+          image:
+            repository: ghcr.io/k8s-at-home/wireguard
+            tag: v1.0.20210424
+            pullPolicy: IfNotPresent
+        # Set the VPN container securityContext
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+              - SYS_MODULE
+        # All variables specified here will be added to the vpn sidecar container
+        # See the documentation of the VPN image for all config values
+        env:
+          TZ: Europe/Helsinki
+        # Provide a customized vpn configuration file to be used by the VPN.
+        configFile: |
+          [Interface]
+          Address = 10.13.225.89
+          PrivateKey = ${PIA_PRIVATE_KEY}
+          DNS = 10.0.0.243,10.0.0.242
+          PostUp = /config/up.sh %i
+          PreDown = /config/down.sh %i
+
+          [Peer]
+          PublicKey = ${PIA_PUBLIC_KEY} 
+          Endpoint = 188.126.89.79:1337
+          AllowedIPs = 0.0.0.0/0
+        scripts:
+          up: |-
+            #!/bin/bash
+            echo "connected" > /shared/vpnstatus
+          down: |-
+            #!/bin/bash
+            echo "disconnected" > /shared/vpnstatus
