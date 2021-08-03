@@ -92,19 +92,6 @@ spec:
         # See the documentation of the VPN image for all config values
         env:
           TZ: Europe/Helsinki
-        # Provide a customized vpn configuration file to be used by the VPN.
-        configFile: |
-          [Interface]
-          Address = 10.13.225.89
-          PrivateKey = ${PIA_PRIVATE_KEY}
-          DNS = 10.0.0.243,10.0.0.242
-          PostUp = /config/up.sh %i
-          PreDown = /config/down.sh %i
-
-          [Peer]
-          PublicKey = ${PIA_PUBLIC_KEY} 
-          Endpoint = 188.126.89.79:1337
-          AllowedIPs = 0.0.0.0/0
         scripts:
           up: |-
             #!/bin/bash
@@ -112,3 +99,7 @@ spec:
           down: |-
             #!/bin/bash
             echo "disconnected" > /shared/vpnstatus
+  valuesFrom:
+    - kind: Secret
+      name: qbittorrent-helm-values
+      valuesKey: values.yaml
