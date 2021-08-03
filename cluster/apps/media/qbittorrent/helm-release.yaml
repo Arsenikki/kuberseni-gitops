@@ -23,7 +23,7 @@ spec:
     env:
       # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
       # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
-      WAIT_FOR_VPN: "true"
+      WAIT_FOR_VPN: "false"
     settings:
       automaticPortSetup: true
     persistence:
@@ -73,7 +73,7 @@ spec:
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
-        enabled: true
+        enabled: false
         # VPN type: options are openvpn or wireguard
         type: wireguard
         # WireGuard specific configuration
