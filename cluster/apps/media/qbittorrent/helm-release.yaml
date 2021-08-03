@@ -22,7 +22,7 @@ spec:
       automaticPortSetup: false
     env:
       # -- Set the container timezone
-      TZ: UTC
+      TZ: "Europe/Helsinki"
       WAIT_FOR_VPN: "true"
     service:
       main:
@@ -40,7 +40,6 @@ spec:
             targetPort: 6881
     ingress:
       main:
-        primary: true
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
@@ -98,9 +97,8 @@ spec:
           # Set this environment variable to 'on' to make sure all traffic gets routed through the VPN container.
           # Make sure to check the other environment variables for the OpenVPN image to see how you can exclude certain
           # traffic from these firewall rules.
-          FIREWALL: ""
+          FIREWALL: "on"
           ROUTE: "10.42.0.0/16"
-          # ROUTE: '10.1.1.0/24'
 
         configFileSecret: qbittorrent-ovpn-config
 
