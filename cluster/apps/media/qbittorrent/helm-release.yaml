@@ -23,7 +23,7 @@ spec:
     env:
       # Our qBittorrent image has a feature that can wait for the VPN to be connected before actually starting the application.
       # It does this by checking the contents of a file /shared/vpnstatus to contain the string 'connected'.
-      WAIT_FOR_VPN: "false"
+      WAIT_FOR_VPN: "true"
     settings:
       automaticPortSetup: true
     persistence:
@@ -73,25 +73,26 @@ spec:
     addons:
       # Enable running a VPN in the pod to route traffic through a VPN
       vpn:
-        enabled: false
-        # VPN type: options are openvpn or wireguard
-        type: wireguard
-        # WireGuard specific configuration
-        wireguard:
+        enabled: true
+        type: openvpn
+        openvpn:
+          auth: |
+            ${OPENVPN_USERNAME}
+            ${OPENVPN_PASSWORD}
           image:
-            repository: ghcr.io/k8s-at-home/wireguard
-            tag: v1.0.20210424
-            pullPolicy: IfNotPresent
+            repository: dperson/openvpn-client
+            tag: latest
+        # All variables specified here will be added to the vpn sidecar container
+        # See the documentation of the VPN image for all config values
+        env:
+          TZ: Europe/Helsinki
+        configFileSecret: qbittorrent-ovpn-config
         # Set the VPN container securityContext
         securityContext:
           capabilities:
             add:
               - NET_ADMIN
               - SYS_MODULE
-        # All variables specified here will be added to the vpn sidecar container
-        # See the documentation of the VPN image for all config values
-        env:
-          TZ: Europe/Helsinki
         scripts:
           up: |-
             #!/bin/bash
@@ -99,7 +100,7 @@ spec:
           down: |-
             #!/bin/bash
             echo "disconnected" > /shared/vpnstatus
-  valuesFrom:
-    - kind: Secret
-      name: qbittorrent-helm-values
-      valuesKey: values.yaml
+  # valuesFrom:
+  #   - kind: Secret
+  #     name: qbittorrent-helm-values
+  #     valuesKey: values.yaml
