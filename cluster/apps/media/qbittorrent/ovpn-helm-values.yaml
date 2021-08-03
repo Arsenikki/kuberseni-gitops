@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ovpn-qbittorrent-helm-values
+  namespace: media
+stringData:
+  values.yaml: |-
+    addons:
+      vpn:  
+        openvpn:
+          auth: |-
+            ${OPENVPN_USERNAME}
+            ${OPENVPN_PASSWORD}
