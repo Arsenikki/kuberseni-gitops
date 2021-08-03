@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - traefik
   - wildcard-certificate
-  - pod-gateway
+  # - pod-gateway
