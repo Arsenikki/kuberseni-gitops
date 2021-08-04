@@ -31,7 +31,7 @@ spec:
     initContainers:
       - name: volume-ownership
         image: busybox:1.33.1
-        command: ["sh", "-c", "chown -R 568:568 /config"]
+        command: ["sh", "-c", "chown -R 568:568 /config && sleep 3600"]
         volumeMounts:
           - name: "config"
             mountPath: "/config"
