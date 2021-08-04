@@ -21,7 +21,7 @@ spec:
       tag: 1.21.0
     env:
       DATA_FOLDER: "config"
-      SIGNUPS_ALLOWED: false
+      SIGNUPS_ALLOWED: true
       WEBSOCKET_ENABLED: true
       WEBSOCKET_ADDRESS: 0.0.0.0
       WEBSOCKET_PORT: 3012
