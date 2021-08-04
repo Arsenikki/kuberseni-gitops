@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgresql-config
+  name: vaultwarden-psql-config
   namespace: security
 spec:
   accessModes:

@@ -69,7 +69,7 @@ spec:
       postgresqlDatabase: "vaultwarden"
       persistence:
         enabled: true
-        existingClaim: vaultwarden-postgresql
+        existingClaim: vaultwarden-psql-config
     resources:
       requests:
         memory: 100Mi
