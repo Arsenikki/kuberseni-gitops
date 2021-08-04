@@ -31,7 +31,7 @@ spec:
     initContainers:
       - name: volume-ownership
         image: busybox:1.33.1
-        command: ["sh", "-c", "chown -R 568:568 /config && sleep 3600"]
+        command: ["sh", "-c", "ls -la && sleep 3600"]
         volumeMounts:
           - name: "config"
             mountPath: "/config"
@@ -77,11 +77,6 @@ spec:
       persistence:
         enabled: true
         existingClaim: vaultwarden-postgresql
-    podSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-      fsGroupChangePolicy: OnRootMismatch
     resources:
       requests:
         memory: 100Mi
