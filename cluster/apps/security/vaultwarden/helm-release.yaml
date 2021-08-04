@@ -29,6 +29,13 @@ spec:
         DOMAIN: https://vault.${SECRET_DOMAIN}
         ADMIN_TOKEN: ${SECRET_VAULTWARDEN_ADMIN_TOKEN}
         DATABASE_URL: postgresql://vaultwarden:${SECRET_VAULTWARDEN_DB_PASSWORD}@vaultwarden-postgresql:5432/vaultwarden
+      initContainers:
+        - name: mk-config-dir
+          image: busybox:1.31.1
+          command: ["sh", "-c", "ls -la"]
+          volumeMounts:
+            - name: config
+              mountPath: /config
       probes:
         liveness:
           enabled: false
