@@ -2,13 +2,13 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: vaultWarden
+  name: vaultwarden
   namespace: security
 spec:
   interval: 5m
   chart:
     spec:
-      chart: vaultWarden
+      chart: vaultwarden
       version: 2.3.1
       sourceRef:
         kind: HelmRepository
