@@ -28,11 +28,14 @@ spec:
         externalIPs:
           - "${PLEX_LB}"
         externalTrafficPolicy: Local
+        annotations:
+          traefik.ingress.kubernetes.io/service.serversscheme: https
     ingress:
       main:
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
+          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "plex.${SECRET_DOMAIN}"
             paths:
