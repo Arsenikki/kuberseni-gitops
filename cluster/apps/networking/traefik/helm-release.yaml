@@ -43,6 +43,9 @@ spec:
         level: DEBUG
       access:
         enabled: true
+        fields:
+          headers:
+            defaultmode: keep
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
