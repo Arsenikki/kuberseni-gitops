@@ -40,7 +40,7 @@ spec:
           enabled: true
     logs:
       general:
-        level: DEBUG
+        level: INFO
       access:
         enabled: true
         fields:
