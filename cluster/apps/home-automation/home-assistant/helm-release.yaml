@@ -43,9 +43,7 @@ spec:
           paths:
             - path: /
               pathType: Prefix
-      tls:
-        - hosts:
-            - "homeassistant.${SECRET_DOMAIN}"
+      tls: {}
     prometheus:
       serviceMonitor:
         enabled: false
@@ -86,9 +84,7 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix
-          tls:
-            - hosts:
-                - "homeassistant.vscode.${SECRET_DOMAIN}"
+          tls: {}
         volumeMounts:
           - name: config
             mountPath: /config

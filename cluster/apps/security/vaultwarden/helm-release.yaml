@@ -55,9 +55,7 @@ spec:
                 pathType: Prefix
                 service:
                   port: 3012
-        tls:
-          - hosts:
-              - "vault.${SECRET_DOMAIN}"
+        tls: {}
     persistence:
       config:
         enabled: true
