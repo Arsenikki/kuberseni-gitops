@@ -43,6 +43,8 @@ spec:
           traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "plex.${SECRET_DOMAIN}"
+            paths:
+              - path: /
         tls:
           - secretName: plex-tls
             hosts:
