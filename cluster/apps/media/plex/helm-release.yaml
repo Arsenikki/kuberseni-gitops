@@ -24,11 +24,9 @@ spec:
       TZ: "Europe/Helsinki"
     service:
       main:
-        type: LoadBalancer
-        externalIPs:
-          - "${PLEX_LB}"
-        externalTrafficPolicy: Local
+        type: ClusterIP
         annotations:
+          # https://doc.traefik.io/traefik/routing/providers/kubernetes-ingress/#communication-between-traefik-and-pods
           traefik.ingress.kubernetes.io/service.serversscheme: https
     ingress:
       main:
