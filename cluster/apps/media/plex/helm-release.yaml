@@ -37,7 +37,7 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Use tls-acme annotation to use default cluster-issuer once everything works
           # kubernetes.io/tls-acme: "true"
-          cert-manager.io/cluster-issuer: letsencrypt-prod
+          cert-manager.io/cluster-issuer: letsencrypt-production
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
           # false would make TLS terminate in the router
           traefik.ingress.kubernetes.io/router.tls: "true"
