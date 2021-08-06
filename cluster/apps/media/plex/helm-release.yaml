@@ -35,17 +35,18 @@ spec:
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
+          # Use tls-acme annotation to use default cluster-issuer once everything works
+          # kubernetes.io/tls-acme: "true"
           cert-manager.io/cluster-issuer: letsencrypt-prod
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
           # false would make TLS terminate in the router
           traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "plex.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
         tls:
-          passthrough: true
+          - secretName: plex-tls
+            hosts:
+              - "plex.${SECRET_DOMAIN}"
     hostnetwork: true
     persistence:
       config:
