@@ -43,7 +43,7 @@ spec:
       hosts:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
-            - path: /
+            - /
       tls:
         - secretName: traefik-forward-auth-tls
           hosts:
