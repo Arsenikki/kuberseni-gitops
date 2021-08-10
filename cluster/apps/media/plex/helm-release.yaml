@@ -29,19 +29,26 @@ spec:
           - "${PLEX_LB}"
         externalTrafficPolicy: Local
         annotations:
+          # https://doc.traefik.io/traefik/routing/providers/kubernetes-ingress/#communication-between-traefik-and-pods
           traefik.ingress.kubernetes.io/service.serversscheme: https
     ingress:
       main:
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
+          # Set to use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Set only "websecure" endpoint to be forwarded
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "plex.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
         tls:
-          - hosts:
+          - secretName: plex-tls
+            hosts:
               - "plex.${SECRET_DOMAIN}"
     hostnetwork: true
     persistence:

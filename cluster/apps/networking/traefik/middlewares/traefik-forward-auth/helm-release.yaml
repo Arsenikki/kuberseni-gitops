@@ -20,7 +20,6 @@ spec:
     authHost: "auth.${SECRET_DOMAIN}"
     cookie:
       domain: "${SECRET_DOMAIN}"
-      insecure: "true"
     providers:
       google:
         # providers.google.enabled -- Enable the google provider
@@ -33,15 +32,23 @@ spec:
       whitelist: "${SECRET_AUTH_WHITELIST_EMAILS}"
     ingress:
       enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "traefik"
+        # Set to use default cluster-issuer
+        kubernetes.io/tls-acme: "true"
+        # Set only "websecure" endpoint to be forwarded
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        # Set to passthrough TLS to backend service
+        traefik.ingress.kubernetes.io/router.tls: "true"
       hosts:
         - host: "auth.${SECRET_DOMAIN}"
           paths:
             - /
       tls:
-        - secretName: "${SECRET_DOMAIN/./-}-tls"
+        - secretName: traefik-forward-auth-tls
           hosts:
             - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
     logging:
-      level: "debug"
+      level: "trace"

@@ -10,7 +10,7 @@ spec:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: home-assistant
-      version: 8.2.0
+      version: 9.3.1
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
@@ -19,7 +19,7 @@ spec:
   values:
     image:
       repository: ghcr.io/home-assistant/home-assistant
-      tag: 2021.5.2
+      tag: 2021.6.3
     env:
       TZ: "Europe/Helsinki"
     envFrom:
@@ -28,27 +28,32 @@ spec:
     hostNetwork: true
     dnsPolicy: ClusterFirstWithHostNet
     service:
-      enabled: true
-      type: LoadBalancer
-      loadBalancerIP: "${HOME_ASSISTANT_LB}"
-      externalTrafficPolicy: Local
-      port:
-        port: 8123
+      main:
+        enabled: true
+        type: ClusterIP
+        ports:
+          http:
+            port: 8123
     ingress:
-      enabled: true
-      annotations:
-        kubernetes.io/ingress.class: traefik
-      hosts:
-        - host: "homeassistant.${SECRET_DOMAIN}"
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - hosts:
-            - "homeassistant.${SECRET_DOMAIN}"
-    prometheus:
-      serviceMonitor:
-        enabled: false
+      ingress:
+      main:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: "traefik"
+          # Set to use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Set only "websecure" endpoint to be forwarded
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
+        hosts:
+          - host: "homeassistant.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+        tls:
+          - secretName: homeassistant-tls
+            hosts:
+              - "homeassistant.${SECRET_DOMAIN}"
     probes:
       liveness:
         enabled: false
@@ -65,30 +70,38 @@ spec:
         enabled: true
         image:
           repository: codercom/code-server
-          tag: 3.10.0
+          tag: 3.9.2
         git:
           deployKeySecret: code-server
         workingDir: "/config"
         args:
           - --auth
-          - "none"
+          - "password"
           - --user-data-dir
           - "/config/.vscode"
           - --extensions-dir
           - "/config/.vscode"
         ingress:
-          enabled: true
-          annotations:
-            kubernetes.io/ingress.class: "traefik"
-            traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
-          hosts:
-            - host: "homeassistant.vscode.${SECRET_DOMAIN}"
-              paths:
-                - path: /
-                  pathType: Prefix
-          tls:
-            - hosts:
-                - "homeassistant.vscode.${SECRET_DOMAIN}"
+          main:
+            enabled: true
+            annotations:
+              kubernetes.io/ingress.class: "traefik"
+              # Set to use traefik-forward-auth middleware for authentication
+              traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
+              # Set to use default cluster-issuer
+              kubernetes.io/tls-acme: "true"
+              # Set only "websecure" endpoint to be forwarded
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              # Set to passthrough TLS to backend service
+              traefik.ingress.kubernetes.io/router.tls: "true"
+            hosts:
+              - host: "homeassistant.vscode.${SECRET_DOMAIN}"
+                paths:
+                  - path: /
+            tls:
+              - secretName: ha-vscode-tls
+                hosts:
+                  - "homeassistant.vscode.${SECRET_DOMAIN}"
         volumeMounts:
           - name: config
             mountPath: /config
