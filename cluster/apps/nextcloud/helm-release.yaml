@@ -69,7 +69,7 @@ spec:
       password: "${SECRET_NEXTCLOUD_DB_PASSWORD}"
 
     cronjob:
-      enabled: true
+      enabled: false
 
     redis:
       enabled: true
