@@ -7,3 +7,4 @@ resources:
   - k8s-at-home-charts.yaml
   - longhorn-charts.yaml
   - node-feature-discovery-charts.yaml
+  - nextcloud-charts.yaml
