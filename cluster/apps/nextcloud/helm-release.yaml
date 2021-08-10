@@ -27,19 +27,19 @@ spec:
         kubernetes.io/ingress.class: "traefik"
         kubernetes.io/tls-acme: "true"
       tls:
-        - secretName: nextcloud-tls
+        - secretName: "nextcloud-tls"
           hosts:
-            - nextcloud.${SECRET_DOMAIN}
+            - "nextcloud.${SECRET_DOMAIN}"
 
     nextcloud:
-      host: nextcloud.${SECRET_DOMAIN}
-      username: ${SECRET_NEXTCLOUD_USERNAME}
-      password: ${SECRET_NEXTCLOUD_PASSWORD}
+      host: "nextcloud.${SECRET_DOMAIN}"
+      username: "${SECRET_NEXTCLOUD_USERNAME}"
+      password: "${SECRET_NEXTCLOUD_PASSWORD}"
 
     persistence:
       enabled: true
       accessMode: ReadWriteMany
-      existingClaim: pvc-nextcloud
+      existingClaim: "pvc-nextcloud"
 
     livenessProbe:
       enabled: false
@@ -51,18 +51,18 @@ spec:
     ## for more options see https://github.com/bitnami/charts/tree/master/bitnami/postgresql
     externalDatabase:
       enabled: true
-      type: postgresql
-      host: nextcloud-postgresql
-      database: nextcloud
-      user: ${SECRET_NEXTCLOUD_DB_USERNAME}
-      password: ${SECRET_NEXTCLOUD_DB_PASSWORD}
+      type: "postgresql"
+      host: "nextcloud-postgresql"
+      database: "nextcloud"
+      user: "${SECRET_NEXTCLOUD_DB_USERNAME}"
+      password: "${SECRET_NEXTCLOUD_DB_PASSWORD}"
 
     redis:
       enabled: true
       cluster:
         enabled: false
       usePassword: true
-      password: ${SECRET_NEXTCLOUD_REDIS_PASSWORD}
+      password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
       master:
         persistence:
           enabled: false
@@ -71,9 +71,9 @@ spec:
       enabled: true
       persistence:
         enabled: true
-        existingClaim: nextcloud-db-pvc
+        existingClaim: "nextcloud-db-pvc"
       global:
         postgresql:
-          postgresqlDatabase: nextcloud
-          postgresqlUsername: ${SECRET_NEXTCLOUD_DB_USERNAME}
-          postgresqlPassword: ${SECRET_NEXTCLOUD_DB_PASSWORD}
+          postgresqlDatabase: "nextcloud"
+          postgresqlUsername: "${SECRET_NEXTCLOUD_DB_USERNAME}"
+          postgresqlPassword: "${SECRET_NEXTCLOUD_DB_PASSWORD}"
