@@ -43,12 +43,20 @@ spec:
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
+          # Set to use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Set only "websecure" endpoint to be forwarded
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: qbittorrent.${SECRET_DOMAIN}
+          - host: "qbittorrent.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
-
+        tls:
+          - secretName: qbittorrent-tls
+            hosts:
+              - "qbittorrent.${SECRET_DOMAIN}"
     # -- Configure persistence settings for the chart under this key.
     # @default -- See values.yaml
     persistence:

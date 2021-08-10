@@ -40,6 +40,12 @@ spec:
         enabled: true
         annotations:
           kubernetes.io/ingress.class: "traefik"
+          # Set to use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Set only "websecure" endpoint to be forwarded
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "vault.${SECRET_DOMAIN}"
             paths:
@@ -56,7 +62,8 @@ spec:
                 service:
                   port: 3012
         tls:
-          - hosts:
+          - secretName: vaultwarden-tls
+            hosts:
               - "vault.${SECRET_DOMAIN}"
     persistence:
       config:
