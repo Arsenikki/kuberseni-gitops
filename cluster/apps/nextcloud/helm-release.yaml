@@ -25,6 +25,7 @@ spec:
       enabled: true
       annotations:
         kubernetes.io/ingress.class: "traefik"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
         kubernetes.io/tls-acme: "true"
       tls:
         - secretName: "nextcloud-tls"
@@ -35,6 +36,12 @@ spec:
       host: "nextcloud.${SECRET_DOMAIN}"
       username: "${SECRET_NEXTCLOUD_USERNAME}"
       password: "${SECRET_NEXTCLOUD_PASSWORD}"
+      configs:
+        proxy.config.php: |-
+          <?php
+          $CONFIG = array (
+            'trusted_proxies' => array('${NETWORK_LOCAL_CIDR}')
+          );
 
     persistence:
       enabled: true
@@ -56,20 +63,23 @@ spec:
     externalDatabase:
       enabled: true
       type: "postgresql"
-      host: "nextcloud-postgresql"
+      host: "nextcloud-postgresql.nextcloud"
       database: "nextcloud"
       user: "${SECRET_NEXTCLOUD_DB_USERNAME}"
       password: "${SECRET_NEXTCLOUD_DB_PASSWORD}"
 
+    cronjob:
+      enabled: true
+
     redis:
       enabled: true
-      cluster:
-        enabled: false
-      usePassword: true
-      password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
-      master:
-        persistence:
-          enabled: false
+      # cluster:
+      #   enabled: false
+      # usePassword: true
+      # password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
+      # master:
+      #   persistence:
+      #     enabled: false
 
     postgresql:
       enabled: true
