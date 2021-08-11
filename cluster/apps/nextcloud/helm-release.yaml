@@ -40,12 +40,13 @@ spec:
       host: "nextcloud.${SECRET_DOMAIN}"
       username: "${SECRET_NEXTCLOUD_USERNAME}"
       password: "${SECRET_NEXTCLOUD_PASSWORD}"
-      configs:
-        proxy.config.php: |-
-          <?php
-          $CONFIG = array (
-            'trusted_proxies' => array('${NETWORK_LOCAL_CIDR}')
-          );
+      extraEnv:
+        - name: TRUSTED_PROXIES
+          value: "${NETWORK_LOCAL_CIDR}"
+        - name: OVERWRITEHOST
+          value: "nextcloud.${SECRET_DOMAIN}"
+        - name: OVERWRITEPROTOCOL
+          value: "https"
 
     persistence:
       enabled: true
