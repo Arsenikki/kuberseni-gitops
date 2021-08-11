@@ -72,14 +72,14 @@ spec:
       enabled: false
 
     redis:
-      enabled: false
-      # cluster:
-      #   enabled: false
-      # usePassword: true
-      # password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
-      # master:
-      #   persistence:
-      #     enabled: false
+      enabled: true
+      cluster:
+        enabled: false
+      usePassword: true
+      password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
+      master:
+        persistence:
+          enabled: false
 
     postgresql:
       enabled: true
