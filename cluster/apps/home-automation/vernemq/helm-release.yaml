@@ -33,17 +33,12 @@ spec:
         enabled: true
         nodePort: 8443
 
-    secretMounts:
-      - name: vernemq-auth
-        secretName: vernemq-secrets
-        path: /vernemq/auth
-
     additionalEnv:
       - name: DOCKER_VERNEMQ_ACCEPT_EULA
         value: "yes"
-      - name: DOCKER_VERNEMQ_VMQ_PASSWD__PASSWORD_FILE
-        value: /vernemq/auth/vmq.passwd
-      - name: DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD
-        value: "on"
       - name: DOCKER_VERNEMQ_PLUGINS__VMQ_ACL
         value: "off"
+
+    envFrom:
+      - secretRef:
+          name: vernemq-users
