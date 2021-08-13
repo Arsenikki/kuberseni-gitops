@@ -40,6 +40,8 @@ spec:
         value: "yes"
       - name: DOCKER_VERNEMQ_PLUGINS__VMQ_PASSWD
         value: "on"
+      - name: DOCKER_VERNEMQ_VMQ_PASSWD__PASSWORD_FILE
+        value: /vernemq/auth/vmq.passwd
       - name: DOCKER_VERNEMQ_PLUGINS__VMQ_ACL
         value: "off"
       - name: DOCKER_VERNEMQ_USER_${SECRET_MQTT_USERNAME}
