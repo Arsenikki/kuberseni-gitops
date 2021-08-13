@@ -36,7 +36,5 @@ spec:
         value: "yes"
       - name: DOCKER_VERNEMQ_PLUGINS__VMQ_ACL
         value: "off"
-      - name: DOCKER_VERNEMQ_USER_ARSENIKKI
-        value: "testitesti"
-      - name: test
-        value: "${VPN_COUNTRY}"
+      - name: DOCKER_VERNEMQ_USER_${SECRET_MQTT_USERNAME}
+        value: "${SECRET_MQTT_PASSWORD}"
