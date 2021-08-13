@@ -30,6 +30,10 @@ spec:
         enabled: true
       mqtt:
         enabled: true
+    persistentVolume:
+      enabled: true
+      size: 1Gi
+      storageClass: longhorn-fast
 
     additionalEnv:
       - name: DOCKER_VERNEMQ_ACCEPT_EULA
