@@ -38,7 +38,7 @@ spec:
         value: "yes"
       - name: DOCKER_VERNEMQ_PLUGINS__VMQ_ACL
         value: "off"
-
-    envFrom:
-      - secretRef:
-          name: vernemq-users
+      - name: DOCKER_VERNEMQ_USER_ARSENIKKI
+        value: "testitesti"
+      - name: test
+        value: "${VPN_COUNTRY}"
