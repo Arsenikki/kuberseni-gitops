@@ -28,10 +28,8 @@ spec:
         - ${VERNEMQ_LB}
       ws:
         enabled: true
-        nodePort: 8080
       mqtt:
         enabled: true
-        nodePort: 8443
 
     additionalEnv:
       - name: DOCKER_VERNEMQ_ACCEPT_EULA
