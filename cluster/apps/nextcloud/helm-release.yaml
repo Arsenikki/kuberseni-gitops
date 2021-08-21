@@ -1,0 +1,98 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+spec:
+  releaseName: nextcloud
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://nextcloud.github.io/helm/
+      chart: nextcloud
+      version: 2.7.2
+      sourceRef:
+        kind: HelmRepository
+        name: nextcloud-charts
+        namespace: flux-system
+      interval: 5m
+  values:
+    image:
+      repository: nextcloud
+      tag: 22.1.0
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "traefik"
+        # Set to use default cluster-issuer
+        kubernetes.io/tls-acme: "true"
+        # Set only "websecure" endpoint to be forwarded
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        # Set to passthrough TLS to backend service
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      tls:
+        - secretName: "nextcloud-tls"
+          hosts:
+            - "nextcloud.${SECRET_DOMAIN}"
+
+    nextcloud:
+      host: "nextcloud.${SECRET_DOMAIN}"
+      username: "${SECRET_NEXTCLOUD_USERNAME}"
+      password: "${SECRET_NEXTCLOUD_PASSWORD}"
+      extraEnv:
+        - name: TRUSTED_PROXIES
+          value: "${NETWORK_LOCAL_CIDR}"
+        - name: OVERWRITEHOST
+          value: "nextcloud.${SECRET_DOMAIN}"
+        - name: OVERWRITEPROTOCOL
+          value: "https"
+
+    persistence:
+      enabled: true
+      accessMode: "ReadWriteMany"
+      existingClaim: "nextcloud-pvc"
+
+    livenessProbe:
+      enabled: false
+
+    readinessProbe:
+      enabled: false
+
+    ## Do not install default sqlite DB
+    internalDatabase:
+      enabled: false
+
+    ## PostgreSQL chart configuration from Bitnami
+    ## for more options see https://github.com/bitnami/charts/tree/master/bitnami/postgresql
+    externalDatabase:
+      enabled: true
+      type: "postgresql"
+      host: "nextcloud-postgresql.nextcloud"
+      database: "nextcloud"
+      user: "${SECRET_NEXTCLOUD_DB_USERNAME}"
+      password: "${SECRET_NEXTCLOUD_DB_PASSWORD}"
+
+    cronjob:
+      enabled: false
+
+    redis:
+      enabled: true
+      cluster:
+        enabled: false
+      usePassword: true
+      password: "${SECRET_NEXTCLOUD_REDIS_PASSWORD}"
+      master:
+        persistence:
+          enabled: false
+
+    postgresql:
+      enabled: true
+      persistence:
+        enabled: true
+        existingClaim: "nextcloud-db-pvc"
+      global:
+        postgresql:
+          postgresqlDatabase: "nextcloud"
+          postgresqlUsername: "${SECRET_NEXTCLOUD_DB_USERNAME}"
+          postgresqlPassword: "${SECRET_NEXTCLOUD_DB_PASSWORD}"

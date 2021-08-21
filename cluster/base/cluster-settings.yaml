@@ -4,10 +4,11 @@ metadata:
     name: cluster-settings
     namespace: flux-system
 data:
+    #ENC[AES256_GCM,data:C/z45FtWdoTg0p8lH7p0,iv:ll/hQXkpHZnt6CpqunMYUZBAaExv78bnPnTKQ5AKodo=,tag:/MZzFGXq31+zHT4vkIhr/w==,type:comment]
     METALLB_LB_RANGE: ENC[AES256_GCM,data:3BOOQNxSXUWl8+4pSXXHivMPQkDyXz2uNrEF,iv:TAiMnasIoYQsbanvXV7uMIZEgte4rp/HugXh7rwaU70=,tag:WZSVL4yz+7PGq06WGRS3cQ==,type:str]
     TRAEFIK_LB: ENC[AES256_GCM,data:77+KTB1sZyh2BQlyww==,iv:wFWjj8cZLdUpBlVB6bGT1qFmcvSoSdolr2vFetnNsKY=,tag:yx46khyTQScnOQzLFYZOkg==,type:str]
-    HOME_ASSISTANT_LB: ENC[AES256_GCM,data:UWx5GNyBxGXVXJHPaQ==,iv:csX8uck0vsuGx6QFByxHTIyZqdMfZr2ix+sDCk/Lsm4=,tag:USWZyte+679bMaPYSNbgkg==,type:str]
-    PLEX_LB: ENC[AES256_GCM,data:/X40kSFaxhSrtn9hiw==,iv:x0zDCaNqwfq5IhfDerBsrzskz4+gxLe9SmLS8lsBAfo=,tag:ENitATzEqBkBBSFbCrpWQA==,type:str]
+    PLEX_LB: ENC[AES256_GCM,data:4IkVJZcy0YCQG+fpzw==,iv:mNS5CTGnazESC/LrElIYGscivNrR4u6koY4rdf4Xl4k=,tag:xpSrEI42I65lGbMxn2Sidg==,type:str]
+    MOSQUITTO_LB: ENC[AES256_GCM,data:diinR1dgVpZClDNJxw==,iv:j5p8E+SzrQiEv/OHGSQrajcbIYeU51rjZz+5DZJfQdY=,tag:SgxYNWJbfz8KKENGKorV4A==,type:str]
     #ENC[AES256_GCM,data:gYJ0tc1mCxEv,iv:KsgEa9A9aMxMCkLS0ylIAJLq6gMDPsYoCjcWw9U8GTA=,tag:ljwwDxlL2zC3m8IHiBXnIA==,type:comment]
     NETWORK_K8S_CLUSTER_CIDR: ENC[AES256_GCM,data:WegdRBEg6yG1nYNB,iv:K2oAEt8lny44nsORyuVNxPXzPveOsyMp9tKNzV6K2fU=,tag:tn6C3UlPUFhMgEXNLA7Cgw==,type:str]
     NETWORK_K8S_SERVICE_CIDR: ENC[AES256_GCM,data:kCpqy0C/BNvDj7aa,iv:8VIN2YUbaO7hjo6D2wR3akpKddXAylCdC2Vvw8kQjfI=,tag:lQKsQ8ReXDq1F6Nk7gL9ng==,type:str]
@@ -18,8 +19,8 @@ sops:
     azure_kv: []
     hc_vault: []
     age: []
-    lastmodified: "2021-08-02T19:33:25Z"
-    mac: ENC[AES256_GCM,data:wDe39hb3+RoiLVmemXOhWkCeRcSjCUQysVLYNBk0C9CeaaOLocTH4uoyUur5bIzEH5I/vFN84ATiCJKQx1nFbgyb/gZcHD1HGa3HNVTwXTH12ogKdtANwMOPJvDZGl66Y/j86MEFNuunMvohDoLPo5UFvv85+6KWi852hCTt8ZE=,iv:E05Xu932lZfwjGBwZ7PCcL8IWYa1/btA6efMSROM2I8=,tag:Nvmg3IhE9ixyh094QNu9Fg==,type:str]
+    lastmodified: "2021-08-13T15:56:35Z"
+    mac: ENC[AES256_GCM,data:gmMgCY+FBerZUyMF7EayAJ222cpW8X4ELbA1ppE19wZt1EviG6Mv/UpKMA/n3Uw40almZo0hCT4vCGUl3GpRumeO3jxZe0zNBxtULSQYTKDjwzND0PrO5y/tFIH8W17ugH33zAQbBf69dTS2Ewa7coF5fJ9xVK37VSqiMba+J5Q=,iv:Vbzjhrh1iiSWNiWxBfptcESfHXUo9WPj1L6RVRbVs78=,tag:Jw4kSEICKyrwyA4MUJLAOA==,type:str]
     pgp:
         - created_at: "2021-08-02T19:27:04Z"
           enc: |
