@@ -6,8 +6,8 @@ metadata:
   namespace: nextcloud
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 4000Gi
-  storageClassName: longhorn-slow-replicated
+      storage: 2000Gi
+  storageClassName: longhorn-slow
