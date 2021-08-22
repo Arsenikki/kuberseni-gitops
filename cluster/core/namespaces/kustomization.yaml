@@ -10,3 +10,4 @@ resources:
   - media.yaml
   - nextcloud.yaml
   - security.yaml
+  - minio.yaml
