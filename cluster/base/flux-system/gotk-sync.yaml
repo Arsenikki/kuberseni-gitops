@@ -7,7 +7,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: main
+    branch: bug/fix-longhorn
   url: https://github.com/Arsenikki/kuberseni-gitops
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
