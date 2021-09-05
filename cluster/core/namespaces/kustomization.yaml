@@ -11,3 +11,4 @@ resources:
   - nextcloud.yaml
   - security.yaml
   - minio.yaml
+  - observability.yaml
