@@ -8,3 +8,4 @@ resources:
   - system-upgrade
   - longhorn-system
   - kube-system
+  - minio-azure-gateway
