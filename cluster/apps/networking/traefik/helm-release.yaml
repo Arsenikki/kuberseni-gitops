@@ -19,6 +19,9 @@ spec:
     deployment:
       kind: Deployment
       replicas: 1
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9105"
     service:
       enabled: true
       type: LoadBalancer
@@ -30,7 +33,7 @@ spec:
       websecure:
         port: 443
       metrics:
-        port: 9100
+        port: 9105
     # Enable both CRD and annotation methods of defining ingress
     providers:
       kubernetesCRD:
