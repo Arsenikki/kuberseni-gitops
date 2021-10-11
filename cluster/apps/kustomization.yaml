@@ -9,3 +9,4 @@ resources:
   - media
   - security
   - nextcloud
+  - observability

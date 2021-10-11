@@ -34,13 +34,13 @@ spec:
           # Set to passthrough TLS to backend service
           traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: "sonarr.${SECRET_DOMAIN}"
+          - host: "homer.${SECRET_DOMAIN}"
             paths:
               - path: /
         tls:
-          - secretName: sonarr-tls
+          - secretName: homer-tls
             hosts:
-              - "sonarr.${SECRET_DOMAIN}"
+              - "homer.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true
