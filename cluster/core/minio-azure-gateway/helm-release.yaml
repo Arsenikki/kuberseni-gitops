@@ -477,7 +477,7 @@ spec:
       ## @param gateway.type Gateway type. Supported types are: `azure`, `gcs`, `nas`, `s3`
       ## ref: https://docs.minio.io/docs/minio-gateway-for-azure
       type: azure
-      replicaCount: 1
+      replicaCount: 4
       auth:
         azure:
           storageAccountName: "${SECRET_AZURE_STORAGE_ACC_NAME}"
