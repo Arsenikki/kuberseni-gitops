@@ -8,5 +8,4 @@ resources:
   - longhorn-charts.yaml
   - node-feature-discovery-charts.yaml
   - nextcloud-charts.yaml
-  - vernemq-charts.yaml
   - grafana-charts.yaml
