@@ -4,10 +4,9 @@ Bitnami helm chart is used and it's configured to provide s3 API for Azure Blob 
 
 Some important steps: 
 
-1. Add azure storage account credentials
-2. Check minio credentials from the created secret
+1. Set azure storage account & minio credentials in `cluster-secrets.yaml`
 3. Create backup container i.e. `"longhorn-backup"` from Azure Portal or through Minio UI. 
-4. Add credentials to secret file, which is created to same namespace as Longhorn. See ./secret.yaml file for reference. 
+4. Refer to minio credential variables in `./secret.yaml` file. 
 5. Specify the backup folder and the secret name in Longhorn settings: 
     * Backup Target:
         ```
