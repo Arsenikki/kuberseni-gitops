@@ -480,5 +480,7 @@ spec:
       replicaCount: 4
       auth:
         azure:
+          accessKey: "${SECRET_MINIO_ACCESS_KEY_ID}"
+          secretKey: "${SECRET_MINIO_ACCESS_KEY_SECRET}"
           storageAccountName: "${SECRET_AZURE_STORAGE_ACC_NAME}"
           storageAccountKey: "${SECRET_AZURE_STORAGE_ACC_KEY}"
