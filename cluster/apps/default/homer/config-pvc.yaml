@@ -5,8 +5,8 @@ metadata:
   name: homer-config
 spec:
   accessModes:
-  - ReadWriteOnce
-  storageClassName: local-path
+    - ReadWriteOnce
+  storageClassName: longhorn-fast-replicated
   resources:
     requests:
       storage: 128Mi
