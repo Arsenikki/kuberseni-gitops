@@ -1,0 +1,38 @@
+image:
+  repository: louislam/uptime-kuma
+  tag: 1.9.1
+env:
+  TZ: "Europe/Helsinki"
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: "traefik"
+      # Set to use traefik-forward-auth middleware for authentication
+      traefik.ingress.kubernetes.io/router.middlewares: "networking-traefik-forward-auth@kubernetescrd"
+      # Set to use default cluster-issuer
+      kubernetes.io/tls-acme: "true"
+      # Set only "websecure" endpoint to be forwarded
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      # Set to passthrough TLS to backend service
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hosts:
+      - host: "uptime-kuma.arsenikki.casa"
+        paths:
+          - path: /
+    tls:
+      - secretName: uptime-kuma-tls
+        hosts:
+          - "uptime-kuma.arsenikki.casa"
+persistence:
+  data:
+    enabled: true
+    accessMode: ReadWriteOnce
+    storageClass: longhorn-fast
+    size: 1Gi
+resources:
+  requests:
+    memory: 50Mi
+    cpu: 50m
+  limits:
+    memory: 250Mi
