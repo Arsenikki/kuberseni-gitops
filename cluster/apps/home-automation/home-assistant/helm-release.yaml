@@ -35,7 +35,6 @@ spec:
           http:
             port: 8123
     ingress:
-      ingress:
       main:
         enabled: true
         annotations:
