@@ -10,4 +10,4 @@ spec:
   resources:
     requests:
       storage: 2000Gi
-  storageClassName: longhorn-slow
+  storageClassName: longhorn-slow-replicated
