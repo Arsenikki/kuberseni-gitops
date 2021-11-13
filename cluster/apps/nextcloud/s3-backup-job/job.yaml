@@ -1,0 +1,41 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: nextcloud-backup-cronjob
+  namespace: nextcloud
+spec:
+  schedule: "0 05 * * 6"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: s3nextcloudbackup
+              image: ghcr.io/arsenikki/s3cmd-container:latest
+              command: ["/bin/sh", "-c"]
+              args:
+                - echo starting;
+                  cd /tmp/DATA;
+                  for dir in $(find ./*/* -type d);
+                  do echo compressing photos from $dir;
+                  tar -czf $dir.tar.gz $dir;
+                  done;
+                  s3cmd --exclude "*" --include "*.tar.gz" sync --recursive --no-check-md5 /tmp/DATA/ s3://photo-backup;
+              volumeMounts:
+                - name: data
+                  mountPath: /tmp/DATA
+                  subPath: data/admin-arsenikki/files/Photos
+                - name: s3config
+                  mountPath: /root/.s3cfg
+                  subPath: .s3cfg
+          volumes:
+            - name: s3config
+              configMap:
+                name: s3config
+            - name: data
+              persistentVolumeClaim:
+                claimName: nextcloud-pvc
+          restartPolicy: Never
