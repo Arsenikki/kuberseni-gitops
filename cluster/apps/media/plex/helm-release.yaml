@@ -29,8 +29,42 @@ spec:
           - "${PLEX_LB}"
         externalTrafficPolicy: Local
         annotations:
+          metallb.universe.tf/allow-shared-ip: plex
           # https://doc.traefik.io/traefik/routing/providers/kubernetes-ingress/#communication-between-traefik-and-pods
           traefik.ingress.kubernetes.io/service.serversscheme: https
+      gdm:
+        enabled: true
+        type: LoadBalancer
+        externalIPs:
+          - "${PLEX_LB}"
+        externalTrafficPolicy: Local
+        annotations:
+          metallb.universe.tf/allow-shared-ip: plex
+        ports:
+          gdm1:
+            enabled: true
+            port: 32410
+            protocol: UDP
+            targetPort: 32410
+            nodePort: 32410
+          gdm2:
+            enabled: true
+            port: 32412
+            protocol: UDP
+            targetPort: 32412
+            nodePort: 32412
+          gdm3:
+            enabled: true
+            port: 32413
+            protocol: UDP
+            targetPort: 32413
+            nodePort: 32413
+          gdm4:
+            enabled: true
+            port: 32414
+            protocol: UDP
+            targetPort: 32414
+            nodePort: 32414
     ingress:
       main:
         enabled: true
@@ -50,7 +84,8 @@ spec:
           - secretName: plex-tls
             hosts:
               - "plex.${SECRET_DOMAIN}"
-    hostnetwork: true
+    # -- Enable devices to be discoverable
+    hostNetwork: false
     persistence:
       config:
         enabled: true
