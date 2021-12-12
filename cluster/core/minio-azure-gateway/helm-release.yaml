@@ -72,7 +72,7 @@ spec:
     clientImage:
       registry: docker.io
       repository: bitnami/minio-client
-      tag: 2021.10.7-debian-10-r7
+      tag: 2021.11.16-debian-10-r7
     ## @param mode MinIO&reg; server mode (`standalone` or `distributed`)
     ## ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
     ##
