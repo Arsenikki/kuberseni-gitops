@@ -17,6 +17,9 @@ spec:
         namespace: flux-system
       interval: 1m
   values:
+    image:
+      repository: ghcr.io/arsenikki/qbittorrent
+      tag: v4.3.5
     settings:
       # -- Enables automatic port configuration at startup
       # This sets the qbittorrent port to the value of `service.bittorrent.ports.bittorrent.port`.
