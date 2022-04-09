@@ -20,7 +20,7 @@ spec:
     image:
       registry: docker.io
       repository: bitnami/minio
-      tag: 2022.4.1-debian-10-r0
+      tag: 2022.4.9-debian-10-r0
 
     ## Bitnami MinIO&reg; Client image version
     ## ref: https://hub.docker.com/r/bitnami/minio-client/tags/
