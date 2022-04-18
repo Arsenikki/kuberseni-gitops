@@ -19,7 +19,7 @@ spec:
   values:
     image:
       repository: ghcr.io/arsenikki/qbittorrent
-      tag: v4.3.9
+      tag: v4.4.2
     settings:
       # -- Enables automatic port configuration at startup
       # This sets the qbittorrent port to the value of `service.bittorrent.ports.bittorrent.port`.
