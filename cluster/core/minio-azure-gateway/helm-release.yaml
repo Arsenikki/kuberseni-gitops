@@ -10,7 +10,7 @@ spec:
     spec:
       # renovate: registryUrl=https://charts.bitnami.com/bitnami
       chart: minio
-      version: 10.1.1
+      version: 11.2.8
       sourceRef:
         kind: HelmRepository
         name: bitnami-charts
@@ -20,14 +20,14 @@ spec:
     image:
       registry: docker.io
       repository: bitnami/minio
-      tag: 2022.1.28-debian-10-r0
+      tag: 2022.4.9-debian-10-r0
 
     ## Bitnami MinIO&reg; Client image version
     ## ref: https://hub.docker.com/r/bitnami/minio-client/tags/
     clientImage:
       registry: docker.io
       repository: bitnami/minio-client
-      tag: 2022.1.29-debian-10-r1
+      tag: 2022.4.7-debian-10-r1
     ## @param mode MinIO&reg; server mode (`standalone` or `distributed`)
     ## ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
     ##
