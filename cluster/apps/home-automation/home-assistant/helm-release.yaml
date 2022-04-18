@@ -34,6 +34,13 @@ spec:
         ports:
           http:
             port: 8123
+      udp:
+        enabled: true
+        type: ClusterIP
+        ports:
+          webrtc:
+            port: 54321
+            protocol: UDP
     ingress:
       main:
         enabled: true
