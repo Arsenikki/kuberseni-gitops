@@ -3,10 +3,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - default
-  - networking
-  - system-upgrade
   - home-automation
   - media
-  - security
+  - networking
   - nextcloud
   - observability
+  - security
+  - system-upgrade
