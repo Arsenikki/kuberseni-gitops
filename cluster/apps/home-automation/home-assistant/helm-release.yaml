@@ -77,14 +77,16 @@ spec:
       codeserver:
         enabled: true
         image:
-          repository: codercom/code-server
-          tag: 4.2.0
+          repository: docker.io/codercom/code-server
+          tag: 4.3.0
         git:
           deployKeySecret: code-server
+        env:
+          TZ: "Europe/Helsinki"
         workingDir: "/config"
         args:
           - --auth
-          - "password"
+          - "none"
           - --user-data-dir
           - "/config/.vscode"
           - --extensions-dir
@@ -117,4 +119,4 @@ spec:
         cpu: 100m
         memory: 100Mi
       limits:
-        memory: 4000Mi
+        memory: 2000Mi
