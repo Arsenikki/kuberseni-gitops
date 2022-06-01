@@ -4,5 +4,5 @@ resources:
   - config-pvc.yaml
   - helm-release.yaml
   - helm-values.yaml
-  - ovpn-secret.yaml
+  - ovpn.config.enc.yaml
   - ovpn-helm-values.yaml
