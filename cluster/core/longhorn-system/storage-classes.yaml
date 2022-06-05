@@ -7,8 +7,8 @@ provisioner: driver.longhorn.io
 parameters:
   numberOfReplicas: "1"
   staleReplicaTimeout: "480"
-  diskSelector: "ssd"
-  nodeSelector: "storage,fast"
+  diskSelector: "fast"
+  nodeSelector: "fast"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -18,8 +18,8 @@ provisioner: driver.longhorn.io
 parameters:
   numberOfReplicas: "3"
   staleReplicaTimeout: "480"
-  diskSelector: "ssd"
-  nodeSelector: "storage,fast"
+  diskSelector: "fast"
+  nodeSelector: "fast"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -29,8 +29,7 @@ provisioner: driver.longhorn.io
 parameters:
   numberOfReplicas: "1"
   staleReplicaTimeout: "480"
-  diskSelector: "hdd"
-  nodeSelector: "storage"
+  diskSelector: "slow"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -40,7 +39,6 @@ provisioner: driver.longhorn.io
 parameters:
   numberOfReplicas: "3"
   staleReplicaTimeout: "480"
-  diskSelector: "hdd"
-  nodeSelector: "storage"
+  diskSelector: "slow"
 ---
 
