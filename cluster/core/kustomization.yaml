@@ -3,8 +3,8 @@ kind: Kustomization
 resources:
   - namespaces
   - volumes
-  - metallb-system
   - cert-manager
   - longhorn-system
   - kube-system
   - minio-azure-gateway
+  - networking
