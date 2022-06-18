@@ -10,20 +10,12 @@ spec:
     spec:
       # renovate: registryUrl=https://charts.bitnami.com/bitnami
       chart: metallb
-      version: 2.5.14
+      version: 3.0.9
       sourceRef:
         kind: HelmRepository
         name: bitnami-charts
         namespace: flux-system
   values:
-    controller:
-      image:
-        repository: metallb/controller
-        tag: v0.12.1
-    speaker:
-      image:
-        repository: metallb/speaker
-        tag: v0.12.1
     configInline:
       address-pools:
       - name: default
