@@ -10,7 +10,7 @@ spec:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: traefik-forward-auth
-      version: 2.0.0
+      version: 2.1.2
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
@@ -31,23 +31,24 @@ spec:
     restrictions:
       whitelist: "${SECRET_AUTH_WHITELIST_EMAILS}"
     ingress:
-      enabled: true
-      annotations:
-        kubernetes.io/ingress.class: "traefik"
-        # Set to use default cluster-issuer
-        kubernetes.io/tls-acme: "true"
-        # Set only "websecure" endpoint to be forwarded
-        traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        # Set to passthrough TLS to backend service
-        traefik.ingress.kubernetes.io/router.tls: "true"
-      hosts:
-        - host: "auth.${SECRET_DOMAIN}"
-          paths:
-            - /
-      tls:
-        - secretName: traefik-forward-auth-tls
-          hosts:
-            - "auth.${SECRET_DOMAIN}"
+      main: 
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: "traefik"
+          # Set to use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Set only "websecure" endpoint to be forwarded
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
+        hosts:
+          - host: "auth.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+        tls:
+          - secretName: traefik-forward-auth-tls
+            hosts:
+              - "auth.${SECRET_DOMAIN}"
     middleware:
       enabled: true
     logging:
