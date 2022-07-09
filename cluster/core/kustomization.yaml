@@ -8,3 +8,4 @@ resources:
   - kube-system
   - minio-azure-gateway
   - networking
+  - security
