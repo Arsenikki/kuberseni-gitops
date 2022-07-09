@@ -1,0 +1,219 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: authelia
+  namespace: security
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://charts.authelia.com
+      chart: authelia
+      version: 0.8.38
+      sourceRef:
+        kind: HelmRepository
+        name: authelia-charts
+        namespace: flux-system
+      interval: 5m
+  values:
+    image:
+      # registry: docker.io
+      registry: ghcr.io
+      repository: authelia/authelia
+      tag: ""
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+    domain: "${SECRET_DOMAIN}"
+
+    service:
+      port: 80
+
+    ingress:
+      enabled: true
+      ingressClassName: "traefik"
+      annotations:
+        kubernetes.io/ingress.class: "traefik"
+        # Set to use default cluster-issuer
+        kubernetes.io/tls-acme: "true"
+        # Set only "websecure" endpoint to be forwarded
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        # Set to passthrough TLS to backend service
+        traefik.ingress.kubernetes.io/router.tls: "true"
+      hosts:
+        - host: auth.${SECRET_DOMAIN}
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        enabled: true
+        secret: authelia-tls
+
+      traefikCRD:
+        enabled: true
+
+        ## Use a standard Ingress object, not an IngressRoute.
+        disableIngressRoute: true
+
+        entryPoints: []
+        # entryPoints:
+        # - http
+
+        # priority: 10
+
+        # weight: 10
+
+        sticky: false
+
+        # stickyCookieNameOverride: authelia_traefik_lb
+
+        # strategy: RoundRobin
+
+        # responseForwardingFlushInterval: 100ms
+
+        middlewares:
+          auth:
+            # nameOverride: authelia-auth
+            authResponseHeaders:
+              - Remote-User
+              - Remote-Name
+              - Remote-Email
+              - Remote-Groups
+
+    pod:
+      # Must be Deployment, DaemonSet, or StatefulSet.
+      kind: Deployment
+
+      annotations: {}
+      # annotations:
+      #   myAnnotation: myValue
+
+      labels: {}
+      # labels:
+      #   myLabel: myValue
+
+      replicas: 1
+      revisionHistoryLimit: 5
+
+      strategy:
+        type: RollingUpdate
+        # rollingUpdate:
+        #   partition: 1
+        #   maxSurge: 25%
+        #   maxUnavailable: 25%
+
+      extraVolumeMounts:
+        - name: authelia-users
+          mountPath: /config/users
+          readOnly: true
+
+      extraVolumes:
+        - name: authelia-users
+          configMap:
+            name: authelia-users
+            items:
+              - key: users_database.yaml
+                path: users_database.yaml
+
+      securityContext:
+        container: {}
+        # container:
+        #   runAsUser: 2000
+        #   runAsGroup: 2000
+        #   fsGroup: 2000
+        pod: {}
+        # pod:
+        #   readOnlyRootFilesystem: true
+        #   allowPrivilegeEscalation: false
+        #   privileged: false
+
+      env: []
+      # env:
+      # - name: TZ
+      #   value: Australia/Melbourne
+
+      resources:
+        limits: {}
+        # limits:
+        #   cpu: "4.00"
+        #   memory: 125Mi
+        requests: {}
+        # requests:
+        #   cpu: "0.25"
+        #   memory: 50Mi
+    
+    configMap:
+      enabled: true
+      log:
+        level: trace
+      theme: light
+      authentication_backend:
+        ldap:
+          enabled: false
+        file:
+          enabled: true
+          path: /config/users/users_database.yaml
+      storage:
+        postgres:
+          enabled: true
+          host: authelia-postgres-postgresql
+          port: 5432
+          database: authelia
+          username: authelia
+          sslmode: disable
+      session:
+        redis:
+          enabled: true
+          enabledSecret: true
+          username: ""
+          host: authelia-redis-master
+          port: 6379
+          database_index: 0
+      notifier:
+        filesystem:
+          enabled: true
+          filename: /config/notification.txt
+        smtp:
+          enabled: false
+
+    access_control:
+      ## Default policy can either be 'bypass', 'one_factor', 'two_factor' or 'deny'. It is the policy applied to any
+      ## resource if there is no policy to be applied to the user.
+      default_policy: deny
+      networks:
+        - name: private
+          networks:
+            - 10.0.0.0/8
+            - 192.168.0.0/16
+
+      rules:
+        # bypass Authelia WAN + LAN
+        - domain:
+            - auth.${SECRET_DOMAIN}
+          policy: bypass
+
+        # One factor auth for LAN
+        - domain:
+            - "*.${SECRET_DOMAIN}"
+          policy: one_factor
+          subject: ["group:admins", "group:users"]
+          networks:
+            - private
+
+        # Two factors auth for WAN
+        - domain:
+            - "*.${SECRET_DOMAIN}"
+          policy: two_factor
+          subject: ["group:admins", "group:users"]
+
+    secret:
+      # ldap:
+      #   key: LDAP_PASSWORD
+      #   value: ${SECRET_LDAP_ADMIN_PASSWORD}
+      storage:
+        key: STORAGE_PASSWORD
+        value: ${SECRET_AUTHELIA_STORAGE_PASSWORD}
+      redis:
+        key: REDIS_PASSWORD
+        value: ${SECRET_AUTHELIA_REDIS_PASSWORD}

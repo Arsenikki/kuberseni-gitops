@@ -35,6 +35,7 @@ spec:
     providers:
       kubernetesCRD:
         enabled: true
+        allowCrossNamespace: true
       kubernetesIngress:
         enabled: true
         # Needed, as otherwise ingresses don't get IPs automatically
@@ -42,7 +43,7 @@ spec:
           enabled: true
     logs:
       general:
-        level: INFO
+        level: DEBUG
       access:
         enabled: true
         fields:
