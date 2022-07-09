@@ -40,6 +40,7 @@ spec:
       main:
         enabled: true
         annotations:
+          # Set to use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
           # Set to use default cluster-issuer
           kubernetes.io/tls-acme: "true"
