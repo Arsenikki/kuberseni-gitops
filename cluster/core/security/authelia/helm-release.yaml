@@ -132,6 +132,7 @@ spec:
           port: 6379
           database_index: 0
       notifier:
+        disable_startup_check: true
         filesystem:
           enabled: true
           filename: /config/notification.txt
