@@ -32,12 +32,12 @@ spec:
       email: "${SECRET_CLOUDFLARE_EMAIL}"
       proxied: true
     policy: sync
-    txtPrefix: "k8s."
     crd:
       # disabled, pulled from source repo in crds/
       create: false
       apiversion: externaldns.k8s.io/v1alpha1
       kind: DNSEndpoint
+    txtOwnerId: ""
     annotationFilter: "external-dns/is-public in (true)"
     resources:
       requests:
