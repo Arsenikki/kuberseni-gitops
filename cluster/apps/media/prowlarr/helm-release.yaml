@@ -36,6 +36,8 @@ spec:
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
           # Set to passthrough TLS to backend service
           traefik.ingress.kubernetes.io/router.tls: "true"
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
         hosts:
           - host: "prowlarr.${SECRET_DOMAIN}"
             paths:
