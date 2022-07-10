@@ -4,3 +4,4 @@ resources:
   - metallb-system
   - traefik
   - wildcard-certificate
+  - external-dns
