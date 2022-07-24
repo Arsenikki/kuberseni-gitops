@@ -77,8 +77,12 @@ spec:
         enabled: true
         type: emptyDir
         mountPath: /shared
-      media:
+      books:
         enabled: true
+        mountPath: /books
+        existingClaim: books-pvc
+      media:
+        enabled: false
         existingClaim: media-pvc
     probes:
       liveness:
