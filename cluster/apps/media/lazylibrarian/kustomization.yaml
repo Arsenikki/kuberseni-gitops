@@ -4,4 +4,4 @@ kind: Kustomization
 
 resources:
   - helm-release.yaml
-  - books-pvc.yaml
+  - pvc.yaml
