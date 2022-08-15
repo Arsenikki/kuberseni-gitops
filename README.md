@@ -7,13 +7,7 @@
 ..running on hyper-converged infrastructure :scream_cat:
 </div>
 
-## :rocket: GitOps supercharged Kubernetes cluster :sailboat: 
-..managed by Flux :robot:
-
-..running on hyper-converged infrastructure :scream_cat:
-</div>
-
----
+## :book:&nbsp; Overview
 
 This repository is my home Kubernetes cluster in a declarative state.
 [Flux](https://github.com/fluxcd/flux2) watches my [cluster](./cluster/) directory and makes the changes to my cluster based on the YAML manifests.
@@ -35,7 +29,6 @@ TBD
 
 ---
 
----
 ## :open_file_folder:&nbsp; Repository structure
 
 The Git repository contains the following directories under `cluster` and are ordered below by how Flux will apply them.
