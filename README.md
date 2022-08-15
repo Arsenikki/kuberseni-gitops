@@ -7,7 +7,7 @@
 ..running on hyper-converged infrastructure :scream_cat:
 </div>
 
-## :book:&nbsp; Overview
+---
 
 This repository is my home Kubernetes cluster in a declarative state.
 [Flux](https://github.com/fluxcd/flux2) watches my [cluster](./cluster/) directory and makes the changes to my cluster based on the YAML manifests.
@@ -28,7 +28,6 @@ This repository is my home Kubernetes cluster in a declarative state.
 TBD
 
 ---
-
 ## :open_file_folder:&nbsp; Repository structure
 
 The Git repository contains the following directories under `cluster` and are ordered below by how Flux will apply them.
@@ -37,8 +36,6 @@ The Git repository contains the following directories under `cluster` and are or
 - **crds** directory contains custom resource definitions (CRDs) that need to exist globally in your cluster before anything else exists
 - **core** directory (depends on **crds**) are important infrastructure applications (grouped by namespace) that should never be pruned by Flux
 - **apps** directory (depends on **core**) is where your common applications (grouped by namespace) could be placed, Flux will prune resources here if they are not tracked by Git anymore
-
----
 
 ## :robot:&nbsp; Automation
 
@@ -54,8 +51,6 @@ The encrypted secrets are then decrypted by sops using the private key inside th
 For encryption/decryption, I use [age](https://github.com/FiloSottile/age).
 Secrets environment variables for the cluster are in [cluster-secrets.yaml](.cluster/base/cluster-secrets.yaml).
 The non-secret variables are in [cluster-settings.yaml](.cluster/base/cluster-settings.yaml).
-
----
 
 ## :handshake:&nbsp; Community
 
