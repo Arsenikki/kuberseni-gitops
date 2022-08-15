@@ -43,7 +43,7 @@ The Git repository contains the following directories under `cluster` and are or
 ## :robot:&nbsp; Automation
 
 * [Renovate](https://github.com/renovatebot/renovate) keeps workloads up-to-date by scanning the repo and opening pull requests when it detects a new container image update or a new helm chart in the upstream repository
-* [Container images](https://github.com/Arsenikki/container-images) are automatically built once changes are detected in the upstream container images. Both AMD64 and ARM architectures supported. 
+* [Container images](https://github.com/Arsenikki/container-images): Some self-managed container images are automatically built using Github Actions once a new version is detected in the upstream container image registry. Both AMD64 and ARM architectures supported and Trivy is used to scan and provide vulnerability reporting for the produced images.
 
 ---
 
@@ -52,8 +52,8 @@ The Git repository contains the following directories under `cluster` and are or
 Secrets are encrypted using [sops](https://github.com/mozilla/sops) before being pushed into this repository.
 The encrypted secrets are then decrypted by sops using the private key inside the cluster.
 For encryption/decryption, I use [age](https://github.com/FiloSottile/age).
-Secrets environment variables for the cluster are in [cluster-secrets.yaml](.cluster/base/cluster-secrets.yaml).
-The non-secret variables are in [cluster-settings.yaml](.cluster/base/cluster-settings.yaml).
+Secrets environment variables for the cluster are in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml).
+The non-secret variables are in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
 
 ---
 
