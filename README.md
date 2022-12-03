@@ -23,12 +23,6 @@ This repository is my home Kubernetes cluster in a declarative state.
 
 ---
 
-## :computer:&nbsp; Software
-
-TBD
-
----
-
 ## :open_file_folder:&nbsp; Repository structure
 
 The Git repository contains the following directories under `cluster` and are ordered below by how Flux will apply them.

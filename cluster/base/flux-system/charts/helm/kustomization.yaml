@@ -10,3 +10,4 @@ resources:
   - prometheus-community-charts.yaml
   - authelia-charts.yaml
   - teleport-charts.yaml
+  - gtaylor-charts.yaml
