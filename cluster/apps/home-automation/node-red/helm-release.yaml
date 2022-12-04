@@ -39,13 +39,13 @@ spec:
           # Set to passthrough TLS to backend service
           traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: "nodered.${SECRET_DOMAIN}"
+          - host: "nodered.${TRAEFIK_LB}.nip.io"
             paths:
               - path: /
         tls:
           - secretName: nodered-tls
             hosts:
-              - "nodered.${SECRET_DOMAIN}"
+              - "nodered.${TRAEFIK_LB}.nip.io"
     persistence:
       data:
         enabled: true
