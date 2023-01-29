@@ -1,0 +1,18 @@
+name: Create and push cluster OCI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-and-push-oci:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Flux CLI
+      run: |
+        curl -s https://fluxcd.io/install.sh | sudo bash
+
+    - name: Push OCI
+      run: |
+        ./bin/flux push artifact oci://kuberseni-gitops:latest --path ./cluster \
+        --source="$(git config --get remote.origin.url)" \
+        --revision="$(git rev-parse HEAD)"
