@@ -67,6 +67,8 @@ spec:
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
+    podSecurityPolicy: 
+      enabled: true
     securityContext:
       capabilities:
         drop: [ALL]
@@ -75,6 +77,8 @@ spec:
       runAsGroup: 0
       runAsNonRoot: false
       runAsUser: 0
+    podSecurityContext:
+      fsGroup: 0
     resources:
       requests:
         cpu: 300m
