@@ -7,6 +7,3 @@ Thumbs.db
 kubeconfig
 # vscode-sops
 .decrypted~*.yaml
-
-# traefik chart
-cluster/apps/networking/traefik/chart/
