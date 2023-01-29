@@ -5,5 +5,4 @@ resources:
 - cluster-secrets.yaml
 - cluster-settings.yaml
 - core-sync.yaml
-- crds-sync.yaml
 - flux-system
