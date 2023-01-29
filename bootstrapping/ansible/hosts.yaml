@@ -1,0 +1,10 @@
+k8s_cluster:
+  children: 
+    masters:
+      hosts:
+        pudge:
+          ansible_host: 192.168.1.216
+        magnus:
+          ansible_host: 192.168.1.147
+        kunkka:
+          ansible_host: 192.168.1.184
