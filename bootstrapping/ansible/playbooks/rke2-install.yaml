@@ -1,0 +1,11 @@
+---
+- name: Deploy RKE2
+  hosts: masters
+  become: true
+  pre_tasks:
+  - name: Load encrypted credentials
+    community.sops.load_vars:
+      file: ../secrets.sops.yaml
+      expressions: ignore  # explicitly do not evaluate expressions on load (default)
+  roles:
+  - role: lablabs.rke2

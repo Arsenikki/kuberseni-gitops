@@ -18,8 +18,8 @@ This repository is my home Kubernetes cluster in a declarative state.
 
 | Node                     | RAM       | Storage                          | Function                           | Operating System | Quantity
 | ------------------------ | --------- | -------------------------------- | ---------------------------------- | ---------------- | --------
-| Dell Precision Tower 7810| 64GB DDR4 | 2x 600GB SAS + 10TB IronWolf Pro | 3x Virtualized master/worker nodes | Harvester 1.0.3  | 1
-| Custom PC build          | 32GB DDR4 | 256GB m.2 + 16TB Exos X16        | 1x Worker node with iGPU           | Proxmox 7.2      | 1
+| Dell Precision Tower 7810| 64GB DDR4 | 2x 1.2T SAS + 16TB Exos X16 | 3x Virtualized master/worker nodes | Proxmox 7.3 | 1
+| Custom PC build          | 32GB DDR4 | 256GB m.2 + 10TB IronWolf Pro        | 1x Worker node with iGPU           | Proxmox 7.3 | 1
 
 ---
 
@@ -46,8 +46,7 @@ The Git repository contains the following directories under `cluster` and are or
 Secrets are encrypted using [sops](https://github.com/mozilla/sops) before being pushed into this repository.
 The encrypted secrets are then decrypted by sops using the private key inside the cluster.
 For encryption/decryption, I use [age](https://github.com/FiloSottile/age).
-Secrets environment variables for the cluster are in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml).
-The non-secret variables are in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
+Secrets and ConfigMap values are stored centrally in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml) and in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
 
 ---
 
