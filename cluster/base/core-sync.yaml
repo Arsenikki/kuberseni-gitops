@@ -2,17 +2,18 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: apps
+  name: core-sync
   namespace: flux-system
 spec:
   interval: 10m0s
   dependsOn:
-  - name: core
-  path: ./cluster/apps
-  prune: true
+  - name: crds-sync
+  path: ./cluster/core
+  prune: false
   sourceRef:
-    kind: GitRepository
-    name: flux-system
+    kind: OCIRepository
+    name: kuberseni-gitops-source
+    namespace: flux-system
   decryption:
     provider: sops
     secretRef:
