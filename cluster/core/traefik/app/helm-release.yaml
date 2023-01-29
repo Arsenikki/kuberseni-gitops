@@ -67,18 +67,16 @@ spec:
     pilot:
       enabled: true
       token: "${SECRET_TRAEFIK_PILOT_TOKEN}"
-    podSecurityPolicy: 
-      enabled: true
     securityContext:
       capabilities:
         drop: [ALL]
         add: [NET_BIND_SERVICE]
       readOnlyRootFilesystem: true
-      runAsGroup: 0
+      runAsGroup: 568
       runAsNonRoot: false
-      runAsUser: 0
+      runAsUser: 568
     podSecurityContext:
-      fsGroup: 0
+      fsGroup: 568
     resources:
       requests:
         cpu: 300m
