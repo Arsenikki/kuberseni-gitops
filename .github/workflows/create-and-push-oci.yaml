@@ -13,6 +13,6 @@ jobs:
 
     - name: Push OCI
       run: |
-        ./bin/flux push artifact oci://kuberseni-gitops:latest --path ./cluster \
+        /usr/local/bin/flux push artifact oci://kuberseni-gitops:latest --path ./cluster \
         --source="$(git config --get remote.origin.url)" \
         --revision="$(git rev-parse HEAD)"
