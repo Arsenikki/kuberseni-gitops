@@ -9,3 +9,4 @@ resources:
   - minio-azure-gateway
   - networking
   - security
+  - traefik
