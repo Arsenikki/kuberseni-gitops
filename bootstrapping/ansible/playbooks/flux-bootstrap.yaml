@@ -1,0 +1,21 @@
+---
+- name: Bootstrap flux with SOPS
+  hosts: masters
+  become: true
+  vars: 
+    flux_cli_version: 0.38.3
+  tasks: 
+  - name: Install Flux CLI
+    ansible.builtin.shell: |
+      wget -c https://github.com/fluxcd/flux2/releases/download/v{{ flux_cli_version }}/flux_{{ flux_cli_version }}_linux_amd64.tar.gz -O - | tar -xz -C /usr/local/bin/
+    args:
+      executable: /bin/bash
+
+  - name: Bootstrap Flux to the cluster
+    ansible.builtin.shell: |
+      flux install \
+        --components="source-controller,kustomize-controller,helm-controller,notification-controller" \
+        --registry=docker.io/fluxcd \
+        --kubeconfig=/etc/rancher/rke2/rke2.yaml
+    when: 
+    - inventory_hostname == groups[rke2_servers_group_name].0
