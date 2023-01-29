@@ -23,6 +23,10 @@ jobs:
 
     - name: Push OCI
       run: |
-        /usr/local/bin/flux push artifact oci://ghcr.io/arsenikki/kuberseni-gitops:latest --path ./cluster \
+        /usr/local/bin/flux push artifact oci://ghcr.io/arsenikki/kuberseni-gitops:$(git rev-parse --short HEAD) \ 
+        --path ./cluster
         --source="$(git config --get remote.origin.url)" \
         --revision="$(git rev-parse HEAD)"
+
+        /usr/local/bin/flux tag artifact oci://ghcr.io/stefanprodan/manifests/podinfo:$(git rev-parse --short HEAD) \
+        --tag latest
