@@ -7,6 +7,6 @@ metadata:
 spec:
   interval: 1m
   provider: generic
-  url: 
+  url: oci://ghcr.io/arsenikki/kuberseni-gitops
   ref:
     tag: latest
