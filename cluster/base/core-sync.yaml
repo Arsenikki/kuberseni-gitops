@@ -8,7 +8,7 @@ spec:
   interval: 10m0s
   dependsOn:
   - name: crds-sync
-  path: ./cluster/core
+  path: ./core
   prune: false
   sourceRef:
     kind: OCIRepository
