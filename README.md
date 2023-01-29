@@ -45,8 +45,7 @@ The Git repository contains the following directories under `cluster` and are or
 
 Secrets are encrypted using [sops](https://github.com/mozilla/sops) before being pushed into this repository.
 The encrypted secrets are then decrypted by sops using the private key inside the cluster.
-For encryption/decryption, I use [age](https://github.com/FiloSottile/age).
-Secrets and ConfigMap values are stored centrally in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml) and in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
+For encryption/decryption, I use [age](https://github.com/FiloSottile/age). Secrets and ConfigMap values are stored centrally in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml) and in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
 
 ---
 
