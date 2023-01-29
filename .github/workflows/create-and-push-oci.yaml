@@ -1,12 +1,9 @@
 name: Create and push cluster OCI
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - 'main'
-    paths:
-      - './cluster/**'
 
 jobs:
   create-and-push-oci:
