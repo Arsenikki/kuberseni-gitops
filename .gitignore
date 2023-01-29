@@ -4,9 +4,6 @@
 .DS_Store
 Thumbs.db
 # k8s
-kubeconfig
+kubeconfig**.yaml
 # vscode-sops
 .decrypted~*.yaml
-
-# traefik chart
-cluster/apps/networking/traefik/chart/

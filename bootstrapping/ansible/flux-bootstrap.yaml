@@ -1,0 +1,6 @@
+---
+- name: Bootstrap flux with SOPS
+  hosts: masters
+  become: true
+  roles:
+  - flux

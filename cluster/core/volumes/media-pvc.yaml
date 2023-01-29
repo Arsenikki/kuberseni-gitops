@@ -9,5 +9,5 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 6000Gi
-  storageClassName: longhorn-slow
+      storage: 15000Gi
+  storageClassName: longhorn-media

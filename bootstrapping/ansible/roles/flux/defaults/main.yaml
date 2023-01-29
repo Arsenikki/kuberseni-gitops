@@ -1,0 +1,11 @@
+# Flux CLI version to be installed
+flux_cli_version: 0.38.3
+
+# Set to install specified OCI artifact automatically
+install_oci_artifact: true
+
+# OCI artifact url to be installed
+oci_artifact_url: oci://ghcr.io/stefanprodan/manifests/podinfo
+
+# OCI artifact tag to be installed
+oci_artifact_tag: latest

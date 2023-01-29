@@ -23,8 +23,6 @@ spec:
     service:
       main:
         type: LoadBalancer
-        externalIPs:
-          - "${MOSQUITTO_LB}"
         externalTrafficPolicy: Local
     env:
       TZ: "Europe/Helsinki"
