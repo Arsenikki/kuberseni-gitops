@@ -1,0 +1,12 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: kuberseni-gitops-source
+  namespace: flux-system
+spec:
+  interval: 1m
+  provider: generic
+  url: 
+  ref:
+    tag: latest
