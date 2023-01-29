@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="500" height="250" src="https://github.com/Arsenikki/kuberseni-gitops/blob/develop/docs/tech-stack.drawio.png?raw=true">
+  <img width="500" height="250" src="https://github.com/Arsenikki/kuberseni-gitops/blob/develop/docs/public/tech-stack.drawio.png?raw=true">
 
 ## :rocket: GitOps supercharged Kubernetes cluster :sailboat: 
 ..managed by Flux :robot:
