@@ -3,9 +3,9 @@
   hosts: masters
   become: true
   pre_tasks:
-  - name: Load encrypted credentials
+  - name: Load secrets
     community.sops.load_vars:
-      file: ../secrets.sops.yaml
+      file: secrets.sops.yaml
       expressions: ignore  # explicitly do not evaluate expressions on load (default)
   roles:
   - role: lablabs.rke2
