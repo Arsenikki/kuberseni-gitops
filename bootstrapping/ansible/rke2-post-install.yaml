@@ -1,0 +1,6 @@
+---
+- name: Run post-installation scripts
+  hosts: masters
+  become: true
+  roles:
+  - rke2-post-install

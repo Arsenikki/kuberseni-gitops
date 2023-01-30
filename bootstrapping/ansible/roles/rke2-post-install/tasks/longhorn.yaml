@@ -1,0 +1,22 @@
+- name: Install Longhorn dependencies
+  ansible.builtin.apt:
+    name:
+      - open-iscsi
+      - nfs-common
+      - jq
+    state: present
+    update_cache: true
+
+- name: Collect Longhorn dependency statuses
+  ansible.builtin.shell: |
+    set -e
+    curl -sSfL https://raw.githubusercontent.com/longhorn/longhorn/{{ longhorn_version }}/scripts/environment_check.sh | bash | sed 's/\x1b\[[0-9;]*m//g'
+  args:
+    executable: /bin/bash
+  changed_when: false
+  retries: 5
+  register: longhorn_dependency_status
+
+- name: Summary of Longhorn dependency statuses
+  ansible.builtin.debug:
+    var: longhorn_dependency_status.stdout_lines

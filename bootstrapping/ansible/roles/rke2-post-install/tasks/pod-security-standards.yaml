@@ -1,0 +1,7 @@
+- name: Generate AdmissionConfiguration
+  ansible.builtin.template:
+    src: "{{ pod_security_standards_filename }}.j2"
+    dest: "/etc/rancher/rke2/{{ pod_security_standards_filename }}"
+    owner: root
+    group: root
+    mode: 0400
