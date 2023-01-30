@@ -18,14 +18,15 @@
   - install_oci_artifact == true
   - inventory_hostname == groups[rke2_servers_group_name].0
   block: 
-  - name: Get OCI artifact
+  - name: Get cluster OCI artifact
     ansible.builtin.shell: |
-      flux pull artifact oci://ghcr.io/org/manifests/app:v0.0.1 --output /tmp
+      flux pull artifact oci://ghcr.io/arsenikki/kuberseni-gitops:latest --output /tmp
   
-  - name: Apply Flux OCIRepo and Kustomization
+  - name: Apply resources
     ansible.builtin.shell: |
-      /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml apply -f /tmp/{{ item }}
+      /var/lib/rancher/rke2/bin/kubectl --kubeconfig /etc/rancher/rke2/rke2.yaml apply -f {{ item }}
     args:
       executable: /bin/bash
     loop:
-      - kuberseni-gitops-source.yaml
+      - /tmp/base/flux-system/repositories/oci/kuberseni-gitops-source.yaml
+      - /tmp/base/flux-system/gotk-sync.yaml
