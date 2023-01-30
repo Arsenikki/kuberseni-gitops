@@ -31,7 +31,7 @@ spec:
       storageMinimalAvailablePercentage: 10
       guaranteedEngineManagerCPU: 20
       guaranteedReplicaManagerCPU: 20
-      defaultDataPath: /mnt/longhorn
+      defaultDataPath: /longhorn
       concurrentAutomaticEngineUpgradePerNodeLimit: 3
       defaultLonghornStaticStorageClass: longhorn
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
