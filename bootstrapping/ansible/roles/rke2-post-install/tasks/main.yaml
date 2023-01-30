@@ -1,0 +1,31 @@
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: /var/lib/rancher/rke2/bin/{{ item }}
+    dest: /usr/bin/{{ item }}
+    owner: root
+    group: root
+    state: link
+  loop:
+  - kubectl
+  - crictl
+
+- name: Add RKE2 bins to system-wide $PATH
+  ansible.builtin.copy:
+    dest: /etc/profile.d/rke2-bins.sh
+    content: 'PATH=$PATH:/var/lib/rancher/rke2/bin'
+    mode: 0644
+
+- name: Set Pod Security Standards for admission controller
+  ansible.builtin.include_tasks: pod-security-standards.yaml
+
+- name: RKE2 service rolling restart
+  ansible.builtin.include_tasks: rke2-restart.yaml
+  with_items: "{{ groups[rke2_cluster_group_name] }}"
+  loop_control:
+    loop_var: _host_item
+  when: 
+  - rke2_rolling_restart_enabled | bool
+  - ( hostvars[_host_item].inventory_hostname == inventory_hostname )
+
+- name: Install Longhorn dependencies
+  ansible.builtin.include_tasks: longhorn.yaml
