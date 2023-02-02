@@ -4,3 +4,12 @@
   become: true
   roles:
   - rke2-post-install
+  pre_tasks:
+  - name: install pip3
+    ansible.builtin.apt: name=python3-pip state=present 
+  - name: Install pre-requisites
+    ansible.builtin.pip:
+      name:
+        - openshift
+        - pyyaml
+        - kubernetes 
