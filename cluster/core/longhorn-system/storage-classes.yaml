@@ -8,7 +8,6 @@ parameters:
   numberOfReplicas: "1"
   staleReplicaTimeout: "480"
   diskSelector: "fast"
-  nodeSelector: "fast"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -19,7 +18,6 @@ parameters:
   numberOfReplicas: "3"
   staleReplicaTimeout: "480"
   diskSelector: "fast"
-  nodeSelector: "fast"
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
