@@ -4,6 +4,4 @@ kind: Kustomization
 resources:
   - home-automation
   - media
-  - networking
-  - observability
   - security
