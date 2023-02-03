@@ -11,6 +11,8 @@ The actual content of the longhorn volume is located in the 'volume-head-000.img
 ```
 sudo mount ./volume-head-000.img /destination/mount/path
 ```
+or if this gives error try mounting the snapshot!
+
 4. Check the content in '/destination/mount/path'
 
 ### Volume stuck in attaching and BackingImage stuck in 'unknown' state
