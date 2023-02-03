@@ -5,11 +5,9 @@ metadata:
     namespace: flux-system
 data:
     #ENC[AES256_GCM,data:Z7mUhZ1lmaiSDMSy9QEv,iv:sqfKHEJ9N42u3NcCOeIjBzK1/79El3iqqdu/uDD0SQo=,tag:leMmlXVYL4Td/H51f0KlbQ==,type:comment]
-    METALLB_LB_RANGE: ENC[AES256_GCM,data:vAVzGwmvnMBiaJChfcdFRIBXLmC4XNrKC099,iv:EzJicg99F7ArwT35hfAhEp3tW7Bn2EGai2lvoYMhp4M=,tag:nHEhrovxN7GTbjrPlV00dQ==,type:str]
     TRAEFIK_LB: ENC[AES256_GCM,data:cXvBCfCSiqa5+eklGQ==,iv:/5W1yCOuo61FpI5uYUYCZ5jvJzO8vmIsI4LeNCE+fCM=,tag:LjZXvNFcw7RENgG6/zVopg==,type:str]
     PLEX_LB: ENC[AES256_GCM,data:bx7DJJuR5uv5L9xFqg==,iv:dgeVN0tfyzt117jlCJh8H0hN0tACgzIO4OqS6bvmwxM=,tag:ae348i/aCSEs0FqVD5m6JQ==,type:str]
     MOSQUITTO_LB: ENC[AES256_GCM,data:2Wu2jBb6XqSH2HNJyg==,iv:m6HbxBvzhsdqPMbmOMe5gZr/ykkptR7YBwEZIuNPIXQ=,tag:VihGNXyZmlUTDQaAfUVZqA==,type:str]
-    ADGUARD_HOME_LB: ENC[AES256_GCM,data:eeu8b7bHT9zi+euNLA==,iv:k1JTwVezFuS4tLVegA/eyXHcdTGnsl4zOWm9t57zSVM=,tag:M9eijD0ee4mVNm4pYw5a6A==,type:str]
     #ENC[AES256_GCM,data:cjboLyvE0fQ5,iv:26voaEjV4FTCbXjV/wc+w7h1PgEqgsULm3ltzrB4rz8=,tag:TGOWG6rdcDLMURP4WYlnUw==,type:comment]
     NETWORK_K8S_CLUSTER_CIDR: ENC[AES256_GCM,data:2RXNeyVPKYfkbdQm,iv:VIOlDRdVLfd2tAKdZPiRw4hd/TSXnyEc4Tll3VRXgDo=,tag:lCbwUo1jSBFWMcK1Fk8Yzw==,type:str]
     NETWORK_K8S_SERVICE_CIDR: ENC[AES256_GCM,data:1koVxD2Vu3ShcieE,iv:lEhTnS84hzUiuW2DhRbyNQa0stLtoez3S8h/CRjeg8I=,tag:sjXXzKzegbVew1YRqWyJFw==,type:str]
@@ -29,8 +27,8 @@ sops:
             UGl3RUhRWlBldUNyaFBpVG9FbmhuYW8KgEgLs/7VA0ZN9Sdsfdq5zGu3Vo9XV6PO
             iYmQ4GjwR3fKafYzvBhUfLlx9zlGYYYIkVWTvcbuMq+var8+IisL0g==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2022-07-10T16:43:04Z"
-    mac: ENC[AES256_GCM,data:nNpruM3CqLdfCQbd+R64MAFN4B3ebgLD2XCjWWTDSOErWj57KpQ5qshcLXLyFzOg65PBogEnirHOqQqNsfOsfsiFPdyUTAzOKccQDHMwEBO+9na6HHZmkfOUHkPx3qNfDoJNbzAWqXmUgWVlOSVXAnpSaFqnpyOpcxYzsscKzbo=,iv:gOWTXUXyWCJtnbCLOCga8+84VZRwsRFTt9Kry2mcFD8=,tag:QNevdsVtOpLdhq9RJtfFlw==,type:str]
+    lastmodified: "2023-02-03T20:13:00Z"
+    mac: ENC[AES256_GCM,data:VdWgZqWOE+3itGxPlzi63pOPhq6JLQUmqiLteUYndLNzOwjlUckWOtNSlI7URi+A+3nJpPj1WFtzmB6+sxrzZtMMxTILCCbhzmFLctez0p1D0iV6CvU6I/DYVfUwGO/xX+EotmHIpJMif5Z9nLVwjIdK4ryK2GefyUkN4aYZRHE=,iv:A94bZuRoxq2fs3mG2FZu0wjrDV+DEiv6aaGLOkF1tmY=,tag:CipMKGUBCMpmYOpTarmoZA==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     version: 3.7.1
