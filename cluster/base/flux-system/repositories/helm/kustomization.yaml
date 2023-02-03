@@ -11,4 +11,4 @@ resources:
   - authelia-charts.yaml
   - teleport-charts.yaml
   - gtaylor-charts.yaml
-  - bjw-s-charts.yaml
+  - bjw-charts.yaml
