@@ -33,5 +33,5 @@ spec:
       guaranteedReplicaManagerCPU: 20
       defaultDataPath: /longhorn
       concurrentAutomaticEngineUpgradePerNodeLimit: 3
-      defaultLonghornStaticStorageClass: longhorn
+      defaultLonghornStaticStorageClass: longhorn-fast-replicated
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
