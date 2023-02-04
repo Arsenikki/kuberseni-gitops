@@ -73,24 +73,24 @@ spec:
         tls:
           enabled: true
           secret: authelia-tls
-      podSecurityContext:
-        container:
-          runAsUser: 568
-          runAsGroup: 568
-          fsGroup: 568
-          fsGroupChangePolicy: "OnRootMismatch"
-      persistence:
-        config:
-          enabled: true
-          type: configMap
-          name: authelia-config
-          subPath: configuration.yaml
-          mountPath: /config/configuration.yaml
-          readOnly: false
-        users: 
-          enabled: true
-          type: configMap
-          name: authelia-users
-          subPath: users.yaml
-          mountPath: /config/users.yaml
-          readOnly: false
+    podSecurityContext:
+      container:
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: "OnRootMismatch"
+    persistence:
+      config:
+        enabled: true
+        type: configMap
+        name: authelia-config
+        subPath: configuration.yaml
+        mountPath: /config/configuration.yaml
+        readOnly: false
+      users: 
+        enabled: true
+        type: configMap
+        name: authelia-users
+        subPath: users.yaml
+        mountPath: /config/users.yaml
+        readOnly: false
