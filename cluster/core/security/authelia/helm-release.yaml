@@ -65,6 +65,8 @@ spec:
         runAsGroup: 568
         fsGroup: 568
         fsGroupChangePolicy: "OnRootMismatch"
+    env:
+      AUTHELIA_LOG_LEVEL: trace
     persistence:
       config:
         enabled: true
@@ -72,11 +74,11 @@ spec:
         name: authelia-config
         subPath: configuration.yaml
         mountPath: /config/configuration.yaml
-        readOnly: false
+        readOnly: true
       users:
         enabled: true
         type: configMap
         name: authelia-users
         subPath: users.yaml
         mountPath: /config/users.yaml
-        readOnly: false
+        readOnly: true
