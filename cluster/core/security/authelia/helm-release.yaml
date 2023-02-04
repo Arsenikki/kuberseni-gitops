@@ -24,18 +24,10 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  values:
-    #initContainers:
-    #  init-db:
-    #    image: ghcr.io/onedr0p/postgres-initdb:14.6
-    #    envFrom:
-    #      - secretRef:
-    #          name: authelia-secret
+  values: 
     controller:
       replicas: 3
       strategy: RollingUpdate
-      annotations:
-        reloader.stakater.com/auto: "true"
     image:
       repository: ghcr.io/authelia/authelia
       # TODO Switch to Authelia release tag on next release
