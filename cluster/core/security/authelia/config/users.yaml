@@ -1,0 +1,7 @@
+users:
+  ${SECRET_AUTHELIA_USERNAME}:
+    email: ${SECRET_AUTHELIA_EMAIL}
+    password: ${SECRET_AUTHELIA_PASSWORD}
+    displayname: ${SECRET_AUTHELIA_USERNAME}
+    groups:
+      - admins

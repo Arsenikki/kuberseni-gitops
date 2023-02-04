@@ -5,176 +5,77 @@ metadata:
   name: authelia
   namespace: security
 spec:
-  interval: 5m
+  interval: 15m
   chart:
     spec:
-      chart: authelia
-      version: 0.8.38
+      chart: app-template
+      version: 1.3.0
       sourceRef:
         kind: HelmRepository
-        name: authelia-charts
+        name: bjw-s
         namespace: flux-system
-      interval: 5m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
+    controller:
+      replicas: 3
+      strategy: RollingUpdate
     image:
-      registry: ghcr.io
-      repository: authelia/authelia
-      tag: ""
-      pullPolicy: IfNotPresent
-      pullSecrets: []
-
-    domain: "${SECRET_DOMAIN}"
-
+      repository: ghcr.io/authelia/authelia
+      tag: 4.36.6
+    args: ["--config", "/config/configuration.yaml", "--config.experimental.filters", "expand-env"]
+    env:
+      REDIS_PASSWORD: ${SECRET_AUTHELIA_REDIS_PASSWORD}
+      STORAGE_PASSWORD: ${SECRET_AUTHELIA_STORAGE_PASSWORD}
+    enableServiceLinks: false
     service:
-      port: 80
-
+      main:
+        ports:
+          http:
+            port: 80
     ingress:
-      enabled: true
-      ingressClassName: "traefik"
-      annotations:
-        # Use Traefik for ingress
-        kubernetes.io/ingress.class: "traefik"
-        # Use default cluster-issuer
-        kubernetes.io/tls-acme: "true"
-        # Only allow websecure endpoint
-        traefik.ingress.kubernetes.io/router.entrypoints: websecure
-        # Set to passthrough TLS to backend service
-        traefik.ingress.kubernetes.io/router.tls: "true"
-      hosts:
-        - host: auth.${SECRET_DOMAIN}
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
+      main: 
         enabled: true
-        secret: authelia-tls
-
-      traefikCRD:
-        enabled: true
-        ## Use a standard Ingress object, not an IngressRoute.
-        disableIngressRoute: true
-        middlewares:
-          auth:
-            # nameOverride: authelia-auth
-            authResponseHeaders:
-              - Remote-User
-              - Remote-Name
-              - Remote-Email
-              - Remote-Groups
-
-    pod:
-      # Must be Deployment, DaemonSet, or StatefulSet.
-      kind: Deployment
-      replicas: 1
-      revisionHistoryLimit: 5
-
-      extraVolumeMounts:
-        - name: authelia-users
-          mountPath: /config/users
-          readOnly: true
-
-      extraVolumes:
-        - name: authelia-users
-          configMap:
-            name: authelia-users
-            items:
-              - key: users_database.yaml
-                path: users_database.yaml
-
-      securityContext:
+        annotations:
+          # Use Traefik for ingress
+          kubernetes.io/ingress.class: "traefik"
+          # Use default cluster-issuer
+          kubernetes.io/tls-acme: "true"
+          # Only allow websecure endpoint
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Set to passthrough TLS to backend service
+          traefik.ingress.kubernetes.io/router.tls: "true"
+        hosts:
+          - host: auth.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          enabled: true
+          secret: authelia-tls
+      podSecurityContext:
         container:
           runAsUser: 568
           runAsGroup: 568
           fsGroup: 568
-        pod: {}
-        # pod:
-        #   readOnlyRootFilesystem: true
-        #   allowPrivilegeEscalation: false
-        #   privileged: false
-
-      env:
-      - name: TZ
-        value: Europe/
-
-      resources:
-        limits:
-          cpu: "2.00"
-          memory: 125Mi
-        requests:
-          cpu: "0.25"
-          memory: 50Mi
-    
-    configMap:
-      enabled: true
-      log:
-        level: info
-      theme: dark
-      authentication_backend:
-        ldap:
-          enabled: false
-        file:
+          fsGroupChangePolicy: "OnRootMismatch"
+      persistence:
+        config:
           enabled: true
-          path: /config/users/users_database.yaml
-      storage:
-        postgres:
+          type: configMap
+          name: authelia-config
+          subPath: configuration.yaml
+          mountPath: /config/configuration.yaml
+          readOnly: false
+        users: 
           enabled: true
-          host: authelia-postgres-postgresql
-          port: 5432
-          database: authelia
-          username: authelia
-          sslmode: disable
-      session:
-        redis:
-          enabled: true
-          enabledSecret: true
-          host: authelia-redis-master
-          port: 6379
-          database_index: 0
-      notifier:
-        disable_startup_check: true
-        filesystem:
-          enabled: true
-          filename: /config/notification.txt
-        smtp:
-          enabled: false
-
-    access_control:
-      ## Default policy can either be 'bypass', 'one_factor', 'two_factor' or 'deny'. It is the policy applied to any
-      ## resource if there is no policy to be applied to the user.
-      default_policy: deny
-      networks:
-        - name: private
-          networks:
-            - 10.0.0.0/8
-            - 192.168.0.0/16
-
-      rules:
-        # bypass Authelia WAN + LAN
-        - domain:
-            - auth.${SECRET_DOMAIN}
-          policy: bypass
-
-        # One factor auth for LAN
-        - domain:
-            - "*.${SECRET_DOMAIN}"
-          policy: one_factor
-          subject: ["group:admins", "group:users"]
-          networks:
-            - private
-
-        # Two factors auth for WAN
-        - domain:
-            - "*.${SECRET_DOMAIN}"
-          policy: two_factor
-          subject: ["group:admins", "group:users"]
-
-    secret:
-      # ldap:
-      #   key: LDAP_PASSWORD
-      #   value: ${SECRET_LDAP_ADMIN_PASSWORD}
-      storage:
-        key: STORAGE_PASSWORD
-        value: ${SECRET_AUTHELIA_STORAGE_PASSWORD}
-      redis:
-        key: REDIS_PASSWORD
-        value: ${SECRET_AUTHELIA_REDIS_PASSWORD}
+          type: configMap
+          name: authelia-users
+          subPath: users.yaml
+          mountPath: /config/users.yaml
+          readOnly: false
