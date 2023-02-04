@@ -9,6 +9,18 @@ log:
   format: json
   keep_stdout: true
 
+jwt_secret: verysecretsecret
+
+authentication_backend:
+  file:
+    enabled: true
+    path: /config/users/users_database.yaml
+
+storage:
+  encryption_key: you_must_generate_a_random_string_of_more_than_twenty_chars_and_configure_this
+  local:
+    path: /config/db.sqlite3
+
 totp:
   issuer: authelia.com
   period: 30
@@ -28,9 +40,7 @@ access_control:
 
 session:
   name: authelia_session
-  # This secret can also be set using the env variables AUTHELIA_SESSION_SECRET_FILE
-  # Used a different secret, but the same site as jwt_secret above.
-  # secret: SECRET_GOES_HERE # use docker secret file instead AUTHELIA_SESSION_SECRET_FILE
+  secret: unsecure_session_secret
   expiration: 3600 # 1 hour
   inactivity: 300 # 5 minutes
   domain: ${SECRET_DOMAIN} # Should match whatever your root protected domain is
