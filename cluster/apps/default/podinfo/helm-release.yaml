@@ -31,6 +31,9 @@ spec:
     image:
       repository: stefanprodan/podinfo
       tag: latest
+    command:
+    - ./podinfo
+    - --port=80
     service:
       main:
         ports:
