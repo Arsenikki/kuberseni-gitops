@@ -2,7 +2,7 @@
 ###
 ###
 # Restart RKE2 services
-rke2_rolling_restart_enabled: false
+rke2_rolling_restart_enabled: true
 
 # Pod Security Standards values:
 pod_security_standards_enforce: baseline
@@ -10,7 +10,7 @@ pod_security_standards_audit: restricted
 pod_security_standards_warn: restricted
 
 # Pod Security Standards exemptions
-pod_security_standards_exemptions_list: [kube-system, cis-operator-system, tigera-operator, longhorn-system, home-automation]
+pod_security_standards_exemptions_list: [kube-system, cis-operator-system, tigera-operator, longhorn-system, home-automation, security]
 
 # Pod Security Standards filename. Configure RKE2 server to use the same filename.
 pod_security_standards_filename: rke2-pss-minimal.yaml
