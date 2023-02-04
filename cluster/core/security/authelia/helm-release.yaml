@@ -32,6 +32,8 @@ spec:
       repository: ghcr.io/authelia/authelia
       # TODO Switch to Authelia release tag on next release
       tag: master@sha256:1b096d11483b92a098c31eef5f779af583520c749428358de3e19567ebbe679d
+    # Set config path explicitly as otherwise default filepath extension is '.yml'. Yuck!
+    args: ["--config", "/config/configuration.yaml"]
     enableServiceLinks: false
     service:
       main:
@@ -74,11 +76,11 @@ spec:
         name: authelia-config
         subPath: configuration.yaml
         mountPath: /config/configuration.yaml
-        readOnly: true
+        readOnly: false
       users:
         enabled: true
         type: configMap
         name: authelia-users
         subPath: users.yaml
         mountPath: /config/users.yaml
-        readOnly: true
+        readOnly: false
