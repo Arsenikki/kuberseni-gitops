@@ -25,7 +25,7 @@ spec:
             port: 1880
     ingress:
       main:
-        enabled: true
+        enabled: false
         annotations:
           # Use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
