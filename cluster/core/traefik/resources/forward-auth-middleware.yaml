@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: forward-auth
+  namespace: traefik
+spec:
+  forwardAuth:
+    address: https://auth.${SECRET_DOMAIN}
+    trustForwardHeader: true
+    authResponseHeaders: 
+    - Remote-User
+    - Remote-Name
+    - Remote-Email
+    - Remote-Groups
