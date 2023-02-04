@@ -30,7 +30,7 @@ spec:
           # Use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
           # Use authelia-forward-auth middleware for authentication
-          traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
+          traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
           # Use default cluster-issuer
           kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
