@@ -43,6 +43,7 @@ spec:
     image:
       repository: ghcr.io/authelia/authelia
       tag: 4.36.6
+    #args: ["--config", "/config/config.yaml"]
     env:
       REDIS_PASSWORD: ${SECRET_AUTHELIA_REDIS_PASSWORD}
       STORAGE_PASSWORD: ${SECRET_AUTHELIA_STORAGE_PASSWORD}
@@ -79,18 +80,18 @@ spec:
         runAsGroup: 568
         fsGroup: 568
         fsGroupChangePolicy: "OnRootMismatch"
-    persistence:
-      config:
-        enabled: true
-        type: configMap
-        name: authelia-config
-        subPath: configuration.yaml
-        mountPath: /config/configuration.yaml
-        readOnly: false
-      users: 
-        enabled: true
-        type: configMap
-        name: authelia-users
-        subPath: users.yaml
-        mountPath: /config/users.yaml
-        readOnly: false
+    #persistence:
+    #  config:
+    #    enabled: true
+    #    type: configMap
+    #    name: authelia-config
+    #    subPath: configuration.yaml
+    #    mountPath: /config/configuration.yaml
+    #    readOnly: false
+    #  users: 
+    #    enabled: true
+    #    type: configMap
+    #    name: authelia-users
+    #    subPath: users.yaml
+    #    mountPath: /config/users.yaml
+    #    readOnly: false
