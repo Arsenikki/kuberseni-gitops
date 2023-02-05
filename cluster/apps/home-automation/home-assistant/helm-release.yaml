@@ -48,8 +48,6 @@ spec:
         annotations:
           # Use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
           # Set to passthrough TLS to backend service
@@ -59,9 +57,8 @@ spec:
             paths:
               - path: /
         tls:
-          - secretName: homeassistant-tls
-            hosts:
-              - "homeassistant.${SECRET_DOMAIN}"
+          - hosts:
+            - "homeassistant.${SECRET_DOMAIN}"
     probes:
       liveness:
         enabled: false
