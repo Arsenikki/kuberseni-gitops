@@ -43,10 +43,6 @@ spec:
       main: 
         enabled: true
         annotations:
-          # Use Traefik for ingress
-          kubernetes.io/ingress.class: "traefik"
-          # Only allow websecure endpoint
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
           # Use forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
           # Let external-dns manage cloudflare DNS records
@@ -59,7 +55,6 @@ spec:
         tls:
         - hosts:
           - podinfo.${SECRET_DOMAIN}
-          
     podSecurityContext:
       container:
         runAsUser: 568
