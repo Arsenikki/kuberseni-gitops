@@ -29,22 +29,17 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Use authelia-forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-          - host: "prowlarr.${SECRET_DOMAIN}"
-            paths:
-              - path: /
+        - host: "prowlarr.${SECRET_DOMAIN}"
+          paths:
+          - path: /
         tls:
-          - secretName: prowlarr-tls
-            hosts:
-              - "prowlarr.${SECRET_DOMAIN}"
+        - hosts:
+          - "prowlarr.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true

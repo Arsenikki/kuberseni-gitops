@@ -47,8 +47,6 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
           # Use forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
           # Let external-dns manage cloudflare DNS records

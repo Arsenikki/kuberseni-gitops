@@ -49,20 +49,15 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Use authelia-forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: "qbittorrent.${SECRET_DOMAIN}"
-            paths:
-              - path: /
+        - host: "qbittorrent.${SECRET_DOMAIN}"
+          paths:
+          - path: /
         tls:
-          - secretName: qbittorrent-tls
-            hosts:
-              - "qbittorrent.${SECRET_DOMAIN}"
+        - hosts:
+          - "qbittorrent.${SECRET_DOMAIN}"
     # -- Configure persistence settings for the chart under this key.
     # @default -- See values.yaml
     persistence:
