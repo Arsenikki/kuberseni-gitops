@@ -73,11 +73,6 @@ spec:
       persistence:
         enabled: true
         existingClaim: vaultwarden-psql-config
-    podSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-      fsGroupChangePolicy: OnRootMismatch
     resources:
       requests:
         memory: 100Mi
