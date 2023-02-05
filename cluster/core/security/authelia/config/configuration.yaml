@@ -41,6 +41,8 @@ access_control:
       policy: one_factor
 
 session:
+  domain: ${SECRET_DOMAIN}
+  secret: ${SECRET_AUTHELIA_SESSION_SECRET}
   redis:
     host: authelia-redis-master
     username: authelia
