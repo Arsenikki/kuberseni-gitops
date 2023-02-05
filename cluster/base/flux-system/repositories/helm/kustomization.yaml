@@ -8,6 +8,5 @@ resources:
   - longhorn-charts.yaml
   - node-feature-discovery-charts.yaml
   - prometheus-community-charts.yaml
-  - teleport-charts.yaml
   - gtaylor-charts.yaml
   - bjw-charts.yaml

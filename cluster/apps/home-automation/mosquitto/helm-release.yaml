@@ -52,9 +52,6 @@ spec:
             enabled: true
             primary: true
             port: 1883
-    securityContext:
-      runAsUser: 568
-      runAsGroup: 568
     configMaps:
       config:
         enabled: true
@@ -71,9 +68,15 @@ spec:
         name: mosquitto-config
         mountPath: /mosquitto/config/mosquitto.conf
         subPath: mosquitto.conf
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
     resources:
       requests:
         cpu: 15m
-        memory: 64M
+        memory: 64Mi
       limits:
-        memory: 124M
+        cpu: 200m
+        memory: 124Mi
