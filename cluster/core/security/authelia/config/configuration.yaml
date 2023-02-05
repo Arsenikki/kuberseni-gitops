@@ -45,7 +45,6 @@ session:
   secret: ${SECRET_AUTHELIA_SESSION_SECRET}
   redis:
     host: authelia-redis-master
-    username: authelia
     password: ${SECRET_AUTHELIA_REDIS_PASSWORD}
     port: 6379
 
