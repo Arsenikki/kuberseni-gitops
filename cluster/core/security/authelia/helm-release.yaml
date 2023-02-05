@@ -46,20 +46,15 @@ spec:
         annotations:
           # Use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
         - host: auth.${SECRET_DOMAIN}
           paths:
           - path: /
             pathType: Prefix
         tls:
-        - secretName: authelia-tls
-          hosts:
+        - hosts:
           - auth.${SECRET_DOMAIN}
     podSecurityContext:
       container:

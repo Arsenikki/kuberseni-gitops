@@ -25,7 +25,7 @@ spec:
       main:
         type: LoadBalancer
         externalIPs:
-          - "${PLEX_LB}"
+        - "${PLEX_LB}"
         externalTrafficPolicy: Local
         annotations:
           metallb.universe.tf/allow-shared-ip: plex
@@ -35,7 +35,7 @@ spec:
         enabled: true
         type: LoadBalancer
         externalIPs:
-          - "${PLEX_LB}"
+        - "${PLEX_LB}"
         externalTrafficPolicy: Local
         annotations:
           metallb.universe.tf/allow-shared-ip: plex
@@ -70,20 +70,15 @@ spec:
         annotations:
           # Use Traefik for ingress
           kubernetes.io/ingress.class: "traefik"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: "plex.${SECRET_DOMAIN}"
-            paths:
-              - path: /
+        - host: "plex.${SECRET_DOMAIN}"
+          paths:
+          - path: /
         tls:
-          - secretName: plex-tls
-            hosts:
-              - "plex.${SECRET_DOMAIN}"
+        - hosts:
+          - "plex.${SECRET_DOMAIN}"
     # -- Enable devices to be discoverable
     hostNetwork: false
     persistence:

@@ -29,20 +29,15 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Use authelia-forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
-          # Use default cluster-issuer
-          kubernetes.io/tls-acme: "true"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
-          - host: "radarr.${SECRET_DOMAIN}"
-            paths:
-              - path: /
+        - host: "radarr.${SECRET_DOMAIN}"
+          paths:
+          - path: /
         tls:
-          - secretName: radarr-tls
-            hosts:
-              - "radarr.${SECRET_DOMAIN}"
+        - hosts:
+          - "radarr.${SECRET_DOMAIN}"
     persistence:
       config:
         enabled: true
