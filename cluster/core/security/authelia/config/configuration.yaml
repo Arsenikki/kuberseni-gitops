@@ -21,7 +21,7 @@ storage:
     database: authelia
     schema: public
     username: authelia
-    password: "${SECRET_AUTHELIA_STORAGE_PASSWORD}"
+    password: ${SECRET_AUTHELIA_POSTGRES_PASSWORD}
 
 totp:
   issuer: authelia.com
