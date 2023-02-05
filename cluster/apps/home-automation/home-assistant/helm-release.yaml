@@ -50,8 +50,6 @@ spec:
           kubernetes.io/ingress.class: "traefik"
           # Only allow websecure endpoint
           traefik.ingress.kubernetes.io/router.entrypoints: websecure
-          # Set to passthrough TLS to backend service
-          traefik.ingress.kubernetes.io/router.tls: "true"
         hosts:
           - host: "homeassistant.${SECRET_DOMAIN}"
             paths:
