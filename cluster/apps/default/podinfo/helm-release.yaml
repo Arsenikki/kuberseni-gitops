@@ -34,11 +34,13 @@ spec:
     command:
     - ./podinfo
     - --port=80
+
     service:
       main:
         ports:
           http:
             port: 80
+
     ingress:
       main: 
         enabled: true
@@ -55,9 +57,16 @@ spec:
         tls:
         - hosts:
           - podinfo.${SECRET_DOMAIN}
+
     podSecurityContext:
-      container:
-        runAsUser: 568
-        runAsGroup: 568
-        fsGroup: 568
-        fsGroupChangePolicy: "OnRootMismatch"
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: "OnRootMismatch"
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 100Mi
+      limits:
+        memory: 500Mi
