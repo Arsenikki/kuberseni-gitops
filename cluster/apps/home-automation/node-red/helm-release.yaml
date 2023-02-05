@@ -25,10 +25,8 @@ spec:
             port: 1880
     ingress:
       main:
-        enabled: false
+        enabled: true
         annotations:
-          # Use Traefik for ingress
-          kubernetes.io/ingress.class: "traefik"
           # Use authelia-forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
           # Only allow websecure endpoint
@@ -49,3 +47,10 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        cpu: 1
+        memory: 1000Mi
