@@ -5,18 +5,23 @@ server:
   port: 9091
 log:
   ## Level of verbosity for logs: info, debug, trace.
-  level: debug
+  level: info
 
-jwt_secret: verysecretsecret
+jwt_secret: ${SECRET_AUTHELIA_JWT_TOKEN}
 
 authentication_backend:
   file:
     path: /config/users.yaml
 
 storage:
-  encryption_key: you_must_generate_a_random_string_of_more_than_twenty_chars_and_configure_this
-  local:
-    path: /config/db.sqlite3
+  encryption_key: ${SECRET_AUTHELIA_ENCRYPTION_KEY}
+  postgres:
+    host: authelia-postgresql
+    port: 5432
+    database: authelia
+    schema: public
+    username: authelia
+    password: "${SECRET_AUTHELIA_STORAGE_PASSWORD}"
 
 totp:
   issuer: authelia.com
@@ -36,11 +41,13 @@ access_control:
       policy: one_factor
 
 session:
-  name: authelia_session
-  secret: unsecure_session_secret
-  expiration: 3600 # 1 hour
-  inactivity: 300 # 5 minutes
-  domain: ${SECRET_DOMAIN} # Should match whatever your root protected domain is
+  redis:
+    enabled: true
+    host: authelia-redis-master
+    username: authelia
+    password: ${SECRET_AUTHELIA_REDIS_PASSWORD}
+    port: 6379
+    database_index: 0
 
 notifier:
   filesystem:
