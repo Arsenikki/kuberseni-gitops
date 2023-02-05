@@ -35,10 +35,9 @@ spec:
     ports:
       web:
         port: 80
+        redirectTo: websecure
       websecure:
         port: 443
-      metrics:
-        port: 9100
     # Enable both CRD and annotation methods of defining ingress
     providers:
       kubernetesCRD:
