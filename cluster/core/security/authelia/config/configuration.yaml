@@ -42,12 +42,10 @@ access_control:
 
 session:
   redis:
-    enabled: true
     host: authelia-redis-master
     username: authelia
     password: ${SECRET_AUTHELIA_REDIS_PASSWORD}
     port: 6379
-    database_index: 0
 
 notifier:
   filesystem:
