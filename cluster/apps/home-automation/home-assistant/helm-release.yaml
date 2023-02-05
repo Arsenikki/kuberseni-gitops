@@ -46,10 +46,8 @@ spec:
       main:
         enabled: true
         annotations:
-          # Use Traefik for ingress
-          kubernetes.io/ingress.class: "traefik"
-          # Only allow websecure endpoint
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
         hosts:
         - host: "homeassistant.${SECRET_DOMAIN}"
           paths:
@@ -89,16 +87,10 @@ spec:
         ingress:
           enabled: true
           annotations:
-            # Use Traefik for ingress
-            kubernetes.io/ingress.class: "traefik"
-            # Use authelia-forward-auth middleware for authentication
-            traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
-            # Use default cluster-issuer
-            kubernetes.io/tls-acme: "true"
-            # Only allow websecure endpoint
-            traefik.ingress.kubernetes.io/router.entrypoints: websecure
-            # Set to passthrough TLS to backend service
-            traefik.ingress.kubernetes.io/router.tls: "true"
+            # Use forward-auth middleware for authentication
+            traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
+            # Let external-dns manage cloudflare DNS records
+            external-dns/is-public: "true"
           hosts:
           - host: "codeserver.${SECRET_DOMAIN}"
             paths:
