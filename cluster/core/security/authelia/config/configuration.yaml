@@ -5,9 +5,7 @@ server:
   port: 9091
 log:
   ## Level of verbosity for logs: info, debug, trace.
-  level: trace
-  format: json
-  keep_stdout: true
+  level: debug
 
 jwt_secret: verysecretsecret
 
