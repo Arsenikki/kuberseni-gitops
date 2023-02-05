@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: redis
-      version: 16.13.2
+      version: 17.7.1
       sourceRef:
         kind: HelmRepository
         name: bitnami-charts
@@ -25,4 +25,5 @@ spec:
     metrics:
       enabled: true
     auth:
+      enabled: true
       password: ${SECRET_AUTHELIA_REDIS_PASSWORD}
