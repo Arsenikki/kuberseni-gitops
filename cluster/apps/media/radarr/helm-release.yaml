@@ -25,12 +25,10 @@ spec:
       main:
         enabled: true
         annotations:
-          # Use Traefik for ingress
-          kubernetes.io/ingress.class: "traefik"
-          # Use authelia-forward-auth middleware for authentication
-          traefik.ingress.kubernetes.io/router.middlewares: "security-forwardauth-authelia@kubernetescrd"
-          # Only allow websecure endpoint
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Use forward-auth middleware for authentication
+          traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
         hosts:
         - host: "radarr.${SECRET_DOMAIN}"
           paths:
