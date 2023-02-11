@@ -19,9 +19,9 @@ spec:
     primary:
       persistence:
         enabled: true
-        existingClaim: "vaultwarden-psql-config"
+        existingClaim: "vaultwarden-psql"
     auth:
-      username: "${SECRET_VAULTWARDEN_DB_USERNAME}"
+      username: "${SECRET_VAULTWARDEN_PSQL_USERNAME}"
       database: vaultwarden
-      password: "${SECRET_VAULTWARDEN_DB_PASSWORD}"
-      postgresPassword: "${SECRET_VAULTWARDEN_DB_PASSWORD}"
+      password: "${SECRET_VAULTWARDEN_PSQL_PASSWORD}"
+      postgresPassword: "${SECRET_VAULTWARDEN_PSQL_PASSWORD}"
