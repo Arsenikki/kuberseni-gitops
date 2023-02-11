@@ -40,7 +40,7 @@ spec:
       WEBSOCKET_PORT: 3012
       DOMAIN: https://vault.${SECRET_DOMAIN}
       ADMIN_TOKEN: ${SECRET_VAULTWARDEN_ADMIN_TOKEN}
-      DATABASE_URL: postgresql://${SECRET_VAULTWARDEN_DB_USERNAME}:${SECRET_VAULTWARDEN_DB_PASSWORD}@vaultwarden-postgresql:5432/vaultwarden
+      DATABASE_URL: postgresql://${SECRET_VAULTWARDEN_PSQL_USERNAME}:${SECRET_VAULTWARDEN_PSQL_PASSWORD}@vaultwarden-postgresql:5432/vaultwarden
     service:
       main:
         ports:
