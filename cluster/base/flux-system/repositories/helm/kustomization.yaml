@@ -10,3 +10,4 @@ resources:
   - prometheus-community-charts.yaml
   - gtaylor-charts.yaml
   - bjw-charts.yaml
+  - weave-charts.yaml
