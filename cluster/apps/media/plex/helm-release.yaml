@@ -68,10 +68,8 @@ spec:
       main:
         enabled: true
         annotations:
-          # Use Traefik for ingress
-          kubernetes.io/ingress.class: "traefik"
-          # Only allow websecure endpoint
-          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
         hosts:
         - host: "plex.${SECRET_DOMAIN}"
           paths:
