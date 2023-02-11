@@ -20,6 +20,12 @@ spec:
       persistence:
         enabled: true
         existingClaim: "vaultwarden-psql"
+      podSecurityContext:
+        enabled: true
+        fsGroup: 568
+      containerSecurityContext:
+        enabled: true
+        runAsUser: 568
     auth:
       username: "${SECRET_VAULTWARDEN_PSQL_USERNAME}"
       database: vaultwarden
