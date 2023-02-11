@@ -24,3 +24,4 @@ spec:
       username: "${SECRET_VAULTWARDEN_DB_USERNAME}"
       database: vaultwarden
       password: "${SECRET_VAULTWARDEN_DB_PASSWORD}"
+      postgresPassword: "${SECRET_VAULTWARDEN_DB_PASSWORD}"
