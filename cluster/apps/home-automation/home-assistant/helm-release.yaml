@@ -26,8 +26,7 @@ spec:
     keepHistory: false
   values:
     controller:
-      replicas: 1
-      strategy: RollingUpdate
+      type: statefulset
     image:
       repository: ghcr.io/home-assistant/home-assistant
       tag: 2022.4.1
