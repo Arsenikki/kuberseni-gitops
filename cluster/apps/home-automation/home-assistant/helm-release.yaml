@@ -101,5 +101,5 @@ spec:
             - path: /
               pathType: Prefix
           tls:
-            hosts:
+          - hosts:
             - "codeserver.${SECRET_DOMAIN}"
