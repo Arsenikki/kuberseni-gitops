@@ -1,82 +1,83 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: home-assistant
   namespace: home-automation
 spec:
-  interval: 5m
+  interval: 15m
   chart:
     spec:
-      chart: home-assistant
-      version: 13.0.1
+      chart: app-template
+      version: 1.3.0
       sourceRef:
         kind: HelmRepository
-        name: k8s-at-home-charts
+        name: bjw-charts
         namespace: flux-system
-      interval: 5m
+  maxHistory: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
   values:
+    controller:
+      replicas: 1
+      strategy: RollingUpdate
     image:
       repository: ghcr.io/home-assistant/home-assistant
       tag: 2022.4.1
     env:
       TZ: "Europe/Helsinki"
-    envFrom:
-    - secretRef:
-        name: home-assistant
-    hostNetwork: true
-    dnsPolicy: ClusterFirstWithHostNet
     service:
       main:
-        enabled: true
-        type: ClusterIP
         ports:
           http:
-            enabled: true
-            port: 8123
-      udp:
-        enabled: true
-        type: ClusterIP
-        ports:
-          webrtc:
-            enabled: true
-            port: 54321
-            protocol: UDP
+            port: 80
     ingress:
-      main:
+      main: 
         enabled: true
         annotations:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: "homeassistant.${SECRET_DOMAIN}"
+        - host: homeassistant.${SECRET_DOMAIN}
           paths:
           - path: /
+            pathType: Prefix
         tls:
         - hosts:
-          - "homeassistant.${SECRET_DOMAIN}"
-    probes:
-      liveness:
-        enabled: false
-      readiness:
-        enabled: false
-      startup:
-        enabled: false
+          - homeassistant.${SECRET_DOMAIN}
+    ### Run as root for now
+    # podSecurityContext:
+    #   runAsUser: 568
+    #   runAsGroup: 568
+    #   fsGroup: 568
+    #   fsGroupChangePolicy: "OnRootMismatch"
     persistence:
       config:
         enabled: true
+        type: pvc
         existingClaim: home-assistant-config
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 100m
+      limits:
+        memory: 2000Mi
     addons:
       codeserver:
         enabled: true
         image:
-          repository: docker.io/codercom/code-server
-          tag: 4.3.0
-        git:
-          deployKeySecret: code-server
+          repository: ghcr.io/coder/code-server
+          tag: 4.9.1
+          pullPolicy: IfNotPresent
         env:
           TZ: "Europe/Helsinki"
-        workingDir: "/config"
         args:
           - --auth
           - "none"
@@ -84,6 +85,9 @@ spec:
           - "/config/.vscode"
           - --extensions-dir
           - "/config/.vscode"
+        volumeMounts:
+        - name: config
+          mountPath: /config
         ingress:
           enabled: true
           annotations:
@@ -95,15 +99,7 @@ spec:
           - host: "codeserver.${SECRET_DOMAIN}"
             paths:
             - path: /
+              pathType: Prefix
           tls:
-          - hosts:
+            hosts:
             - "codeserver.${SECRET_DOMAIN}"
-        volumeMounts:
-        - name: config
-          mountPath: /config
-    resources:
-      requests:
-        cpu: 100m
-        memory: 100Mi
-      limits:
-        memory: 2000Mi
