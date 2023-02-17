@@ -5,7 +5,7 @@ metadata:
   name: vaultwarden-app
   namespace: flux-system
 spec:
-  path: ./apps/vaultwarden/app
+  path: ./core/vaultwarden/app
   prune: true
   sourceRef:
     kind: OCIRepository

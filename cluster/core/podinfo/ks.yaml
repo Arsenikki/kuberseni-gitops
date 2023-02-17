@@ -5,7 +5,7 @@ metadata:
   name: podinfo-app
   namespace: flux-system
 spec:
-  path: ./apps/podinfo/app
+  path: ./core/podinfo/app
   prune: true
   sourceRef:
     kind: OCIRepository
