@@ -37,7 +37,7 @@ metadata:
   name: longhorn-resources
   namespace: flux-system
 spec:
-  path: ./core/traefik/resources
+  path: ./core/longhorn/resources
   dependsOn:
     - name: longhorn-app
   prune: true
