@@ -5,7 +5,7 @@ metadata:
   name: mosquitto-app
   namespace: flux-system
 spec:
-  path: ./apps/mosquitto/app
+  path: ./core/mosquitto/app
   prune: true
   sourceRef:
     kind: OCIRepository

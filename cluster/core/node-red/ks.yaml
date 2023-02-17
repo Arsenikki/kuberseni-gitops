@@ -5,7 +5,7 @@ metadata:
   name: node-red-app
   namespace: flux-system
 spec:
-  path: ./apps/node-red/app
+  path: ./core/node-red/app
   prune: true
   sourceRef:
     kind: OCIRepository
