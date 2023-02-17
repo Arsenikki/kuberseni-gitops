@@ -4,4 +4,4 @@ resources:
   # Pre Flux-Kustomizations
   - namespace.yaml
   # Flux-Kustomizations
-  - kustomization-flux.yaml
+  - ks.yaml

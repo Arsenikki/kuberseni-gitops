@@ -1,0 +1,114 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: minio-gateway
+  namespace: minio
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: minio
+      version: 11.10.13
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami-charts
+        namespace: flux-system
+      interval: 1m
+  values:
+    image:
+      registry: docker.io
+      repository: bitnami/minio
+      tag: 2022.4.9-debian-10-r0
+
+    ## Bitnami MinIO&reg; Client image version
+    ## ref: https://hub.docker.com/r/bitnami/minio-client/tags/
+    clientImage:
+      registry: docker.io
+      repository: bitnami/minio-client
+      tag: 2022.4.7-debian-10-r1
+    ## @param mode MinIO&reg; server mode (`standalone` or `distributed`)
+    ## ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
+    ##
+    mode: standalone
+
+    containerPort: 9000
+
+    ## MinIO&reg; pod Security Context
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+    ## @param podSecurityContext.enabled Enable pod Security Context
+    ## @param podSecurityContext.fsGroup Group ID for the container
+    ##
+    podSecurityContext:
+      enabled: true
+      fsGroup: 568
+    ## MinIO&reg; container Security Context
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+    ## @param containerSecurityContext.enabled Enable container Security Context
+    ## @param containerSecurityContext.runAsUser User ID for the container
+    ## @param containerSecurityContext.runAsNonRoot Avoid running as root User
+    ##
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 568
+      runAsNonRoot: true
+
+    ## MinIO&reg; containers' resource requests and limits
+    ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ## We usually recommend not to specify default resources and to leave this as a conscious
+    ## choice for the user. This also increases chances charts run on environments with little
+    ## resources, such as Minikube. If you do want to specify resources, uncomment the following
+    ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    ## @param resources.limits The resources limits for the MinIO&reg; container
+    ## @param resources.requests The requested resources for the MinIO&reg; container
+    ##
+    resources:
+      ## Example:
+      ## limits:
+      ##    cpu: 250m
+      ##    memory: 256Mi
+      limits: {}
+      ## Examples:
+      ## requests:
+      ##    cpu: 250m
+      ##    memory: 256Mi
+      requests: {}
+
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 1
+      successThreshold: 1
+      failureThreshold: 5
+
+    startupProbe:
+      enabled: false
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 60
+
+    gateway:
+      ## @param gateway.enabled Use MinIO&reg; as Gateway for other storage systems
+      ##
+      enabled: true
+      ## @param gateway.type Gateway type. Supported types are: `azure`, `gcs`, `nas`, `s3`
+      ## ref: https://docs.minio.io/docs/minio-gateway-for-azure
+      type: azure
+      replicaCount: 3
+      auth:
+        azure:
+          accessKey: "${SECRET_MINIO_ACCESS_KEY_ID}"
+          secretKey: "${SECRET_MINIO_ACCESS_KEY_SECRET}"
+          storageAccountName: "${SECRET_AZURE_STORAGE_ACC_NAME}"
+          storageAccountKey: "${SECRET_AZURE_STORAGE_ACC_KEY}"
