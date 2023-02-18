@@ -15,18 +15,20 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
+    controller:
+      type: statefulset
     image:
       repository: ghcr.io/onedr0p/qbittorrent
       tag: 4.5.1
     env:
       TZ: "Europe/Helsinki"
       WAIT_FOR_VPN: "true"
-      QBITTORRENT__PORT: 8080
+      QBITTORRENT__PORT: 80
     service:
       main:
         ports:
           http:
-            port: 8080
+            port: 80
     ingress:
       main: 
         enabled: true
@@ -88,8 +90,7 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups:
-        - 65539
+      supplementalGroups: [10000]
     resources:
       requests:
         cpu: 100m
