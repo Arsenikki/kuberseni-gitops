@@ -15,7 +15,7 @@ resources:
 - plex/ks.yaml
 - podinfo/ks.yaml
 - prowlarr/ks.yaml
-# - qbittorrent/ks.yaml
+- qbittorrent/ks.yaml
 - radarr/ks.yaml
 - sonarr/ks.yaml
 - tailscale/ks.yaml
