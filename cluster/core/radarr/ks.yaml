@@ -2,10 +2,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: plex-app
+  name: radarr-app
   namespace: flux-system
 spec:
-  path: ./core/plex/app
+  path: ./core/radarr/app
   prune: true
   sourceRef:
     kind: OCIRepository
@@ -28,5 +28,5 @@ spec:
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2beta1
       kind: HelmRelease
-      name: plex
+      name: radarr
       namespace: media

@@ -1,0 +1,62 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: prowlarr
+  namespace: media
+spec:
+  chart:
+    spec:
+      chart: app-template
+      version: 1.3.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-charts
+        namespace: flux-system
+  interval: 30m
+  values:
+    image:
+      repository: ghcr.io/onedr0p/prowlarr-develop
+      tag: 1.1.3.2521
+    env:
+      TZ: "Europe/Helsinki"
+    service:
+      main:
+        ports:
+          http:
+            port: 8989
+    ingress:
+      main: 
+        enabled: true
+        annotations:
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
+        hosts:
+        - host: prowlarr.${SECRET_DOMAIN}
+          paths:
+          - path: /
+            pathType: Prefix
+        tls:
+        - hosts:
+          - prowlarr.${SECRET_DOMAIN}
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: "OnRootMismatch"
+      supplementalGroups:
+        - 65539
+    persistence:
+      config:
+        enabled: true
+        existingClaim: prowlarr-config
+      media:
+        enabled: true
+        mountPath: /data
+        existingClaim: media-pvc-01
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        memory: 1024M
