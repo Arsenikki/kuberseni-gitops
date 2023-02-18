@@ -46,16 +46,11 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups:
-        - 65539
+      supplementalGroups: [10000]
     persistence:
       config:
         enabled: true
         existingClaim: prowlarr-config
-      media:
-        enabled: true
-        mountPath: /data
-        existingClaim: media-pvc-01
     resources:
       requests:
         cpu: 100m
