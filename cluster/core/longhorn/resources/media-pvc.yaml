@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: media-pvc
+  name: media-pvc-01
   namespace: media
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 15000Gi
-  storageClassName: longhorn-media
+      storage: 14400Gi
+  storageClassName: longhorn-slow
