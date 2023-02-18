@@ -38,14 +38,3 @@ parameters:
   numberOfReplicas: "3"
   staleReplicaTimeout: "480"
   diskSelector: "slow"
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: longhorn-media
-provisioner: driver.longhorn.io
-parameters:
-  numberOfReplicas: "1"
-  staleReplicaTimeout: "480"
-  nodeSelector: "media"
----
