@@ -10,6 +10,7 @@ resources:
 - mosquitto/ks.yaml
 - node-feature-discovery/ks.yaml
 - node-red/ks.yaml
+- plex/ks.yaml
 - podinfo/ks.yaml
 - tailscale/ks.yaml
 - traefik/ks.yaml
