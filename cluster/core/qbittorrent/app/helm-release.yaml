@@ -64,6 +64,11 @@ spec:
           OPENVPN_USER: '${OPENVPN_USERNAME}'
           OPENVPN_PASSWORD: '${OPENVPN_PASSWORD}'
           SERVER_REGIONS: Netherlands
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+              - SYS_MODULE
         scripts:
           up: |-
             #!/bin/bash
