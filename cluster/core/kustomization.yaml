@@ -21,3 +21,4 @@ resources:
 - tailscale/ks.yaml
 - traefik/ks.yaml
 - vaultwarden/ks.yaml
+- vpn-gateway/ks.yaml
