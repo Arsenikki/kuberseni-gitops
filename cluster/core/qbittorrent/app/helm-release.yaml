@@ -22,13 +22,27 @@ spec:
       tag: 4.5.1
     env:
       TZ: "Europe/Helsinki"
-      WAIT_FOR_VPN: "true"
       QBITTORRENT__PORT: 80
+      QBITTORRENT__BT_PORT: 51820
+    podAnnotations:
+      useVpnGateway: "true"
+    hostname: qbittorrent
     service:
       main:
         ports:
           http:
             port: 80
+      bittorrent:
+        enabled: true
+        type: LoadBalancer
+        loadBalancerIP: "${SVC_QBITTORRENT_ADDRESS}"
+        ports:
+          bittorrent:
+            enabled: true
+            port: 51820
+            protocol: TCP
+            targetPort: 51820
+        externalTrafficPolicy: Local
     ingress:
       main: 
         enabled: true
@@ -53,39 +67,7 @@ spec:
         enabled: true
         mountPath: /data
         existingClaim: media-pvc-01
-      shared:
-        enabled: true
-        type: emptyDir
-        mountPath: /shared
-        medium: Memory
-        sizeLimit: 10Mi
-    addons:
-      vpn:
-        enabled: true
-        type: gluetun
-        gluetun:
-          image:
-            repository: docker.io/qmcgaw/gluetun
-            tag: v3.32.0
-        env: 
-          VPN_SERVICE_PROVIDER: 'private internet access'
-          OPENVPN_USER: '${OPENVPN_USERNAME}'
-          OPENVPN_PASSWORD: '${OPENVPN_PASSWORD}'
-          SERVER_REGIONS: Netherlands
-        securityContext:
-          capabilities:
-            add:
-              - NET_ADMIN
-              - SYS_MODULE
-        # Scripts are currently not executed automatically
-        scripts:
-          up: |-
-            #!/bin/bash
-            echo "connected" > /shared/vpnstatus
-          down: |-
-            #!/bin/bash
-            echo "disconnected" > /shared/vpnstatus
-    securityContext:
+    podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
