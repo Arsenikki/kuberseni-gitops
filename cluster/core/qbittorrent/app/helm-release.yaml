@@ -20,7 +20,7 @@ spec:
       tag: 4.5.1
     env:
       TZ: "Europe/Helsinki"
-      WAIT_FOR_VPN: "false"
+      WAIT_FOR_VPN: "true"
       QBITTORRENT__PORT: 8080
     service:
       main:
@@ -53,13 +53,17 @@ spec:
         existingClaim: media-pvc-01 
     addons:
       vpn:
-        enabled: false
+        enabled: true
         type: gluetun
         gluetun:
           image:
             repository: docker.io/qmcgaw/gluetun
             tag: v3.32.0
-        configFileSecret: qbittorrent-ovpn-config
+        env: 
+          VPN_SERVICE_PROVIDER: 'private internet access'
+          OPENVPN_USER: '${OPENVPN_USERNAME}'
+          OPENVPN_PASSWORD: '${OPENVPN_PASSWORD}'
+          SERVER_REGIONS: Netherlands
         scripts:
           up: |-
             #!/bin/bash
