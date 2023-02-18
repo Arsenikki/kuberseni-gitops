@@ -70,22 +70,12 @@ spec:
           OPENVPN_USER: '${OPENVPN_USERNAME}'
           OPENVPN_PASSWORD: '${OPENVPN_PASSWORD}'
           SERVER_REGIONS: Netherlands
-        configFile: |-
-          [Interface]
-          PrivateKey = ${PIA_PRIVATE_KEY}
-          Address = 10.13.225.89
-          DNS = 10.0.0.243,10.0.0.242
-          PostUp = /gluetun/scripts/up.sh %i
-          PreDown = /gluetun/scripts/down.sh %i
-          [Peer]
-          PublicKey = ${PIA_PUBLIC_KEY}
-          Endpoint = 188.126.89.79:1337
-          AllowedIPs = 0.0.0.0/0
         securityContext:
           capabilities:
             add:
               - NET_ADMIN
               - SYS_MODULE
+        # Scripts are currently not executed automatically
         scripts:
           up: |-
             #!/bin/bash
