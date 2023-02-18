@@ -50,7 +50,13 @@ spec:
       media:
         enabled: true
         mountPath: /data
-        existingClaim: media-pvc-01 
+        existingClaim: media-pvc-01
+      shared:
+        enabled: true
+        type: emptyDir
+        mountPath: /shared
+        medium: Memory
+        sizeLimit: 10Mi
     addons:
       vpn:
         enabled: true
