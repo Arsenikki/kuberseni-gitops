@@ -5,7 +5,7 @@ metadata:
     namespace: vpn
 type: Opaque
 stringData:
-    vpnConfigKey: ENC[AES256_GCM,data:76zuBUwWiGqsbELLOoNd+R253/MSEkvGmuVMrjwHbRiyVSZhH2w5iT5yDhN0YDPTG00nXY5CFrilcS3qpkwm9z98HoY6Zbov7e8y9UToXg5gz/rTMtnByPemz/yzmdomUBWq2Nd4aO+kAzS7cfgRjvy3knXP3e0uHfUMyIPGGWxGOZhHyGUb6zZrRfR/2PSV4rLuD4uCcdL8tB+ZPr4NJyvSOispbrrxQmUwnDRy1NRIVdwVfibtz9j1fZwC9BpxFWS83qxpRMkkh4NM9boLdwgvTRK4p8s3rPKA3ZgenwLJdGiMAy2gVHeNMVVwPuIV837I6ya+lTox71cP8eu8Nmo3cBOVHDOa7w==,iv:EsA2rfbJi7wDGr05NrT5OwiNEIUN7i4hLoV1G6vdE3A=,tag:NiN/WrOq1I4Cd/T5uYMEZA==,type:str]
+    vpnConfigfile: ENC[AES256_GCM,data:3cC6L6YNUK2Hu+FiGB2yMY1oDyoLDv6kgpaebrQjD+LaguhXTAQywSl0lCX1/MGlCxuxTO7mLK0ET+VVdEzF8hK+VPoSkOarhX33554dajLAVh4s7GXcEO+OqgHHPtWOKsTUIoKgdUj1rYWmMAa7uD+YVcIfpCx6XHPGQNPec/IKr+lYk3REn6WI0Yrpeuw5zQb1GV4tLe9esLUq4s6TudR/ut6yZbdC+Tt9KhltgHaVbF+aVOhnicGw9bfixkBdgHlTvwmoh8hdkJQjo9dj+7Lvf+hvPBAZYq8l9TCfLJsOLtL9qa9ptafM9wTp1jvvK+yK7DaEedJNw8d4eNLi4PQY7QzPZDZNrQ==,iv:QmeCxIgCrEUKgEJGHiMi6G0J4q8eX8mx4rIV2l8seMQ=,tag:il+SFuv5Parfah41rPyxhw==,type:str]
 sops:
     kms: []
     gcp_kms: []
@@ -21,8 +21,8 @@ sops:
             UmNDZUhpTXZVd3ZzNnd1OG5vVXl6cm8KsZ50HC90SN7VrIllG8KSPiRjAMYrVvVM
             KuxMUjzGPIdVZ8A3vMdhUzYmrpo6eAIgWY0UJhARd7HjA+Cr/BrgMw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2023-02-19T09:36:49Z"
-    mac: ENC[AES256_GCM,data:L60aZr41xmeasexv1FQdPP7GSDLbS7F+p6yxYOfFWtpeRqHoip2251ArEFUAntIV7A2agOBiJUVFT/XVXKZvjiTuNakM70U/O4iF+JBQvCaVwHcXuDpRkec52P8FR4hpcx2L/hzq1HcdMSU9tp0HNgzUsFm/b66wKSqL6ANhu/k=,iv:NrP40hJlAfXmJEBaKxs5DtbHgklyiTwT1I0nfGUwOgI=,tag:pV/+bkDjCscahNOf0Y/8Yg==,type:str]
+    lastmodified: "2023-02-19T09:44:56Z"
+    mac: ENC[AES256_GCM,data:9Vx4FlYwWlz2nG+KeU7TY2C1Ztw8fnMpWs96qEj27rabVm6F+b220aToNF9U+qtqtpd09Yn7XzlF+l2YvvdfUamQcl5qQWe2iyj75GRbmFEo5GZTow0rM3SJK3nbVBnYEkF8bvslbeECkiAAwVP+QyrqLIjuYBn+rYdPUcfSnnU=,iv:otdbwrSF3LUGFINZViWfrUJUExTmEYJgFHhDBRigRTs=,tag:sf7voQeRZZEYvaeYXOlKJA==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     version: 3.7.1
