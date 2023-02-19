@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
 - helm-release.yaml
 - namespace.yaml
-- pia-wireguard-config.yaml
+- pia-wireguard-config.enc.yaml
