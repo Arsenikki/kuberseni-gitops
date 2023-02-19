@@ -59,13 +59,18 @@ spec:
           value: "off"
         - name: LOG_LEVEL
           value: debug
+        - name: WIREGUARD_PRIVATE_KEY
+          value: "${PIA_PRIVATE_KEY}"
+        - name: WIREGUARD_ADDRESSES
+          value: "10.22.231.141/32"
+        - name: WIREGUARD_PUBLIC_KEY
+          value: "${PIA_PUBLIC_KEY}"
         - name: VPN_ENDPOINT_IP
-          value: 10.22.231.141
+          value: "${PIA_ENDPOINT_IP}"
         - name: VPN_ENDPOINT_PORT
-          value: 51820
+          value: "${PIA_ENDPOINT_PORT}"
         - name: DNS_ADDRESS
           value: "1.1.1.1"      
-        configFileSecret: pia-wireguard-config
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
