@@ -47,7 +47,9 @@ spec:
         - name: OPENVPN_PASSWORD
           value: ${PIA_PASSWORD}
         - name: SERVER_REGIONS
-          value: Netherlands
+          value: "FI Helsinki,Estonia,SE Stockholm,DE Berlin,Norway"
+        - name: OPENVPN_VERBOSITY
+          value: 6
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
