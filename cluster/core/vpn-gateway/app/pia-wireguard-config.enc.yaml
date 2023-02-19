@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
     name: pia-wireguard-config
+    namespace: vpn
 type: Opaque
 stringData:
     vpnConfigKey: ENC[AES256_GCM,data:76zuBUwWiGqsbELLOoNd+R253/MSEkvGmuVMrjwHbRiyVSZhH2w5iT5yDhN0YDPTG00nXY5CFrilcS3qpkwm9z98HoY6Zbov7e8y9UToXg5gz/rTMtnByPemz/yzmdomUBWq2Nd4aO+kAzS7cfgRjvy3knXP3e0uHfUMyIPGGWxGOZhHyGUb6zZrRfR/2PSV4rLuD4uCcdL8tB+ZPr4NJyvSOispbrrxQmUwnDRy1NRIVdwVfibtz9j1fZwC9BpxFWS83qxpRMkkh4NM9boLdwgvTRK4p8s3rPKA3ZgenwLJdGiMAy2gVHeNMVVwPuIV837I6ya+lTox71cP8eu8Nmo3cBOVHDOa7w==,iv:EsA2rfbJi7wDGr05NrT5OwiNEIUN7i4hLoV1G6vdE3A=,tag:NiN/WrOq1I4Cd/T5uYMEZA==,type:str]
@@ -20,8 +21,8 @@ sops:
             UmNDZUhpTXZVd3ZzNnd1OG5vVXl6cm8KsZ50HC90SN7VrIllG8KSPiRjAMYrVvVM
             KuxMUjzGPIdVZ8A3vMdhUzYmrpo6eAIgWY0UJhARd7HjA+Cr/BrgMw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2023-02-19T09:33:11Z"
-    mac: ENC[AES256_GCM,data:TxWAyU/11qsdrp8jcp7UN+sPpyD3uVDmue1kUPMtauY2UTVkLYObcmric/hbTwYHY57ORrJddBBSRe21fvRVm8HvIuPo7CIacZKNzxO51jTlU/0B2IR4GRaJG8xwKS+5GGORvcCSU/Ek4r9BttZY/QNfgKK0MomV4jr6HIbZWQE=,iv:nWF/ZfVAKv5e6jiW1WttU3ybQdQbacXY/VKi7aeho8g=,tag:VegVxFGDVt2TTw2AC5/IIA==,type:str]
+    lastmodified: "2023-02-19T09:36:49Z"
+    mac: ENC[AES256_GCM,data:L60aZr41xmeasexv1FQdPP7GSDLbS7F+p6yxYOfFWtpeRqHoip2251ArEFUAntIV7A2agOBiJUVFT/XVXKZvjiTuNakM70U/O4iF+JBQvCaVwHcXuDpRkec52P8FR4hpcx2L/hzq1HcdMSU9tp0HNgzUsFm/b66wKSqL6ANhu/k=,iv:NrP40hJlAfXmJEBaKxs5DtbHgklyiTwT1I0nfGUwOgI=,tag:pV/+bkDjCscahNOf0Y/8Yg==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     version: 3.7.1
