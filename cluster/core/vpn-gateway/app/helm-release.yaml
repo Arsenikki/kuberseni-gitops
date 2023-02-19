@@ -72,17 +72,17 @@ spec:
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
-        networkPolicy:
-          enabled: false
-          egress:
-          - to:
-            - ipBlock:
-                cidr: 0.0.0.0/0
-            ports:
-            - port: 51820
-              protocol: UDP
-          - to:
-            - namespaceSelector: {}
+        # networkPolicy:
+        #   enabled: false
+        #   egress:
+        #   - to:
+        #     - ipBlock:
+        #         cidr: 0.0.0.0/0
+        #     ports:
+        #     - port: 51820
+        #       protocol: UDP
+        #   - to:
+        #     - namespaceSelector: {}
     publicPorts:
       - IP: 10
         hostname: qbittorrent-0
@@ -93,11 +93,8 @@ spec:
             type: tcp
     routed_namespaces: ["media"]
     settings:
-      VPN_INTERFACE: wg0
       VPN_BLOCK_OTHER_TRAFFIC: true
+      NOT_ROUTED_TO_GATEWAY_CIDRS: 10.0.0.0/8 192.168.0.0/16
+      VPN_LOCAL_CIDRS: 10.0.0.0/8 192.168.0.0/16
       VPN_TRAFFIC_PORT: 51820
-      DNS_LOCAL_CIDRS: local
-      VPN_LOCAL_CIDRS: "10.0.0.0/8 192.168.0.0/16"
-      NOT_ROUTED_TO_GATEWAY_CIDRS: "10.0.0.0/8 192.168.0.0/16"
-      VXLAN_ID: 43
-      VXLAN_IP_NETWORK: 172.16.1
+      IPTABLES_NFT: yes
