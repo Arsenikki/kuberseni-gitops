@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pia-wireguard-config
+type: Opaque
+stringData:
+  vpnConfigKey: |-
+    [Interface]
+    Address = 10.22.231.141
+    PrivateKey = ${PIA_PRIVATE_KEY}
+    DNS = 10.0.0.243,10.0.0.242
+
+    [Peer]
+    PublicKey = fUBH4Y4Xz7SnPTDHna4W84NWAxKcq/dhOccNA82/DHM=
+    Endpoint = 188.126.89.152:1337
+    AllowedIPs = 0.0.0.0/0
+    PersistentKeepalive = 25
