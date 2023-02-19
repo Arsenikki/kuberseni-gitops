@@ -49,8 +49,9 @@ spec:
           repository: docker.io/qmcgaw/gluetun
           tag: v3.32.0
         env:
+            # Premade config doesn't exist for PIA, when VPN_TYPE is wireguard. 
           - name: VPN_SERVICE_PROVIDER
-            value: "private internet access"
+            value: custom
           - name: VPN_TYPE
             value: wireguard
           - name: VPN_INTERFACE
@@ -61,7 +62,7 @@ spec:
             value: "off"
           - name: LOG_LEVEL
             value: debug
-        vpnConfig: |-
+        configFile: |-
           [Interface]
           Address = 10.22.231.141
           PrivateKey = ${PIA_PRIVATE_KEY}
