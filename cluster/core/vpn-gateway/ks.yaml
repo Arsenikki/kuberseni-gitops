@@ -26,7 +26,7 @@ spec:
   retryInterval: 1m
   timeout: 3m
   healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
-      kind: HelmRelease
-      name: vpn-gateway
-      namespace: media
+  - apiVersion: helm.toolkit.fluxcd.io/v2beta1
+    kind: HelmRelease
+    name: vpn-gateway
+    namespace: media
