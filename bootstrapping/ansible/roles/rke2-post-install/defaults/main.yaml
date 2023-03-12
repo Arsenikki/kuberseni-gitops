@@ -10,7 +10,7 @@ pod_security_standards_audit: restricted
 pod_security_standards_warn: restricted
 
 # Pod Security Standards exemptions
-pod_security_standards_exemptions_list: [kube-system, cis-operator-system, tigera-operator, longhorn-system, home-automation, security]
+pod_security_standards_exemptions_list: [kube-system, cis-operator-system, tigera-operator, longhorn-system, home-automation, security, media]
 
 # Pod Security Standards filename. Configure RKE2 server to use the same filename.
 pod_security_standards_filename: rke2-pss-minimal.yaml
