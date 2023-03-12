@@ -26,8 +26,24 @@ spec:
       QBITTORRENT__PORT: 80
       QBITTORRENT__BT_PORT: 51820
       QBITTORRENT__USE_PROFILE: "true"
-    podAnnotations:
-      setGateway: "true"
+    sidecars:
+      gluetun:
+        image: qmcgaw/gluetun:v3.32
+        env:
+        - name: VPN_SERVICE_PROVIDER
+          value: private internet access
+        - name: SERVER_REGIONS
+          value: Netherlands
+        - name: OPENVPN_USER
+          value: ${PIA_USERNAME}
+        - name: OPENVPN_PASSWORD
+          value: ${PIA_PASSWORD}
+        - name: DOT
+          value: "off"
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
     hostname: qbittorrent
     service:
       main:
