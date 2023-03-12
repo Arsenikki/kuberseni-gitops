@@ -42,26 +42,22 @@ spec:
     #     type: udp
     #   - port: 51820
     #     type: tcp
-    # additionalContainers:
-    #   gluetun:
-    #     image: qmcgaw/gluetun:v3.32
-    #     env:
-    #     - name: VPN_SERVICE_PROVIDER
-    #       value: private internet access
-    #     - name: SERVER_REGIONS
-    #       value: Netherlands
-    #     - name: OPENVPN_USER
-    #       value: ${PIA_USERNAME}
-    #     - name: OPENVPN_PASSWORD
-    #       value: ${PIA_PASSWORD}
-    #     - name: HEALTH_VPN_DURATION_INITIAL
-    #       value: 30s
-    #     - name: DOT
-    #       value: "off"
-    #     securityContext:
-    #       capabilities:
-    #         add:
-    #           - NET_ADMIN
+    additionalContainers:
+      gluetun:
+        image: qmcgaw/gluetun:v3.32
+        env:
+        - name: VPN_SERVICE_PROVIDER
+          value: private internet access
+        - name: SERVER_REGIONS
+          value: Netherlands
+        - name: OPENVPN_USER
+          value: ${PIA_USERNAME}
+        - name: OPENVPN_PASSWORD
+          value: ${PIA_PASSWORD}
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
     webhook:
       gatewayAnnotation: setGateway
       gatewayDefault: false
