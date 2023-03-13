@@ -16,7 +16,7 @@ spec:
   interval: 30m
   values:
     controller:
-      type: statefulset
+      type: deployment
     image:
       repository: linuxserver/qbittorrent
       tag: 4.5.2
