@@ -50,6 +50,13 @@ spec:
         ports:
           http:
             port: 8080
+    probes:
+      liveness:
+        enabled: false
+      readiness:
+        enabled: false
+      startup:
+        enabled: false
     ingress:
       main: 
         enabled: true
