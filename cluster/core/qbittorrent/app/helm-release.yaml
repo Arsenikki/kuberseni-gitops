@@ -18,7 +18,7 @@ spec:
     controller:
       type: deployment
     image:
-      repository: linuxserver/qbittorrent
+      repository: ghcr.io/onedr0p/qbittorrent
       tag: 4.5.2
     env:
       UMASK: "022"
@@ -74,9 +74,15 @@ spec:
         enabled: true
         mountPath: /data
         existingClaim: media-pvc-01
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: "OnRootMismatch"
+      supplementalGroups: [10000]
     resources:
       requests:
         cpu: 100m
         memory: 128M
       limits:
-        memory: 1024M
+        memory: 1500M
