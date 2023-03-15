@@ -39,10 +39,6 @@ spec:
           value: ${PIA_USERNAME}
         - name: OPENVPN_PASSWORD
           value: ${PIA_PASSWORD}
-        - name: DOT
-          value: "off"
-        - name: Firewall
-          value: "off"
         securityContext:
           capabilities:
             add:
