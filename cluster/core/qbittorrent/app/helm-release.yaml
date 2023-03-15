@@ -41,8 +41,8 @@ spec:
           value: ${PIA_PASSWORD}
         - name: DOT
           value: "off"
-        - name: FIREWALL_VPN_INPUT_PORTS
-          value: "50413"
+        - name: Firewall
+          value: "off"
         securityContext:
           capabilities:
             add:
@@ -54,9 +54,15 @@ spec:
           http:
             port: 8080
       bittorrent:
+        enabled: true
+        type: LoadBalancer
         ports:
-          http:
-            port: 51234
+          bittorrent:
+            enabled: true
+            port: 50413
+            protocol: TCP
+            targetPort: 50413
+        externalTrafficPolicy: Local
     probes:
       liveness:
         enabled: false
