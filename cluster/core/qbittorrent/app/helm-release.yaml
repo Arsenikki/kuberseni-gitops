@@ -22,6 +22,7 @@ spec:
       tag: 4.5.2
     env:
       UMASK: "022"
+      QBITTORRENT__BT_PORT: 50413
       QBITTORRENT__PORT: 8080
       QBITTORRENT__USE_PROFILE: "true"
       PUID: 0
@@ -40,6 +41,8 @@ spec:
           value: ${PIA_PASSWORD}
         - name: DOT
           value: "off"
+        - name: FIREWALL_VPN_INPUT_PORTS
+          value: "50413"
         securityContext:
           capabilities:
             add:
@@ -50,6 +53,10 @@ spec:
         ports:
           http:
             port: 8080
+      bittorrent:
+        ports:
+          http:
+            port: 51234
     probes:
       liveness:
         enabled: false
