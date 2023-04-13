@@ -66,8 +66,8 @@ spec:
         existingClaim: node-red-data 
     resources:
       requests:
+        cpu: 10m
         memory: 100Mi
-        cpu: 100m
       limits:
         cpu: 1
         memory: 1000Mi
