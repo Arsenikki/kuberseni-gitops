@@ -40,7 +40,7 @@ spec:
     annotationFilter: "external-dns/is-public in (true)"
     resources:
       requests:
+        cpu: 10m
         memory: 100Mi
-        cpu: 25m
       limits:
         memory: 250Mi

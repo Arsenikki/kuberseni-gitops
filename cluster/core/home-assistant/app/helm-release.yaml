@@ -64,8 +64,8 @@ spec:
         existingClaim: home-assistant-config
     resources:
       requests:
+        cpu: 10m
         memory: 100Mi
-        cpu: 100m
       limits:
         memory: 2000Mi
     addons:
