@@ -4,4 +4,5 @@ resources:
 - gotk-components.yaml
 - gotk-sync.yaml
 - repositories
-- weave-gitops
+# Disabled to reduce resource usage temporarily. 
+# - weave-gitops
