@@ -8,6 +8,7 @@ spec:
   interval: 5m
   chart:
     spec:
+      # renovate: registryUrl=https://gtaylor.github.io/helm-charts
       chart: tailscale-subnet-router
       version: 1.1.1
       sourceRef:
