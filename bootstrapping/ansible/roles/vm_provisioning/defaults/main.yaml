@@ -1,0 +1,9 @@
+recreate_vm: true
+
+proxmox_username: root@pam
+secret_proxmox_password: "{{ undef(hint='You must specify your Proxmox password') }}"
+proxmox_host: localhost
+proxmox_vm_template_name: ubuntu-2204-cloudinit
+
+secret_cloud_init_user: "{{ undef(hint='You must specify your cloud-init user') }}"
+secret_cloud_init_ssh_key: "{{ undef(hint='You must specify your cloud-init ssh key') }}"

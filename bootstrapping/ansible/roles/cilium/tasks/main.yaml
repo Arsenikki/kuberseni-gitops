@@ -1,0 +1,6 @@
+- name: Create Cilium Helm chart config
+  become: true
+  ansible.builtin.template:
+    src: templates/cilium-helm-config.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/cilium-helm-config.yaml
+    mode: "0600"

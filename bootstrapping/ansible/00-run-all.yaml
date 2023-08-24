@@ -1,0 +1,14 @@
+---
+- ansible.builtin.import_playbook: 01-provision-vms.yaml
+
+- name: Verify that VMs are ready
+  hosts: k8s_cluster
+  gather_facts: no
+  tasks: 
+    - name: Wait 60 seconds for target connection to become reachable/usable
+      ansible.builtin.wait_for_connection:
+        timeout: 60
+
+- ansible.builtin.import_playbook: 02-configure-cluster.yaml
+
+- ansible.builtin.import_playbook: 03-flux-bootstrap.yaml

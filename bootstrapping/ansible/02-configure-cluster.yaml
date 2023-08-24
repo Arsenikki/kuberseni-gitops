@@ -1,0 +1,74 @@
+---
+- name: Create manifests directory
+  hosts: masters
+  tasks:
+    - name: Create manifests directory
+      become: true
+      ansible.builtin.file:
+        path: /var/lib/rancher/k3s/server/manifests
+        state: directory
+        mode: '0755'
+
+- name: Install kube-vip load balancer
+  hosts: masters
+  run_once: true
+  roles:
+    - role: kube-vip
+
+- name: Install Cilium
+  hosts: masters
+  run_once: true
+  roles:
+    - role: cilium
+
+- name: Install deps
+  hosts: masters
+  tasks:
+    - name: Wait for /var/lib/dpkg/lock-frontend to be released 
+      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 5; done;
+
+    - name: Install pip
+      become: true
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+
+    - name: Install deps using pip
+      become: true
+      ansible.builtin.pip:
+        name:
+          - openshift
+          - pyyaml
+          - kubernetes
+        state: present
+
+- name: Build a cluster with HA control plane
+  hosts: k8s_cluster
+  roles:
+    - role: xanmanning.k3s
+
+- name: Copy kubeconfig
+  hosts: masters
+  run_once: true
+  tasks:
+    - name: Get absolute path to this Git repository
+      ansible.builtin.command: git rev-parse --show-toplevel
+      delegate_to: localhost
+      run_once: true
+      register: repository_path
+      changed_when: false
+      check_mode: false
+      failed_when: repository_path.rc != 0
+
+    - name: Copy kubeconfig to the project directory
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ repository_path.stdout }}/kubeconfig"
+        flat: true
+
+    - name: Update kubeconfig with the correct load balancer address
+      delegate_to: localhost
+      ansible.builtin.replace:
+        path: "{{ repository_path.stdout }}/kubeconfig"
+        regexp: https://127.0.0.1:6443
+        replace: "https://{{ kube_vip_address }}:6443"

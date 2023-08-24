@@ -1,0 +1,43 @@
+---
+- name: Prepare proxmox hosts
+  hosts: proxmox
+  become: true
+  tasks:
+    - name: Create Python venv dir
+      ansible.builtin.file:
+        name: /venv/ansible
+        state: directory
+        mode: '0644'
+
+    - name: Install Python venv
+      ansible.builtin.apt:
+        name: python3.11-venv
+
+    - name: Install Python in venv
+      ansible.builtin.shell: python3 -m venv /venv/ansible/
+      become: true
+
+    - name: Set venv'd Python interpreter
+      ansible.builtin.set_fact:
+        ansible_python_interpreter: /venv/ansible/bin/python3
+
+    - name: Install required pip packages
+      ansible.builtin.pip:
+        name:
+          - requests==2.31.0
+          - proxmoxer==2.0.1
+        virtualenv: /venv/ansible
+
+- name: Provision VM nodes
+  hosts: k8s_cluster
+  gather_facts: false
+  become: true
+  any_errors_fatal: true
+  pre_tasks:
+    - name: Load secrets
+      delegate_to: proxmox
+      community.sops.load_vars:
+        file: secrets.sops.yaml
+        expressions: ignore
+  roles:
+    - vm_provisioning

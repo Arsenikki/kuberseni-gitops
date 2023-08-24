@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap flux with SOPS
-  hosts: masters
+  hosts: k8s_cluster
   become: true
   roles:
-  - flux
+    - flux
