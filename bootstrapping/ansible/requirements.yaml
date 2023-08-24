@@ -1,4 +1,7 @@
 ---
+roles:
+  - name: xanmanning.k3s
+
 collections:
   - name: kubernetes.core
     version: 2.3.1

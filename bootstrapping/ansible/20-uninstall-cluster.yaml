@@ -1,0 +1,18 @@
+---
+- name: Uninstall k3s
+  hosts: k8s_cluster
+  tasks:
+    - name: Uninstall k3s on nodes
+      become: true
+      ignore_errors: true
+      ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+
+- name: remove network configs
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Cleanup network configs
+      ansible.builtin.command: |
+        rm -rf /var/lib/rancher /etc/rancher ~/.kube/*; \
+        ip addr flush dev lo; \
+        ip addr add 127.0.0.1/8 dev lo;

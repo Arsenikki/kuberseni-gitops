@@ -1,0 +1,13 @@
+- name: Get RBAC manifest
+  become: true
+  ansible.builtin.get_url:
+    url: https://kube-vip.io/manifests/rbac.yaml
+    dest: /var/lib/rancher/k3s/server/manifests/kube-vip-rbac.yaml
+    mode: "0600"
+
+- name: Create kube-vip daemonset
+  become: true
+  ansible.builtin.template:
+    src: templates/kube-vip-daemon-set.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/kube-vip-daemon-set.yaml
+    mode: "0600"
