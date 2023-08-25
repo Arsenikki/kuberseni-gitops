@@ -22,4 +22,3 @@ resources:
 # Disabled to reduce resource usage temporarily. 
 # - tailscale/ks.yaml
 - traefik/ks.yaml
-- vaultwarden/ks.yaml
