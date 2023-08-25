@@ -30,7 +30,6 @@ spec:
       strategy: RollingUpdate
     image:
       repository: ghcr.io/authelia/authelia
-      # TODO Switch to Authelia release tag on next release
       tag: 4.37.5
     # Set config path explicitly as otherwise default filepath extension is '.yml'. Yuck!
     args: ["--config", "/config/configuration.yaml"]
