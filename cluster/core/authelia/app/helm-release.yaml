@@ -24,7 +24,7 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
-  values: 
+  values:
     controller:
       replicas: 1
       strategy: RollingUpdate
@@ -40,7 +40,7 @@ spec:
           http:
             port: 80
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Let external-dns manage cloudflare DNS records

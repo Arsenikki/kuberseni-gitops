@@ -1,7 +1,7 @@
 <div align="center">
   <img width="500" height="250" src="https://github.com/Arsenikki/kuberseni-gitops/blob/main/docs/public/tech-stack.drawio.png?raw=true">
 
-## :rocket: GitOps supercharged Kubernetes cluster :sailboat: 
+## :rocket: GitOps supercharged Kubernetes cluster :sailboat:
 ..managed by Flux :robot:
 
 ..running on hyper-converged infrastructure :scream_cat:

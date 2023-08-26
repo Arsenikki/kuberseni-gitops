@@ -38,7 +38,7 @@ spec:
           http:
             port: 8123
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Let external-dns manage cloudflare DNS records

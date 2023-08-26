@@ -24,7 +24,7 @@
 - name: Install deps
   hosts: masters
   tasks:
-    - name: Wait for /var/lib/dpkg/lock-frontend to be released 
+    - name: Wait for /var/lib/dpkg/lock-frontend to be released
       ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 5; done;
 
     - name: Install pip
