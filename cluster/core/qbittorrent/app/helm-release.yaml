@@ -67,7 +67,7 @@ spec:
       startup:
         enabled: false
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Use forward-auth middleware for authentication

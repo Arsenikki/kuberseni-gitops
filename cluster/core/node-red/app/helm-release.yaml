@@ -39,7 +39,7 @@ spec:
           http:
             port: 1880
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Use forward-auth middleware for authentication
@@ -63,7 +63,7 @@ spec:
       data:
         enabled: true
         type: pvc
-        existingClaim: node-red-data 
+        existingClaim: node-red-data
     resources:
       requests:
         cpu: 10m

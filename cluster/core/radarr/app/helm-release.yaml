@@ -26,7 +26,7 @@ spec:
           http:
             port: 7878
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Use forward-auth middleware for authentication

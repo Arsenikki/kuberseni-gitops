@@ -27,7 +27,7 @@ spec:
           http:
             port: 32400
     ingress:
-      main: 
+      main:
         enabled: true
         annotations:
           # Let external-dns manage cloudflare DNS records

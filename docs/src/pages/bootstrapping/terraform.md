@@ -1,13 +1,13 @@
 ---
-title: Terraform 
+title: Terraform
 description: Terraform
 layout: /src/layouts/MainLayout.astro
 ---
 
-Terraform is used to generated wanted Azure resources. The main ones are: 
+Terraform is used to generated wanted Azure resources. The main ones are:
 
 - Azure storage account - used for data backups
-- Azure static web app - used to host Astro-based docs 
+- Azure static web app - used to host Astro-based docs
 
 # Getting started
 
@@ -26,4 +26,4 @@ backend "azurerm" {
 2. Execute `terraform init`
 3. Execute `terraform apply`
 4. Revert the change done in step 1.
-5. Execute `terraform init` again, which will ask to transfer the local state to storage account. Select `yes`. 
+5. Execute `terraform init` again, which will ask to transfer the local state to storage account. Select `yes`.
