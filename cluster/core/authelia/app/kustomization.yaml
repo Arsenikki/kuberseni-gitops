@@ -1,9 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: security
+namespace: authelia
 resources:
   - persistence
   - helm-release.yaml
+  - namespace.yaml
 patchesStrategicMerge:
   - ./patches/env.yaml
 configMapGenerator:
