@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: longhorn
-      version: 1.4.0
+      version: 1.5.1
       sourceRef:
         kind: HelmRepository
         name: longhorn-charts
@@ -20,7 +20,6 @@ spec:
     persistence:
       defaultClassReplicaCount: 3
     defaultSettings:
-      defaultSettings:
       defaultReplicaCount: 3
       backupTarget: s3://${LONGHORN_BACKUP_BUCKET}@lol/
       backupTargetCredentialSecret: minio-aws-secret
@@ -30,7 +29,7 @@ spec:
       storageMinimalAvailablePercentage: 10
       guaranteedEngineManagerCPU: 20
       guaranteedReplicaManagerCPU: 20
-      defaultDataPath: /longhorn
+      defaultDataPath: /var/lib/longhorn
       concurrentAutomaticEngineUpgradePerNodeLimit: 3
       defaultLonghornStaticStorageClass: longhorn-fast-replicated
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
