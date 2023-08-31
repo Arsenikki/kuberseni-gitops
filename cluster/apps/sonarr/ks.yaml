@@ -5,7 +5,7 @@ metadata:
   name: sonarr-app
   namespace: flux-system
 spec:
-  path: ./core/sonarr/app
+  path: ./apps/sonarr/app
   prune: true
   sourceRef:
     kind: OCIRepository

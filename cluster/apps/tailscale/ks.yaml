@@ -5,7 +5,7 @@ metadata:
   name: tailscale-app
   namespace: flux-system
 spec:
-  path: ./core/tailscale/app
+  path: ./apps/tailscale/app
   prune: true
   sourceRef:
     kind: OCIRepository

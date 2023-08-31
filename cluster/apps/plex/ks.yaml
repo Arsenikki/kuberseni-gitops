@@ -5,7 +5,7 @@ metadata:
   name: plex-app
   namespace: flux-system
 spec:
-  path: ./core/plex/app
+  path: ./apps/plex/app
   prune: true
   sourceRef:
     kind: OCIRepository

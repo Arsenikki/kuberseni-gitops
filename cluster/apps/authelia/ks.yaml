@@ -5,7 +5,7 @@ metadata:
   name: authelia-app
   namespace: flux-system
 spec:
-  path: ./core/authelia/app
+  path: ./apps/authelia/app
   prune: true
   sourceRef:
     kind: OCIRepository

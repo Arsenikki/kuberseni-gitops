@@ -5,7 +5,7 @@ metadata:
   name: external-dns-app
   namespace: flux-system
 spec:
-  path: ./core/external-dns/app
+  path: ./apps/external-dns/app
   prune: true
   sourceRef:
     kind: OCIRepository

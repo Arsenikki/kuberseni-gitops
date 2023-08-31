@@ -5,7 +5,7 @@ metadata:
   name: qbittorrent-app
   namespace: flux-system
 spec:
-  path: ./core/qbittorrent/app
+  path: ./apps/qbittorrent/app
   prune: true
   sourceRef:
     kind: OCIRepository

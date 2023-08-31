@@ -5,7 +5,7 @@ metadata:
   name: minio-gateway-app
   namespace: flux-system
 spec:
-  path: ./core/minio-gateway/app
+  path: ./apps/minio-gateway/app
   prune: true
   sourceRef:
     kind: OCIRepository
