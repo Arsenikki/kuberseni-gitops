@@ -3,9 +3,9 @@ kind: Kustomization
 resources:
   - repositories
   - weave-gitops
-  - flux-sync
   - gotk-components.yaml
   - cluster-secrets.yaml
   - cluster-settings.yaml
+  - flux-sync.yaml
   - core-sync.yaml
   - apps-sync.yaml

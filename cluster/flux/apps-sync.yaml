@@ -2,11 +2,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: core-sync
+  name: apps-sync
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./core
+  path: ./app
   dependsOn:
     - name: core-sync
   prune: false
