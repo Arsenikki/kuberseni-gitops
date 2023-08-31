@@ -2,12 +2,13 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
-  name: base-sync
+  name: core-sync
   namespace: flux-system
 spec:
-  interval: 1m
-  timeout: 5m
-  path: ./base
+  interval: 10m0s
+  path: ./core
+  dependsOn:
+    - name: flux-sync
   prune: false
   sourceRef:
     kind: OCIRepository

@@ -8,7 +8,7 @@ spec:
   interval: 10m0s
   path: ./core
   dependsOn:
-    - name: base-sync
+    - name: core-sync
   prune: false
   sourceRef:
     kind: OCIRepository
