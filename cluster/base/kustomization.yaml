@@ -5,5 +5,5 @@ resources:
 - cluster-settings.yaml
 - core-sync.yaml
 - flux
-- longhorn
-- traefik
+- longhorn/ks.yaml
+- traefik/ks.yaml
