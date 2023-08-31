@@ -7,7 +7,6 @@ resources:
 - home-assistant/ks.yaml
 # - lazylibrarian/ks.yaml
 # - lidarr/ks.yaml
-- longhorn/ks.yaml
 - minio-gateway/ks.yaml
 - mosquitto/ks.yaml
 - node-feature-discovery/ks.yaml
@@ -21,4 +20,3 @@ resources:
 # - sonarr/ks.yaml
 # Disabled to reduce resource usage temporarily.
 # - tailscale/ks.yaml
-- traefik/ks.yaml

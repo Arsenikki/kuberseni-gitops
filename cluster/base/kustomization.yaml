@@ -4,4 +4,6 @@ resources:
 - cluster-secrets.yaml
 - cluster-settings.yaml
 - core-sync.yaml
-- flux-system
+- flux
+- longhorn
+- traefik
