@@ -13,3 +13,7 @@ spec:
     kind: OCIRepository
     name: kuberseni-gitops-source
     namespace: flux-system
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
