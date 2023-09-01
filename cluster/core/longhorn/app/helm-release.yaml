@@ -26,3 +26,5 @@ spec:
       defaultLonghornStaticStorageClass: longhorn-fast-replicated
       createDefaultDiskLabeledNodes: true
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+    longhornUI:
+      replicas: 1
