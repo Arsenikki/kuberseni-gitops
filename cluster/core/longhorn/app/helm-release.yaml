@@ -21,15 +21,10 @@ spec:
       defaultClassReplicaCount: 3
     defaultSettings:
       defaultReplicaCount: 3
+      defaultDataPath: /var/lib/longhorn
+      storageReservedPercentageForDefaultDisk: 15
+      defaultLonghornStaticStorageClass: longhorn-fast-replicated
+      createDefaultDiskLabeledNodes: true
       backupTarget: s3://${LONGHORN_BACKUP_BUCKET}@lol/
       backupTargetCredentialSecret: minio-aws-secret
-      backupstorePollInterval: 0
-      createDefaultDiskLabeledNodes: true
-      storageOverProvisioningPercentage: 100
-      storageMinimalAvailablePercentage: 10
-      guaranteedEngineManagerCPU: 20
-      guaranteedReplicaManagerCPU: 20
-      defaultDataPath: /var/lib/longhorn
-      concurrentAutomaticEngineUpgradePerNodeLimit: 3
-      defaultLonghornStaticStorageClass: longhorn-fast-replicated
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
