@@ -6,7 +6,6 @@ resources:
   - home-assistant/ks.yaml
   # - lazylibrarian/ks.yaml
   # - lidarr/ks.yaml
-  - minio-gateway/ks.yaml
   - mosquitto/ks.yaml
   - node-feature-discovery/ks.yaml
   - node-red/ks.yaml

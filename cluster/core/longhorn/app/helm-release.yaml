@@ -25,6 +25,4 @@ spec:
       storageReservedPercentageForDefaultDisk: 15
       defaultLonghornStaticStorageClass: longhorn-fast-replicated
       createDefaultDiskLabeledNodes: true
-      backupTarget: s3://${LONGHORN_BACKUP_BUCKET}@lol/
-      backupTargetCredentialSecret: minio-aws-secret
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
