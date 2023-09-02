@@ -9,6 +9,9 @@
     force: true
     state: absent
   register: vm_remove_output
+  retries: 3
+  delay: 10
+  until: vm_remove_output is not failed
   when: recreate_vm
 
 - name: Print vm_remove_output
