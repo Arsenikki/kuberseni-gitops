@@ -10,7 +10,7 @@
         mode: '0644'
 
     - name: Install Python venv
-      ansible.builtin.apt:
+      ansible.builtin.package:
         name: python3.11-venv
 
     - name: Install Python in venv
@@ -37,7 +37,9 @@
     - name: Load secrets
       delegate_to: proxmox
       community.sops.load_vars:
-        file: secrets.sops.yaml
+        file: secrets.enc.yaml
         expressions: ignore
   roles:
     - vm_provisioning
+  # vars:
+    # recreate_vm: true

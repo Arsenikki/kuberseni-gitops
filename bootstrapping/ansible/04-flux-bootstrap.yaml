@@ -1,0 +1,12 @@
+---
+- name: Bootstrap flux with SOPS
+  hosts: masters
+  become: true
+  pre_tasks:
+    - name: Load secrets
+      delegate_to: proxmox
+      community.sops.load_vars:
+        file: secrets.enc.yaml
+        expressions: ignore
+  roles:
+    - flux

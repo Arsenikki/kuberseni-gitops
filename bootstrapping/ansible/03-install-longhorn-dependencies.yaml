@@ -1,6 +1,6 @@
 ---
 - name: Install longhorn dependencies
-  hosts: k8s_cluster
+  hosts: workers
   become: true
   roles:
-    - longhorn_dependencies
+    - longhorn

@@ -22,18 +22,23 @@
     - role: cilium
 
 - name: Install deps
-  hosts: masters
+  hosts: k8s_cluster
   tasks:
     - name: Wait for /var/lib/dpkg/lock-frontend to be released
-      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 5; done;
+      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
 
-    - name: Install pip
+    - name: Ensure required dependencies are installed.
       become: true
-      ansible.builtin.apt:
-        name: python3-pip
+      ansible.builtin.package:
+        name:
+          - python3-pip
         state: present
+      register: pip_status
+      until: pip_status is not failed
+      delay: 10
+      retries: 5
 
-    - name: Install deps using pip
+    - name: Ensure required Python libraries are installed.
       become: true
       ansible.builtin.pip:
         name:

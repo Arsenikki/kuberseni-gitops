@@ -14,5 +14,3 @@
     - name: Cleanup network configs
       ansible.builtin.command: |
         rm -rf /var/lib/rancher /etc/rancher ~/.kube/*; \
-        ip addr flush dev lo; \
-        ip addr add 127.0.0.1/8 dev lo;
