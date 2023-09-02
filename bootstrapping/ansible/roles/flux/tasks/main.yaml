@@ -14,6 +14,12 @@
           --kubeconfig=/etc/rancher/k3s/k3s.yaml \
           --registry=docker.io/fluxcd
 
+    - name: Create 'sops-age' secret
+      kubernetes.core.k8s:
+        state: present
+        template: templates/sops-age.yaml.j2
+        kubeconfig: /etc/rancher/k3s/k3s.yaml
+
     - name: Get cluster OCI artifact
       ansible.builtin.shell: |
         flux pull artifact {{ oci_artifact_url }}:{{ oci_artifact_tag }} --output /tmp
@@ -22,5 +28,5 @@
       ansible.builtin.shell: |
         /usr/local/bin/kubectl --kubeconfig=/etc/rancher/k3s/k3s.yaml apply -f {{ item }}
       loop:
-        - /tmp/base/flux-system/repositories/oci/kuberseni-gitops-source.yaml
-        - /tmp/base/flux-system/gotk-sync.yaml
+        - /tmp/flux/repositories/oci/kuberseni-gitops-source.yaml
+        - /tmp/flux/flux-sync.yaml
