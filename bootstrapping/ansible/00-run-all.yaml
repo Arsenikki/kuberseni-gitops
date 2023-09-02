@@ -5,10 +5,12 @@
   hosts: k8s_cluster
   gather_facts: no
   tasks:
-    - name: Wait 60 seconds for target connection to become reachable/usable
+    - name: Wait for target connection to become reachable/usable
       ansible.builtin.wait_for_connection:
-        timeout: 60
+        timeout: 90
 
 - ansible.builtin.import_playbook: 02-configure-cluster.yaml
 
-- ansible.builtin.import_playbook: 03-flux-bootstrap.yaml
+- ansible.builtin.import_playbook: 03-install-longhorn-dependencies.yaml
+
+- ansible.builtin.import_playbook: 04-flux-bootstrap.yaml
