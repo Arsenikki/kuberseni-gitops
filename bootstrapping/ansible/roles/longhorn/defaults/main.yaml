@@ -1,0 +1,2 @@
+longhorn_version: v1.5.1
+longhorn_default_disk_path: /var/lib/longhorn
