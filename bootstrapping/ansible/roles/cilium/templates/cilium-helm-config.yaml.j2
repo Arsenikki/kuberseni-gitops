@@ -30,3 +30,9 @@ spec:
         - port-distribution
         - icmp
         - http
+    operator:
+      nodeSelector:
+        node-role.kubernetes.io/master: "true"
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: "Exists"
