@@ -4,6 +4,8 @@ metadata:
     name: cluster-settings
     namespace: flux-system
 data:
+    #ENC[AES256_GCM,data:NPq1PqUp6iwc60+NNAoboWEs,iv:TDCoykUUzIxGLcmXvhu4w7f4glxH0nUUs/GOgugWQ4s=,tag:Lv5mBsSCam88T4TLTtuFAg==,type:comment]
+    TRUENAS_IP_ADDRESS: ENC[AES256_GCM,data:JWHElFj+84P/ZqU=,iv:/HIOtJ+0jZxBgsiDuQCbfomEqklTTDyq54igewWRHyg=,tag:OS32mFsE2m+KC/dJam8lcg==,type:str]
     #ENC[AES256_GCM,data:Z7mUhZ1lmaiSDMSy9QEv,iv:sqfKHEJ9N42u3NcCOeIjBzK1/79El3iqqdu/uDD0SQo=,tag:leMmlXVYL4Td/H51f0KlbQ==,type:comment]
     TRAEFIK_LB: ENC[AES256_GCM,data:cXvBCfCSiqa5+eklGQ==,iv:/5W1yCOuo61FpI5uYUYCZ5jvJzO8vmIsI4LeNCE+fCM=,tag:LjZXvNFcw7RENgG6/zVopg==,type:str]
     PLEX_LB: ENC[AES256_GCM,data:bx7DJJuR5uv5L9xFqg==,iv:dgeVN0tfyzt117jlCJh8H0hN0tACgzIO4OqS6bvmwxM=,tag:ae348i/aCSEs0FqVD5m6JQ==,type:str]
@@ -28,8 +30,8 @@ sops:
             UGl3RUhRWlBldUNyaFBpVG9FbmhuYW8KgEgLs/7VA0ZN9Sdsfdq5zGu3Vo9XV6PO
             iYmQ4GjwR3fKafYzvBhUfLlx9zlGYYYIkVWTvcbuMq+var8+IisL0g==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2023-02-19T12:35:49Z"
-    mac: ENC[AES256_GCM,data:IS1qdIsmLpTA06SDkDu5fz3o624U76QKcubVHFJBaIpEdkYTa2xbh0w7QFIG+En7cL7l5MNoDoUDVS0zMD1swlhdmYYCTToqnTpbmfVOW6TaSmkS8QeRXcO851f3e0ecDDnVoArr22Sasj/3u8Ni10PoUEoxAo/dhiI0NuXSc1U=,iv:wcl/snMkOZ3bRiAGNWIU4qtYMv6vGR/r5UFBaN6VXNs=,tag:HxC5zg3iOJNlHMYlCrVnsA==,type:str]
+    lastmodified: "2023-09-09T14:21:06Z"
+    mac: ENC[AES256_GCM,data:+q8EdbjXxmKYJYA5htMCijSPTLbjzyh2Q4XqWzbkHAEBvavvZAr/Y/FsPon1RubUdX3fsnZwUqn6k4Eo/uBC2eejhPZoWKwL3rtkfM5wZvGay6hHkb79XSxGUs+CpsUVZhzmlvTj2VAEGjbidetTds323YZsv8g0K7n1VBNHJ0w=,iv:UxLTWqwTcbFiyOehmNn8D7Nit+GEXMoZ09tERRmwCH4=,tag:AIYXP7652hw12j+Vafl4dA==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
-    version: 3.7.1
+    version: 3.7.3
