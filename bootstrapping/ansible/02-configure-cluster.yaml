@@ -22,7 +22,7 @@
     - role: cilium
 
 - name: Install deps
-  hosts: k8s_cluster
+  hosts: masters
   tasks:
     - name: Wait for /var/lib/dpkg/lock-frontend to be released
       ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;

@@ -8,6 +8,10 @@ proxmox:
       ansible_host: 192.168.1.11
       proxmox_vm_template_id: 8001
       network_bridge: "vmbr0"
+    nas:
+      ansible_host: 192.168.1.12
+      proxmox_vm_template_id: 8001
+      network_bridge: "vmbr0"
 k8s_cluster:
   children:
     masters:
@@ -15,21 +19,21 @@ k8s_cluster:
         k3s-master-01:
           ansible_host: 192.168.1.51
           vmid: 101
-          target_host: "minipc"
+          target_host: "router"
           vcpu: 2
           memory: 8192
           disk_size: "64G"
         k3s-master-02:
           ansible_host: 192.168.1.52
           vmid: 102
-          target_host: "minipc" # Change to nas
+          target_host: "minipc"
           vcpu: 2
           memory: 8192
           disk_size: "64G"
         k3s-master-03:
           ansible_host: 192.168.1.53
           vmid: 103
-          target_host: "minipc" # Change to router
+          target_host: "nas"
           vcpu: 2
           memory: 8192
           disk_size: "64G"
@@ -40,18 +44,12 @@ k8s_cluster:
           vmid: 201
           target_host: "minipc"
           vcpu: 10
-          memory: 8192
+          memory: 24576
           disk_size: "512G"
-        # k3s-worker-02:
-          # ansible_host: 192.168.1.62
-          # vmid: 202
-          # target_host: "nas"
-          # vcpu: 2
-          # memory: 8192
-          # disk_size: "64G"
-        # k3s-worker-03:
-          # ansible_host: 192.168.2.63
-          # vmid: 202
-          # target_host: "router"
-          # memory: 8192
-          # disk_size: "64G"\
+        k3s-worker-02:
+          ansible_host: 192.168.1.62
+          vmid: 202
+          target_host: "nas"
+          vcpu: 2
+          memory: 8192
+          disk_size: "64G"

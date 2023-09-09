@@ -41,5 +41,3 @@
         expressions: ignore
   roles:
     - vm_provisioning
-  # vars:
-    # recreate_vm: true
