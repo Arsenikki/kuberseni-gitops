@@ -5,7 +5,7 @@ metadata:
   name: democratic-csi-app
   namespace: flux-system
 spec:
-  path: ./apps/democratic-csi/app
+  path: ./core/democratic-csi/app
   prune: true
   sourceRef:
     kind: OCIRepository
