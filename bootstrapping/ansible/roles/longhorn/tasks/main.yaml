@@ -4,6 +4,15 @@
     state: directory
     mode: '0755'
 
+- name: Verify that worker nodes exist and are ready
+  delegate_to: "{{ groups['masters'][1] }}"
+  kubernetes.core.k8s_info:
+    kubeconfig: /etc/rancher/k3s/k3s.yaml
+    kind: Node
+    name: "{{ inventory_hostname }}"
+  register: worker_exists
+  until: worker_exists.failed is false
+
 - name: Label worker nodes
   delegate_to: "{{ groups['masters'][1] }}"
   kubernetes.core.k8s:
