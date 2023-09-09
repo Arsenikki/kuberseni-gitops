@@ -89,7 +89,7 @@ spec:
       media:
         enabled: true
         mountPath: /data
-        existingClaim: media-pvc-01
+        existingClaim: media-pvc
     securityContext:
       runAsUser: 568
       runAsGroup: 568
