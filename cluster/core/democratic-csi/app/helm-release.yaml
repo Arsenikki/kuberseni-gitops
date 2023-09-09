@@ -27,7 +27,7 @@ spec:
   values:
     csiDriver:
       name: org.democratic-csi.nfs
-
+    storageClasses:
       storageClasses:
         - name: freenas-nfs-csi
           defaultClass: true
@@ -36,16 +36,9 @@ spec:
           allowVolumeExpansion: true
           parameters:
             fsType: nfs
-
           mountOptions:
             - noatime
             - nfsvers=4
-          secrets:
-            provisioner-secret:
-            controller-publish-secret:
-            node-stage-secret:
-            node-publish-secret:
-            controller-expand-secret:
     driver:
       config:
         driver: freenas-nfs
