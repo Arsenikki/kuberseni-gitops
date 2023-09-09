@@ -54,7 +54,7 @@ spec:
       media:
         enabled: true
         mountPath: /data
-        existingClaim: media-pvc-01
+        existingClaim: media-pvc
     resources:
       requests:
         cpu: 100m

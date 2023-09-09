@@ -47,7 +47,7 @@ spec:
       media:
         enabled: true
         mountPath: /data
-        existingClaim: media-pvc-01
+        existingClaim: media-pvc
       transcode:
         enabled: true
         type: emptyDir
