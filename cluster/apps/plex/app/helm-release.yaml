@@ -57,8 +57,6 @@ spec:
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
       supplementalGroups: [44, 109, 10000]
-    nodeSelector:
-      kubernetes.io/hostname: magnus
     resources:
       requests:
         cpu: 1
