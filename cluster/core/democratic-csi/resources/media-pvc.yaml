@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: media-pvc-01
+  name: media-pvc
   namespace: media
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 14400Gi
-  storageClassName: longhorn-slow
+      storage: 8000Gi
+  storageClassName: truenas-nfs-csi
