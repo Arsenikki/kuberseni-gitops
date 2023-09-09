@@ -9,12 +9,9 @@ resources:
   - mosquitto/ks.yaml
   - node-feature-discovery/ks.yaml
   - node-red/ks.yaml
-  # Disabled to reduce resource usage temporarily.
-  # - plex/ks.yaml
-  - podinfo/ks.yaml
-  # - prowlarr/ks.yaml
-  # - qbittorrent/ks.yaml
-  # - radarr/ks.yaml
-  # - sonarr/ks.yaml
-  # Disabled to reduce resource usage temporarily.
+  - plex/ks.yaml
+  - prowlarr/ks.yaml
+  - qbittorrent/ks.yaml
+  - radarr/ks.yaml
+  - sonarr/ks.yaml
   # - tailscale/ks.yaml
