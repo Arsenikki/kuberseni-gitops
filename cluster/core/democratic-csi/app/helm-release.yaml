@@ -28,17 +28,16 @@ spec:
     csiDriver:
       name: org.democratic-csi.nfs
     storageClasses:
-      storageClasses:
-        - name: freenas-nfs-csi
-          defaultClass: true
-          reclaimPolicy: Delete
-          volumeBindingMode: Immediate
-          allowVolumeExpansion: true
-          parameters:
-            fsType: nfs
-          mountOptions:
-            - noatime
-            - nfsvers=4
+      - name: truenas-nfs-csi
+        defaultClass: true
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+        allowVolumeExpansion: true
+        parameters:
+          fsType: nfs
+        mountOptions:
+          - noatime
+          - nfsvers=4
     driver:
       config:
         driver: freenas-nfs
