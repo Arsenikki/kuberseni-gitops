@@ -60,8 +60,8 @@ spec:
           datasetEnableQuotas: true
           datasetEnableReservation: false
           datasetPermissionsMode: "0777"
-          datasetPermissionsUser: root
-          datasetPermissionsGroup: wheel
+          datasetPermissionsUser: 0
+          datasetPermissionsGroup: 0
         nfs:
           shareHost: ${TRUENAS_IP_ADDRESS}
           shareAlldirs: false
