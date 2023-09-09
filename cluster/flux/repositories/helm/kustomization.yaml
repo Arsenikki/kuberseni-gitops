@@ -3,12 +3,13 @@ kind: Kustomization
 resources:
 - angelnu-charts.yaml
 - bitnami-charts.yaml
-- traefik-charts.yaml
+- bjw-charts.yaml
+- democratic-csi-charts.yaml
+- gtaylor-charts.yaml
 - jetstack-charts.yaml
 - k8s-at-home-charts.yaml
 - longhorn-charts.yaml
 - node-feature-discovery-charts.yaml
 - prometheus-community-charts.yaml
-- gtaylor-charts.yaml
-- bjw-charts.yaml
+- traefik-charts.yaml
 - weave-charts.yaml
