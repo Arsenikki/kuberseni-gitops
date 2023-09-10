@@ -18,3 +18,8 @@ spec:
     crds: CreateReplace
   upgrade:
     crds: CreateReplace
+  values:
+    config:
+      core:
+        sources:
+          - pci
