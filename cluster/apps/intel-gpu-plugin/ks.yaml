@@ -41,7 +41,6 @@ spec:
   dependsOn:
     - name: intel-gpu-plugin-app
     - name: node-feature-discovery-app
-    - name: node-feature-discovery-resources
   prune: true
   sourceRef:
     kind: OCIRepository
