@@ -6,6 +6,4 @@ spec:
   image: intel/intel-gpu-plugin:0.27.1
   initImage: intel/intel-gpu-initcontainer:0.27.1
   sharedDevNum: 2
-  nodeSelector:
-    intel.feature.node.kubernetes.io/gpu: "true"
   nodeFeatureRule: true
