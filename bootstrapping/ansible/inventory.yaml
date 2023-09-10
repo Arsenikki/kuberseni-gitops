@@ -52,4 +52,4 @@ k8s_cluster:
           target_host: "nas"
           vcpu: 2
           memory: 8192
-          disk_size: "64G"
+          disk_size: "128G"
