@@ -5,6 +5,7 @@ resources:
 - bjw-charts.yaml
 - democratic-csi-charts.yaml
 - gtaylor-charts.yaml
+- intel-charts.yaml
 - jetstack-charts.yaml
 - longhorn-charts.yaml
 - node-feature-discovery-charts.yaml
