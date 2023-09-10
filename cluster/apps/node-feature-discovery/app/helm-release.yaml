@@ -15,24 +15,6 @@ spec:
         name: node-feature-discovery-charts
         namespace: flux-system
   install:
-    createNamespace: true
     crds: CreateReplace
   upgrade:
     crds: CreateReplace
-  values:
-    nodeFeatureRule:
-      createCRD: true
-    worker:
-      nodeSelector:
-        node-role.kubernetes.io/worker: "true"
-      config:
-        core:
-          sources:
-            - custom
-        sources:
-          custom:
-            - name: intel-gpu
-              matchOn:
-                - pciId:
-                    class: ["0300"]
-                    vendor: ["8086"]
