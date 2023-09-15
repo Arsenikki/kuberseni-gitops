@@ -22,8 +22,7 @@ spec:
       tag: 4.5.5
     env:
       QBITTORRENT__BT_PORT: 50413
-      QBITTORRENT__PORT: 8080
-      QBITTORRENT__USE_PROFILE: "true"
+      QBITTORRENT__PORT: 80
     sidecars:
       gluetun:
         image: qmcgaw/gluetun:v3.32
@@ -45,7 +44,7 @@ spec:
       main:
         ports:
           http:
-            port: 8080
+            port: 80
       bittorrent:
         enabled: true
         type: LoadBalancer
