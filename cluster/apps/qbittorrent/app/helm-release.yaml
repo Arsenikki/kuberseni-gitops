@@ -22,8 +22,8 @@ spec:
       tag: 4.5.5
     env:
       TZ: "Europe/London"
-      QBITTORRENT__BT_PORT: 50413
       QBITTORRENT__PORT: 80
+      QBITTORRENT__BT_PORT: 50413
     sidecars:
       gluetun:
         image: qmcgaw/gluetun:v3.32
@@ -90,9 +90,9 @@ spec:
     securityContext:
       runAsUser: 568
       runAsGroup: 568
-      fsGroup: 568
-      fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups: [10000]
+    podSecurityContext:
+      supplementalGroups:
+        - 10000
     resources:
       requests:
         cpu: 100m
