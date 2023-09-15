@@ -18,6 +18,8 @@ spec:
     image:
       repository: ghcr.io/onedr0p/plex
       tag: 1.32.5.7349-8f4248874
+    env:
+      TZ: "Europe/London"
     service:
       main:
         type: LoadBalancer

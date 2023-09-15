@@ -32,7 +32,7 @@ spec:
       repository: nodered/node-red
       tag: 3.0.2
     env:
-      TZ: "Europe/Helsinki"
+      TZ: "Europe/London"
     service:
       main:
         ports:
