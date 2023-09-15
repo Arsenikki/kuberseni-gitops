@@ -21,12 +21,9 @@ spec:
       repository: ghcr.io/onedr0p/qbittorrent
       tag: 4.5.5
     env:
-      UMASK: "022"
       QBITTORRENT__BT_PORT: 50413
       QBITTORRENT__PORT: 8080
       QBITTORRENT__USE_PROFILE: "true"
-      PUID: 0
-      PGID: 0
     sidecars:
       gluetun:
         image: qmcgaw/gluetun:v3.32
