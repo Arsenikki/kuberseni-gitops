@@ -22,6 +22,16 @@ spec:
       TZ: "Europe/London"
       QBITTORRENT__PORT: 8080
       QBITTORRENT__BT_PORT: 50413
+      QBT_Preferences__WebUI__AlternativeUIEnabled: false
+      QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
+      QBT_Preferences__WebUI__AuthSubnetWhitelist: 0.0.0.0/8
+      QBT_Preferences__WebUI__LocalHostAuth: false
+      QBT_BitTorrent__Session__Interface: eth0
+      QBT_BitTorrent__Session__InterfaceAddress:
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+      QBT_BitTorrent__Session__InterfaceName: eth0
     sidecars:
       gluetun:
         image: qmcgaw/gluetun:v3.32
