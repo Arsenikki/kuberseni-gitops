@@ -46,6 +46,10 @@ spec:
           value: ${PIA_PASSWORD}
         - name: FIREWALL_INPUT_PORTS
           value: "8080"
+        - name: FIREWALL_VPN_INPUT_PORTS
+          value: "50494"
+        - name: FIREWALL_DEBUG
+          value: "on"
         - name: FIREWALL_OUTBOUND_SUBNETS
           value: "10.42.0.0/16,10.43.0.0/16"
         securityContext:
