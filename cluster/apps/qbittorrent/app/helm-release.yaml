@@ -15,8 +15,6 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
-    controller:
-      type: deployment
     image:
       repository: ghcr.io/onedr0p/qbittorrent
       tag: 4.5.5
@@ -91,8 +89,9 @@ spec:
       runAsUser: 568
       runAsGroup: 568
     podSecurityContext:
-      supplementalGroups:
-        - 10000
+      fsGroup: 568
+      fsGroupChangePolicy: "OnRootMismatch"
+      supplementalGroups: [10000]
     resources:
       requests:
         cpu: 100m
