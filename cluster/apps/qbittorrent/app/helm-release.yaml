@@ -20,7 +20,7 @@ spec:
       tag: 4.5.5
     env:
       TZ: "Europe/London"
-      QBITTORRENT__PORT: 80
+      QBITTORRENT__PORT: 8080
       QBITTORRENT__BT_PORT: 50413
     sidecars:
       gluetun:
@@ -43,7 +43,7 @@ spec:
       main:
         ports:
           http:
-            port: 80
+            port: 8080
       bittorrent:
         enabled: true
         type: LoadBalancer
