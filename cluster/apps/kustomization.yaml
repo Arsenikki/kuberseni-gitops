@@ -1,18 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # Namespaces
+  - home-automation
+  - media
+
+  # Singular apps
   - authelia/ks.yaml
   - external-dns/ks.yaml
-  - home-assistant/ks.yaml
   - intel-gpu-plugin/ks.yaml
   # - lazylibrarian/ks.yaml
   # - lidarr/ks.yaml
-  - mosquitto/ks.yaml
   - node-feature-discovery/ks.yaml
-  - node-red/ks.yaml
-  - plex/ks.yaml
-  - prowlarr/ks.yaml
-  - qbittorrent/ks.yaml
-  - radarr/ks.yaml
-  - sonarr/ks.yaml
   # - tailscale/ks.yaml
+  - pod-gateway/ks.yaml

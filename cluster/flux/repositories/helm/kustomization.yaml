@@ -1,13 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- bitnami-charts.yaml
-- bjw-charts.yaml
-- democratic-csi-charts.yaml
-- gtaylor-charts.yaml
-- intel-charts.yaml
-- jetstack-charts.yaml
-- longhorn-charts.yaml
-- node-feature-discovery-charts.yaml
-- traefik-charts.yaml
-- weave-charts.yaml
+  - angelnu-charts.yaml
+  - bitnami-charts.yaml
+  - bjw-charts.yaml
+  - democratic-csi-charts.yaml
+  - gtaylor-charts.yaml
+  - intel-charts.yaml
+  - jetstack-charts.yaml
+  - longhorn-charts.yaml
+  - node-feature-discovery-charts.yaml
+  - traefik-charts.yaml
+  - weave-charts.yaml
