@@ -46,7 +46,7 @@ spec:
       netshoot:
         enabled: true
       vpn:
-        enabled: false
+        enabled: true
         type: gluetun
         gluetun:
           image: 
