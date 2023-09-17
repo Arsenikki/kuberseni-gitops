@@ -31,11 +31,16 @@ spec:
         ports:
           http:
             port: 8080
-    sidecars:
+    addons:
       netshoot:
         enabled: true
-      gluetun:
-        image: ghcr.io/qdm12/gluetun:v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
+      vpn:
+        enabled: false
+        type: gluetun
+        gluetun:
+          image: 
+            repository: ghcr.io/qdm12/gluetun
+            tag: v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
         env:
           - name: VPN_SERVICE_PROVIDER
             value: mullvad
@@ -62,6 +67,7 @@ spec:
           capabilities:
             add:
               - NET_ADMIN
+              - SYS_MODULE
     probes:
       liveness:
         enabled: false
