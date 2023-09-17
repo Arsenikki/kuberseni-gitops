@@ -24,6 +24,7 @@ spec:
       TZ: "Europe/London"
       UMASK: "022"
       QBITTORRENT__PORT: 8080
+      QBITTORRENT__BT_PORT: 50413
       QBT_BitTorrent__Session__DefaultSavePath: '/data/downloads'
     hostname: qbittorrent
     service:
@@ -31,6 +32,16 @@ spec:
         ports:
           http:
             port: 8080
+      bittorrent:
+        enabled: true
+        type: LoadBalancer
+        ports:
+          bittorrent:
+            enabled: true
+            port: 50413
+            protocol: TCP
+            targetPort: 50413
+        externalTrafficPolicy: Local
     addons:
       netshoot:
         enabled: true
@@ -64,6 +75,7 @@ spec:
           - name: LOG_LEVEL
             value: debug
         securityContext:
+          privileged: true
           capabilities:
             add:
               - NET_ADMIN
