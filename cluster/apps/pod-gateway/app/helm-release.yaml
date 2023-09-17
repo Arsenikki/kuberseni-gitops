@@ -74,15 +74,6 @@ spec:
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
-    publicPorts:
-      - IP: 10
-        hostname: qbittorrent-0
-        ports:
-          - port: 56202
-            type: udp
-          - port: 56202
-            type: tcp
-    DNSPolicy: ClusterFirst
     routed_namespaces:
       - media
     settings:
