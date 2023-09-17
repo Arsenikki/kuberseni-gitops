@@ -13,4 +13,3 @@ resources:
   # - lidarr/ks.yaml
   - node-feature-discovery/ks.yaml
   # - tailscale/ks.yaml
-  - pod-gateway/ks.yaml
