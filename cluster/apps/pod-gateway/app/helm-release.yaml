@@ -33,6 +33,7 @@ spec:
       image:
         repository: ghcr.io/angelnu/gateway-admision-controller
         tag: v3.9.0@sha256:4e169da5af107a9c6c784d3e03c89da07fad45f18358ab5b7177662df12d955a
+    DNS: 172.16.1.1
     addons:
       vpn:
         enabled: true
@@ -43,38 +44,44 @@ spec:
             tag: v3.34.3@sha256:55f6c5b9cd2646b7d3f95c48f2d35e9e01fefa5d927f8636392e104f6d86639b
         env:
           - name: VPN_SERVICE_PROVIDER
-            value: private internet access
-          - name: SERVER_REGIONS
-            value: Netherlands
-          - name: OPENVPN_USER
-            value: ${PIA_USERNAME}
-          - name: OPENVPN_PASSWORD
-            value: ${PIA_PASSWORD}
+            value: mullvad
           - name: VPN_TYPE
-            value: openvpn
-          - name: OPENVPN_PROTOCOL
-            value: udp
-          # Currently need this in K8s to hit Cluster DNS for lookup
+            value: wireguard
+          - name: VPN_INTERFACE
+            value: wg0
           - name: FIREWALL
             value: "off"
-          # Currently need this in K8s to hit Cluster DNS for lookup
           - name: DOT
             value: "off"
+          - name: SERVER_CITIES
+            value: Amsterdam
+          - name: WIREGUARD_PRIVATE_KEY
+            value: ${SECRET_WG_PRIVATE_KEY}
+          - name: WIREGUARD_ADDRESSES
+            value: ${SECRET_WG_ADDRESSES}
           - name: LOG_LEVEL
             value: debug
         securityContext:
-          # Gluetun won't run on-top of Talos / Cilium w/o this atm
-          privileged: true
-      networkPolicy:
-        # Using my own Cilium-based Network Policies
-        enabled: false
-    # clusterName: ${CLUSTER_DOMAIN}
-    # Needed to get CoreDNS IP listed in /etc/resolv.conf for NAS DNS lookup when mounting SMB share
+          capabilities:
+            add: ["NET_ADMIN"]
+    publicPorts:
+      - IP: 10
+        hostname: qbittorrent-0
+        ports:
+          - port: 56202
+            type: udp
+          - port: 56202
+            type: tcp
     DNSPolicy: ClusterFirst
     routed_namespaces:
       - media
     settings:
-      # Don't forget to allow this on your firewall(s)!
-      VPN_TRAFFIC_PORT: 51820
-      VPN_LOCAL_CIDRS: 10.0.0.0/8 192.168.0.0/16
-      NOT_ROUTED_TO_GATEWAY_CIDRS: 10.0.0.0/8 192.168.0.0/16
+      VPN_INTERFACE: "wg0"
+      VXLAN_ID: "43"
+      VXLAN_IP_NETWORK: "172.16.1"
+      VPN_BLOCK_OTHER_TRAFFIC: "true"
+      VPN_TRAFFIC_PORT: "51820"
+      DNS_LOCAL_CIDRS: "local"
+      NOT_ROUTED_TO_GATEWAY_CIDRS: "10.0.0.0/8 192.168.0.0/16"
+      VPN_LOCAL_CIDRS: "10.0.0.0/8 192.168.0.0/16"
+      IPTABLES_NFT: "yes"
