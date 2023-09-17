@@ -15,34 +15,53 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
-    controller:
-      type: statefulset
+    # controller:
+    #   type: statefulset
     image:
       repository: ghcr.io/onedr0p/qbittorrent
       tag: 4.5.5
     env:
       TZ: "Europe/London"
+      UMASK: "022"
       QBITTORRENT__PORT: 8080
-      QBITTORRENT__BT_PORT: 50413
       QBT_BitTorrent__Session__DefaultSavePath: '/data/downloads'
-    podAnnotations:
-      setGateway: "true"
-    hostname: qbittorrent-0
+    hostname: qbittorrent
     service:
       main:
         ports:
           http:
             port: 8080
-      bittorrent:
+    sidecars:
+      netshoot:
         enabled: true
-        type: LoadBalancer
-        ports:
-          bittorrent:
-            enabled: true
-            port: 50413
-            protocol: TCP
-            targetPort: 50413
-        externalTrafficPolicy: Cluster
+      gluetun:
+        image: ghcr.io/qdm12/gluetun:v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
+        env:
+          - name: VPN_SERVICE_PROVIDER
+            value: mullvad
+          - name: VPN_TYPE
+            value: wireguard
+          - name: VPN_INTERFACE
+            value: wg0
+          - name: FIREWALL_INPUT_PORTS
+            value: "8080"
+            # Allow access to k8s subnets
+          - name: FIREWALL_OUTBOUND_SUBNETS
+            value: "10.42.0.0/16,10.43.0.0/16"
+          - name: DOT
+            value: "off"
+          - name: SERVER_CITIES
+            value: Amsterdam
+          - name: WIREGUARD_PRIVATE_KEY
+            value: ${SECRET_WG_PRIVATE_KEY}
+          - name: WIREGUARD_ADDRESSES
+            value: ${SECRET_WG_ADDRESSES}
+          - name: LOG_LEVEL
+            value: debug
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
     probes:
       liveness:
         enabled: false
@@ -74,9 +93,10 @@ spec:
         enabled: true
         mountPath: /data
         existingClaim: media-pvc
-    podSecurityContext:
+    securityContext:
       runAsUser: 568
       runAsGroup: 568
+    podSecurityContext:
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
     resources:
