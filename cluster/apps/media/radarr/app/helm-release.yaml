@@ -28,7 +28,10 @@ spec:
     ingress:
       main:
         enabled: true
+        ingressClassName: traefik
         annotations:
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
           # Use forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
           # Let external-dns manage cloudflare DNS records
