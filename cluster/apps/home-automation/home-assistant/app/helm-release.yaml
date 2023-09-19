@@ -41,6 +41,8 @@ spec:
       main:
         enabled: true
         annotations:
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
@@ -49,7 +51,8 @@ spec:
           - path: /
             pathType: Prefix
         tls:
-        - hosts:
+        - secretName: home-assistant-tls
+          hosts:
           - homeassistant.${SECRET_DOMAIN}
     ### Run as root for now
     # podSecurityContext:
@@ -90,6 +93,8 @@ spec:
         ingress:
           enabled: true
           annotations:
+            # Automatically generate TLS certificate
+            kubernetes.io/tls-acme: "true"
             # Use forward-auth middleware for authentication
             traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
             # Let external-dns manage cloudflare DNS records
@@ -100,5 +105,6 @@ spec:
             - path: /
               pathType: Prefix
           tls:
-          - hosts:
+          - secretName: code-server-tls
+            hosts:
             - "codeserver.${SECRET_DOMAIN}"
