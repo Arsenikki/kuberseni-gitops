@@ -43,6 +43,8 @@ spec:
       main:
         enabled: true
         annotations:
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
@@ -51,7 +53,8 @@ spec:
           - path: /
             pathType: Prefix
         tls:
-        - hosts:
+        - secretName: authelia-tls
+          hosts:
           - auth.${SECRET_DOMAIN}
     podSecurityContext:
       container:
