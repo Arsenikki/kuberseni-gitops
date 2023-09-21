@@ -15,6 +15,7 @@ data:
     NETWORK_K8S_CLUSTER_CIDR: ENC[AES256_GCM,data:2RXNeyVPKYfkbdQm,iv:VIOlDRdVLfd2tAKdZPiRw4hd/TSXnyEc4Tll3VRXgDo=,tag:lCbwUo1jSBFWMcK1Fk8Yzw==,type:str]
     NETWORK_K8S_SERVICE_CIDR: ENC[AES256_GCM,data:1koVxD2Vu3ShcieE,iv:lEhTnS84hzUiuW2DhRbyNQa0stLtoez3S8h/CRjeg8I=,tag:sjXXzKzegbVew1YRqWyJFw==,type:str]
     NETWORK_LOCAL_CIDR: ENC[AES256_GCM,data:kEWjNW6agoGRH+XidkY=,iv:oRhDdy3b2amrvfZrpyaBizjpP6U9+K5Z3gRgHswm+6o=,tag:OATI8Ah+BUReGi8nzZWxaw==,type:str]
+    CILIUM_LB_POOL: ENC[AES256_GCM,data:rEUS/6RWj2v0pYomhTM=,iv:dg4pt5fgBr42cnx37P/IWUWq57BCx9nOn+eZTMPw67A=,tag:yIzvUiTiIqha4Z11Gw7bcQ==,type:str]
     KUBE_VIP_API_SERVER_IP: ENC[AES256_GCM,data:77Cr13lfao9a9k5J,iv:dFobquqnyE7LqX85/k13pOPJsPk/VH6UW7EWbtW+syI=,tag:H+/m7gsrv02ohfq3aaMHTw==,type:str]
 sops:
     kms: []
@@ -31,8 +32,8 @@ sops:
             UGl3RUhRWlBldUNyaFBpVG9FbmhuYW8KgEgLs/7VA0ZN9Sdsfdq5zGu3Vo9XV6PO
             iYmQ4GjwR3fKafYzvBhUfLlx9zlGYYYIkVWTvcbuMq+var8+IisL0g==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2023-09-21T17:54:50Z"
-    mac: ENC[AES256_GCM,data:FBvD2AcMfsEkgqxf4lWC7GMq2uvVzTotC0S8W8xbMm1JNS4lEDN1QRLYUaucRiRcOr9ZKD5qjoZP3xrXIyvK+X6ZhwbO94aLcrr7bp1Y5OzSKEFSzxGSBwEwSAkx61a/JjeJTekVzy6JO3saXFIq6pPxBveDHLSiSsetACWgw5o=,iv:/13V/t+JhrBK3BhUqvVsG1XFnLCjKi07O6qO+UXbjY0=,tag:0+qRHmUpOuj6cJPXp3Jh7g==,type:str]
+    lastmodified: "2023-09-21T18:30:01Z"
+    mac: ENC[AES256_GCM,data:BGiC22o0BjYfmeJ6aEY+vfH67dVHJLdlmwJlA9uqQ+3oA2p8Kej0jZ6ZxIMG+zrEwVQT1yBJoP8mKfT3rN97OsCrm/e5YzF0Bm6KPU1N+etswIyINNWK7W8NtWj0uA/8d6Aa+KdsckvC/tq9oRABJo++j0QjHtdyKSFSVUVfBRs=,iv:V5Aa+cubFSuNzTIhOOX6S0a9Lx5tihw7QPUQA30a7VM=,tag:ILBD2p7IYLM5Dl9F5L/CDQ==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     version: 3.7.3
