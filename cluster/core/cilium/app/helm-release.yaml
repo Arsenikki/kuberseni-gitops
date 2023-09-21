@@ -28,6 +28,13 @@ spec:
     kubeProxyReplacement: strict
     k8sServiceHost: "${KUBE_VIP_API_SERVER_IP}"
     k8sServicePort: 6443
+    # See https://docs.cilium.io/en/latest/network/l2-announcements/#l2-announcements-l2-aware-lb-beta
+    l2announcements:
+      enabled: true
+    # See https://docs.cilium.io/en/latest/network/l2-announcements/#sizing-client-rate-limit
+    k8sClientRateLimit:
+      qps: 5
+      burst: 10
     hubble:
       enabled: true
       ui:
