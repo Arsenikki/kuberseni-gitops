@@ -4,6 +4,7 @@ resources:
   - angelnu-charts.yaml
   - bitnami-charts.yaml
   - bjw-charts.yaml
+  - cilium-charts.yaml
   - democratic-csi-charts.yaml
   - gtaylor-charts.yaml
   - intel-charts.yaml
