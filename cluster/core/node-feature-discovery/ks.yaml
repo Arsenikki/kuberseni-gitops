@@ -5,7 +5,7 @@ metadata:
   name: node-feature-discovery-app
   namespace: flux-system
 spec:
-  path: ./apps/node-feature-discovery/app
+  path: ./core/node-feature-discovery/app
   prune: true
   sourceRef:
     kind: OCIRepository

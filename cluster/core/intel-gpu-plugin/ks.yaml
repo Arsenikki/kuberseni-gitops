@@ -5,7 +5,7 @@ metadata:
   name: intel-gpu-plugin-app
   namespace: flux-system
 spec:
-  path: ./apps/intel-gpu-plugin/app
+  path: ./core/intel-gpu-plugin/app
   prune: true
   sourceRef:
     kind: OCIRepository
@@ -32,7 +32,7 @@ metadata:
   name: intel-gpu-plugin-resources
   namespace: flux-system
 spec:
-  path: ./apps/intel-gpu-plugin/resources
+  path: ./core/intel-gpu-plugin/resources
   dependsOn:
     - name: intel-gpu-plugin-app
     - name: node-feature-discovery-app
