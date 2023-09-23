@@ -44,7 +44,8 @@ spec:
       main:
         type: LoadBalancer
         externalTrafficPolicy: Cluster
-        loadBalancerIP: '${MOSQUITTO_LB}'
+        annotations:
+          - "io.cilium/lb-ipam-ips": "${MOSQUITTO_LB}"
         ports:
           http:
             enabled: false
