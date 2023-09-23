@@ -1,0 +1,15 @@
+---
+- name: Kernel update successful
+  debug:
+    msg: "Kernel update was successful."
+  when: kernel_update_result.changed
+  notify: Reboot
+
+- name: Reboot
+  ansible.builtin.reboot:
+    msg: "Reboot initiated by Ansible for kernel update."
+
+- name: Kernel update failed
+  debug:
+    msg: "Kernel update failed."
+  when: not kernel_update_result.changed

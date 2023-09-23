@@ -1,0 +1,62 @@
+---
+- name: Install deps
+  hosts: masters
+  tasks:
+    - name: Wait for /var/lib/dpkg/lock-frontend to be released
+      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+
+    - name: Ensure required dependencies are installed.
+      become: true
+      ansible.builtin.package:
+        name:
+          - python3-pip
+        state: present
+      register: pip_status
+      until: pip_status is not failed
+      delay: 10
+      retries: 5
+
+    - name: Ensure required Python libraries are installed.
+      become: true
+      ansible.builtin.pip:
+        name:
+          - openshift
+          - pyyaml
+          - kubernetes
+        state: present
+
+- name: Update worker kernels for GPU support
+  hosts: workers
+  tasks:
+    - name: Get current kernel version
+      become: true
+      ansible.builtin.shell: uname -r
+      changed_when: false
+      register: current_kernel_version
+
+    - ansible.builtin.set_fact:
+        target_kernel_version: "6.4.0"
+
+    - name: Update worker kernels for GPU support
+      when: current_kernel_version.stdout | split('-') | first is version(target_kernel_version, '!=')
+      block:
+        - name: Download kernel update script
+          become: true
+          ansible.builtin.get_url:
+            url: "https://raw.githubusercontent.com/pimlie/ubuntu-mainline-kernel.sh/master/ubuntu-mainline-kernel.sh"
+            dest: /root/ubuntu-mainline-kernel.sh
+            mode: '0700'
+
+        - name: Update kernel
+          become: true
+          ansible.builtin.shell: /root/ubuntu-mainline-kernel.sh -i {{ target_kernel_version }} --yes
+
+        - name: Restart hosts
+          become: true
+          ansible.builtin.reboot:
+            msg: "Reboot initiated by Ansible"
+            connect_timeout: 5
+            reboot_timeout: 300
+            pre_reboot_delay: 0
+            post_reboot_delay: 30
+            test_command: whoami

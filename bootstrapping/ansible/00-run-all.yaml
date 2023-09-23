@@ -1,16 +1,10 @@
 ---
 - ansible.builtin.import_playbook: 01-provision-vms.yaml
 
-- name: Verify that VMs are ready
-  hosts: k8s_cluster
-  gather_facts: no
-  tasks:
-    - name: Wait for target connection to become reachable/usable
-      ansible.builtin.wait_for_connection:
-        timeout: 90
+- ansible.builtin.import_playbook: 02-configure-vms.yaml
 
-- ansible.builtin.import_playbook: 02-configure-cluster.yaml
+- ansible.builtin.import_playbook: 03-create-cluster.yaml
 
-- ansible.builtin.import_playbook: 03-install-longhorn-dependencies.yaml
+- ansible.builtin.import_playbook: 04-install-longhorn-dependencies.yaml
 
-- ansible.builtin.import_playbook: 04-flux-bootstrap.yaml
+- ansible.builtin.import_playbook: 05-flux-bootstrap.yaml
