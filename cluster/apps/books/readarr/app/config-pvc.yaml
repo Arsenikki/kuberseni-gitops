@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: lidarr-config
-  namespace: media
+  name: readarr-config
+  namespace: books
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi
   storageClassName: longhorn-fast-replicated

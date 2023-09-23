@@ -2,28 +2,33 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: lidarr
-  namespace: media
+  name: readarr
+  namespace: books
 spec:
-  interval: 5m
   chart:
     spec:
-      chart: lidarr
-      version: 14.0.1
+      chart: app-template
+      version: 1.5.1
       sourceRef:
         kind: HelmRepository
-        name: k8s-at-home-charts
+        name: bjw-charts
         namespace: flux-system
-      interval: 5m
+  interval: 30m
   values:
     image:
-      repository: ghcr.io/k8s-at-home/lidarr
-      tag: v1.0.0.2255
+      repository: ghcr.io/onedr0p/readarr-develop
+      tag: 0.3.5.2217
     env:
       TZ: "Europe/London"
+    service:
+      main:
+        ports:
+          http:
+            port: 8787
     ingress:
       main:
         enabled: true
+        ingressClassName: traefik
         annotations:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
@@ -32,28 +37,31 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: "lidarr.${SECRET_DOMAIN}"
+        - host: readarr.${SECRET_DOMAIN}
           paths:
           - path: /
+            pathType: Prefix
         tls:
-        - secretName: lidarr-tls
+        - secretName: readarr-tls
           hosts:
-          - "lidarr.${SECRET_DOMAIN}"
-    persistence:
-      config:
-        enabled: true
-        existingClaim: lidarr-config
-      media:
-        enabled: true
-        existingClaim: media-pvc
+          - readarr.${SECRET_DOMAIN}
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
-      fsGroupChangePolicy: OnRootMismatch
+      fsGroupChangePolicy: "OnRootMismatch"
+      supplementalGroups: [10000]
+    persistence:
+      config:
+        enabled: true
+        existingClaim: readarr-config
+      books:
+        enabled: true
+        mountPath: /data
+        existingClaim: books-pvc
     resources:
       requests:
-        memory: 150Mi
         cpu: 100m
+        memory: 256M
       limits:
-        memory: 500Mi
+        memory: 512M
