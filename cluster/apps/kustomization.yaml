@@ -9,7 +9,4 @@ resources:
   # Singular apps
   - authelia/ks.yaml
   - external-dns/ks.yaml
-  - intel-gpu-plugin/ks.yaml
-  # - lazylibrarian/ks.yaml
-  # - lidarr/ks.yaml
-  - node-feature-discovery/ks.yaml
+
