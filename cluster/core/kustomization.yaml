@@ -4,5 +4,7 @@ resources:
   - cert-manager/ks.yaml
   - cilium/ks.yaml
   - democratic-csi/ks.yaml
+  - intel-gpu-plugin/ks.yaml
   - longhorn/ks.yaml
+  - node-feature-discovery/ks.yaml
   - traefik/ks.yaml
