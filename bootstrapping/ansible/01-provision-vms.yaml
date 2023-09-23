@@ -41,3 +41,11 @@
         expressions: ignore
   roles:
     - vm_provisioning
+
+- name: Verify that VMs are ready
+  hosts: k8s_cluster
+  gather_facts: false
+  tasks:
+    - name: Wait for target connection to become reachable/usable
+      ansible.builtin.wait_for_connection:
+        timeout: 120

@@ -21,32 +21,6 @@
   roles:
     - role: cilium
 
-- name: Install deps
-  hosts: masters
-  tasks:
-    - name: Wait for /var/lib/dpkg/lock-frontend to be released
-      ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
-
-    - name: Ensure required dependencies are installed.
-      become: true
-      ansible.builtin.package:
-        name:
-          - python3-pip
-        state: present
-      register: pip_status
-      until: pip_status is not failed
-      delay: 10
-      retries: 5
-
-    - name: Ensure required Python libraries are installed.
-      become: true
-      ansible.builtin.pip:
-        name:
-          - openshift
-          - pyyaml
-          - kubernetes
-        state: present
-
 - name: Build a cluster with HA control plane
   hosts: k8s_cluster
   roles:
