@@ -5,8 +5,8 @@ resources:
   - books
   - home-automation
   - media
+  - monitoring
 
   # Singular apps
   - authelia/ks.yaml
   - external-dns/ks.yaml
-
