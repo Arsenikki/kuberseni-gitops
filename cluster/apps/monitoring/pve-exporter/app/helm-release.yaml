@@ -20,9 +20,8 @@ spec:
       tag: 2.3.1
     env:
       TZ: "Europe/London"
-      PVE_USER: "metrics-exporter@pve"
-      PVE_TOKEN_NAME: "monitoring"
-      PVE_TOKEN_VALUE: "0aa5b117-8409-461c-b407-a0c9b6ddbcc1"
+      PVE_USER: "prometheus-pve-exporter@pve"
+      PVE_PASSWORD: "${SECRET_PROXMOX_METRICS_PASSWORD}"
       PVE_VERIFY_SSL: false
     service:
       main:
@@ -34,7 +33,6 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups: [10000]
     resources:
       requests:
         cpu: 15m

@@ -1,7 +1,7 @@
 recreate_vm: false
 
 proxmox_username: root@pam
-secret_proxmox_password: "{{ undef(hint='You must specify your Proxmox password') }}"
+secret_proxmox_root_password: "{{ undef(hint='You must specify your Proxmox password') }}"
 proxmox_host: localhost
 proxmox_vm_template_name: ubuntu-2204-cloudinit
 

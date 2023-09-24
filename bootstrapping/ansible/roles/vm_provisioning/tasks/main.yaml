@@ -26,7 +26,7 @@
     # Proxmox auth
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
-    api_password: "{{ secret_proxmox_password }}"
+    api_password: "{{ secret_proxmox_root_password }}"
     # VM generic
     node: "{{ target_host }}"
     name: "{{ inventory_hostname }}"
@@ -45,7 +45,7 @@
     # Proxmox auth
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
-    api_password: "{{ secret_proxmox_password }}"
+    api_password: "{{ secret_proxmox_root_password }}"
     # VM generic
     node: "{{ target_host }}"
     name: "{{ inventory_hostname }}"
@@ -73,7 +73,7 @@
     # Proxmox auth
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
-    api_password: "{{ secret_proxmox_password }}"
+    api_password: "{{ secret_proxmox_root_password }}"
     # VM generic
     name: "{{ inventory_hostname }}"
     # VM network
@@ -86,7 +86,7 @@
     # Proxmox auth
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
-    api_password: "{{ secret_proxmox_password }}"
+    api_password: "{{ secret_proxmox_root_password }}"
     # VM generic
     name: "{{ inventory_hostname }}"
     state: "resized"
@@ -100,7 +100,7 @@
     # Proxmox auth
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
-    api_password: "{{ secret_proxmox_password }}"
+    api_password: "{{ secret_proxmox_root_password }}"
     # VM generic
     name: "{{ inventory_hostname }}"
     state: started
