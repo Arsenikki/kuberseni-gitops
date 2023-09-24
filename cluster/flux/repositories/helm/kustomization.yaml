@@ -6,6 +6,7 @@ resources:
   - bjw-charts.yaml
   - cilium-charts.yaml
   - democratic-csi-charts.yaml
+  - grafana-charts.yaml
   - gtaylor-charts.yaml
   - intel-charts.yaml
   - jetstack-charts.yaml
