@@ -20,7 +20,7 @@ spec:
       tag: 2.3.1
     env:
       TZ: "Europe/London"
-      PVE_USER: "prometheus-pve-exporter@pve"
+      PVE_USER: "${SECRET_PROXMOX_METRICS_USERNAME}"
       PVE_PASSWORD: "${SECRET_PROXMOX_METRICS_PASSWORD}"
       PVE_VERIFY_SSL: false
     service:
