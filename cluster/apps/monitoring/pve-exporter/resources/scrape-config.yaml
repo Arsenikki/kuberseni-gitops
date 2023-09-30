@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: pve-exporter
+  namespace: monitoring
+spec:
+  staticConfigs:
+    - targets:
+        - 192.168.1.10
+        - 192.168.1.11
+        - 192.168.1.12
