@@ -24,14 +24,11 @@ spec:
     prometheus:
       prometheusSpec:
         retention: 24h
+        serviceMonitorSelectorNilUsesHelmValues: false
         resources:
           requests:
             cpu: 200m
             memory: 200Mi
-        podMonitorNamespaceSelector: { }
-        podMonitorSelector:
-          matchLabels:
-            app.kubernetes.io/component: monitoring
     grafana:
       defaultDashboardsEnabled: true
     kube-state-metrics:
