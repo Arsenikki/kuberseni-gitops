@@ -9,15 +9,10 @@ spec:
       params:
         target:
           - 192.168.1.10
-        relabelings:
-          - action: replace
-            sourceLabels:
-              - "__address__"
-            targetLabel: "__param_target"
-          - action: replace
-            sourceLabels:
-              - "__param_target"
-            targetLabel: "instance"
+      relabelings:
+        - sourceLabels:
+            - __param_target
+          targetLabel: instance
       path: /pve
       port: http
       scheme: http
@@ -25,6 +20,10 @@ spec:
       params:
         target:
           - 192.168.1.11
+      relabelings:
+        - sourceLabels:
+            - __param_target
+          targetLabel: instance
       path: /pve
       port: http
       scheme: http
@@ -32,6 +31,10 @@ spec:
       params:
         target:
           - 192.168.1.12
+      relabelings:
+        - sourceLabels:
+            - __param_target
+          targetLabel: instance
       path: /pve
       port: http
       scheme: http
