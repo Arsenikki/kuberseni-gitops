@@ -5,31 +5,39 @@ metadata:
   namespace: monitoring
 spec:
   endpoints:
-  - interval: 10s
-    params:
-      target:
-      - 192.168.1.10
-    path: /pve
-    port: http
-    scheme: http
-  - interval: 10s
-    params:
-      target:
-      - 192.168.1.11
-    path: /pve
-    port: http
-    scheme: http
-  - interval: 10s
-    params:
-      target:
-      - 192.168.1.12
-    path: /pve
-    port: http
-    scheme: http
-  jobLabel: k8s-app
+    - interval: 10s
+      params:
+        target:
+          - 192.168.1.10
+        relabelings:
+          - action: replace
+            sourceLabels:
+              - "__address__"
+            targetLabel: "__param_target"
+          - action: replace
+            sourceLabels:
+              - "__param_target"
+            targetLabel: "instance"
+      path: /pve
+      port: http
+      scheme: http
+    - interval: 10s
+      params:
+        target:
+          - 192.168.1.11
+      path: /pve
+      port: http
+      scheme: http
+    - interval: 10s
+      params:
+        target:
+          - 192.168.1.12
+      path: /pve
+      port: http
+      scheme: http
   namespaceSelector:
     matchNames:
-    - monitoring
+      - monitoring
   selector:
     matchLabels:
       app.kubernetes.io/name: pve-exporter
