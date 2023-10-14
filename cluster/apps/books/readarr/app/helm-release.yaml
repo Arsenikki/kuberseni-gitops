@@ -55,10 +55,10 @@ spec:
       config:
         enabled: true
         existingClaim: readarr-config
-      books:
+      media:
         enabled: true
         mountPath: /data
-        existingClaim: books-pvc
+        existingClaim: media-pvc
     resources:
       requests:
         cpu: 100m
