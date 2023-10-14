@@ -45,14 +45,10 @@ spec:
         type: LoadBalancer
         externalTrafficPolicy: Cluster
         annotations:
-          - "io.cilium/lb-ipam-ips": "${MOSQUITTO_LB}"
+          io.cilium/lb-ipam-ips: "${MOSQUITTO_LB}"
         ports:
           http:
-            enabled: false
-          mqtt:
-            enabled: true
             port: 1883
-            targetPort: 1883
     configMaps:
       config:
         enabled: true
