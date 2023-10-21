@@ -10,3 +10,4 @@ resources:
   # Singular apps
   - authelia/ks.yaml
   - external-dns/ks.yaml
+  - teleport/ks.yaml
