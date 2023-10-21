@@ -15,11 +15,15 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
-    clusterName: "teleport.arsenikki.xyz"
-    kubeClusterName: "home-cluster"
+    chartMode: standalone
+    clusterName: teleport.${SECRET_DOMAIN}
+    kubeClusterName: home-cluster
+    proxyListenerMode: multiplex
+    acme: true
+    acmeEmail: ${SECRET_TELEPORT_EMAIL}
     auth_service:
       enabled: true
       type: github
     persistence:
       enabled: true
-      existingClaimName: "teleport-data"
+      existingClaimName: teleport-data
