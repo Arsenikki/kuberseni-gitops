@@ -26,6 +26,8 @@ spec:
       type: ClusterIP
     ingress:
       enabled: false
+    tls:
+      existingSecretName: teleport-tls
     persistence:
       enabled: true
       existingClaimName: teleport-data
