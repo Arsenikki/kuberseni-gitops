@@ -19,6 +19,8 @@ spec:
     clusterName: teleport.${SECRET_DOMAIN}
     kubeClusterName: home-cluster
     proxyListenerMode: multiplex
+    log:
+      level: DEBUG
     auth_service:
       enabled: true
       type: github
