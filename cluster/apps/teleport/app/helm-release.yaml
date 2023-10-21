@@ -25,13 +25,7 @@ spec:
     service:
       type: ClusterIP
     ingress:
-      enabled: true
-    tls:
-      existingSecretName: teleport-tls
-    annotations:
-      ingress:
-        # Automatically generate TLS certificate
-        kubernetes.io/tls-acme: "true"
+      enabled: false
     persistence:
       enabled: true
       existingClaimName: teleport-data
