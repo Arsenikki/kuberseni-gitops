@@ -16,6 +16,8 @@ spec:
   interval: 30m
   values:
     chartMode: standalone
+    operator:
+      enabled: true
     clusterName: teleport.${SECRET_DOMAIN}
     kubeClusterName: home-cluster
     proxyListenerMode: multiplex
