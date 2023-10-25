@@ -1,0 +1,12 @@
+---
+- name: Install teleport
+  hosts: all
+  become: true
+  pre_tasks:
+    - name: Load secrets
+      delegate_to: proxmox
+      community.sops.load_vars:
+        file: secrets.enc.yaml
+        expressions: ignore
+  roles:
+    - teleport_agent
