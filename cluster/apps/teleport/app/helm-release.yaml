@@ -35,6 +35,7 @@ spec:
     highAvailability:
       certManager:
         enabled: true
+        issuerKind: ClusterIssuer
         issuerName: letsencrypt-prod
     persistence:
       enabled: true
