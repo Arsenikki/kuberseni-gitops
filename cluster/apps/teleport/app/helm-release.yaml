@@ -16,8 +16,10 @@ spec:
   interval: 30m
   values:
     chartMode: standalone
+    # Disable for now as the operator support is still lacking
+    # See https://github.com/gravitational/teleport/issues/29480
     operator:
-      enabled: true
+      enabled: false
     clusterName: teleport.${SECRET_DOMAIN}
     kubeClusterName: home-cluster
     proxyListenerMode: multiplex
@@ -30,8 +32,10 @@ spec:
       type: ClusterIP
     ingress:
       enabled: false
-    tls:
-      existingSecretName: teleport-tls
+    highAvailability:
+      certManager:
+        enabled: true
+        issuerName: letsencrypt-prod
     persistence:
       enabled: true
       existingClaimName: teleport-data
