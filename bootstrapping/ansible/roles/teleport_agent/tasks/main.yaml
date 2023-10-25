@@ -1,0 +1,60 @@
+---
+- name: Create teleport directory
+  ansible.builtin.file:
+    path: "{{ teleport_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Check current Teleport version
+  ansible.builtin.shell: /usr/local/bin/teleport version
+  changed_when: false
+  ignore_errors: true
+  register: teleport_version_output
+
+- name: Create 'teleport_current_version' variable
+  ansible.builtin.set_fact:
+    teleport_current_version: "{{ teleport_version_output.stdout.split(' ')[1] }}"
+  when: teleport_version_output.rc == 0
+
+- name: Download and install teleport
+  when: (teleport_version_output.rc != 0) or (teleport_current_version != teleport_version)
+  block:
+  - name: Download Teleport agent
+    ansible.builtin.get_url:
+      url: https://get.gravitational.com/teleport-{{ teleport_version }}-linux-amd64-bin.tar.gz
+      dest: /tmp/teleport-{{ teleport_version }}-linux-amd64-bin.tar.gz
+
+  - name: Unarchive a file that is already on the remote machine
+    ansible.builtin.unarchive:
+      src: /tmp/teleport-{{ teleport_version }}-linux-amd64-bin.tar.gz
+      dest: /tmp
+      remote_src: true
+
+  - name: Install Teleport and binaries
+    ansible.builtin.shell: /tmp/teleport/install
+    notify: "teleport_agent : Start or restart teleport service"
+
+- name: Generate Teleport node join token
+  delegate_to: "{{ groups['masters'][1] }}"
+  ansible.builtin.shell: kubectl exec -n teleport -ti deployment/teleport-auth -- tctl tokens add --type=node --format=text
+  register: token_output
+
+- name: Create Teleport join token file
+  ansible.builtin.copy:
+    dest: "{{ teleport_join_token_path }}"
+    content: "{{ token_output.stdout }}"
+    mode: "0600"
+
+- name: Create teleport config.
+  ansible.builtin.template:
+    src: "teleport-agent.yaml.j2"
+    dest: "{{ teleport_config_path }}"
+    mode: "0600"
+  notify: "teleport_agent : Start or restart teleport service"
+
+- name: Create teleport service (systemd).
+  ansible.builtin.template:
+    src: "teleport.service.j2"
+    dest: "/etc/systemd/system/teleport.service"
+    mode: "0644"
+  notify: "teleport_agent : Start or restart teleport service"

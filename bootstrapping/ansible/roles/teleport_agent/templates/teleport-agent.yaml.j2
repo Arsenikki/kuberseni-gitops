@@ -1,0 +1,29 @@
+---
+version: v3
+teleport:
+  nodename: {{ ansible_hostname }}
+  data_dir: /var/lib/teleport
+  join_params:
+    token_name: {{ teleport_join_token_path }}
+    method: token
+  proxy_server: teleport.arsenikki.xyz:443
+  log:
+    output: stderr
+    severity: INFO
+    format:
+      output: text
+  ca_pin: ""
+  diag_addr: ""
+auth_service:
+  enabled: "no"
+ssh_service:
+  enabled: "yes"
+  commands:
+  - name: hostname
+    command: [hostname]
+    period: 1m0s
+proxy_service:
+  enabled: "no"
+  https_keypairs: []
+  https_keypairs_reload_interval: 0s
+  acme: {}
