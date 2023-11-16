@@ -56,10 +56,6 @@ spec:
       config:
         enabled: true
         existingClaim: overseerr-config
-      media:
-        enabled: true
-        mountPath: /data
-        existingClaim: media-pvc
     resources:
       requests:
         cpu: 10m
