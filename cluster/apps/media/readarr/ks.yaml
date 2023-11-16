@@ -5,7 +5,7 @@ metadata:
   name: readarr-app
   namespace: flux-system
 spec:
-  path: ./apps/books/readarr/app
+  path: ./apps/media/readarr/app
   prune: true
   sourceRef:
     kind: OCIRepository
