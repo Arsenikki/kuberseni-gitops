@@ -56,7 +56,7 @@ spec:
             tag: v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
         env:
           - name: VPN_SERVICE_PROVIDER
-            value: mullvad
+            value: airvpn
           - name: VPN_TYPE
             value: wireguard
           - name: VPN_INTERFACE
@@ -70,10 +70,12 @@ spec:
             value: "off"
           - name: SERVER_CITIES
             value: Amsterdam
-          - name: WIREGUARD_PRIVATE_KEY
-            value: ${SECRET_WG_PRIVATE_KEY}
           - name: WIREGUARD_ADDRESSES
             value: ${SECRET_WG_ADDRESSES}
+          - name: WIREGUARD_PRIVATE_KEY
+            value: ${SECRET_WG_PRIVATE_KEY}
+          - name: WIREGUARD_PRESHARED_KEY
+            value: ${SECRET_WG_PRESHARED_KEY}
           - name: LOG_LEVEL
             value: debug
         securityContext:
