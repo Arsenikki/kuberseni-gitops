@@ -60,10 +60,13 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-      # Required for passthrough of /dev/dri devices from NFD
+      # Required for passthrough of /dev/dri devices. Fetched by running following on the host
+      # cat /etc/group | grep "video\|render"
+      # video:x:44:arsenikki
+      # render:x:110:
       supplementalGroups:
         - 44
-        - 109
+        - 110
     resources:
       requests:
         gpu.intel.com/i915: 1
