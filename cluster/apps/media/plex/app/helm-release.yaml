@@ -60,7 +60,10 @@ spec:
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: OnRootMismatch
-      supplementalGroups: [10000]
+      # Required for passthrough of /dev/dri devices from NFD
+      supplementalGroups:
+        - 44
+        - 109
     resources:
       requests:
         gpu.intel.com/i915: 1
