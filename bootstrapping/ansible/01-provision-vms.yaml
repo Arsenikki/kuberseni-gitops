@@ -61,3 +61,17 @@
     - name: Wait for target connection to become reachable/usable
       ansible.builtin.wait_for_connection:
         timeout: 120
+
+- name: Configure QEMU guest agent on VMs
+  hosts: k8s_cluster
+  tasks:
+    - name: Install qemu-guest-agent
+      ansible.builtin.package:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Enable qemu-guest-agent service
+      ansible.builtin.service:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
