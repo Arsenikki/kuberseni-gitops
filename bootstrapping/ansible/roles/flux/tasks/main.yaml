@@ -1,3 +1,4 @@
+---
 - name: Install Flux CLI
   ansible.builtin.shell: |
     wget \

@@ -1,3 +1,4 @@
+---
 - name: Get RBAC manifest
   become: true
   ansible.builtin.get_url:

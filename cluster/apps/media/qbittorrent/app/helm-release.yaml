@@ -28,7 +28,7 @@ spec:
       QBT_BitTorrent__Session__Interface: wg0
       QBT_BitTorrent__Session__InterfaceAddress:
       QBT_BitTorrent__Session__InterfaceName: wg0
-      QBT_BitTorrent__Session__DefaultSavePath: '/data/downloads'
+      QBT_BitTorrent__Session__DefaultSavePath: "/data/downloads"
     hostname: qbittorrent
     service:
       main:
@@ -51,7 +51,7 @@ spec:
         enabled: true
         type: gluetun
         gluetun:
-          image: 
+          image:
             repository: ghcr.io/qdm12/gluetun
             tag: v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
         env:
@@ -102,14 +102,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: qbittorrent.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: qbittorrent.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: qbittorrent-tls
-          hosts:
-          - qbittorrent.${SECRET_DOMAIN}
+          - secretName: qbittorrent-tls
+            hosts:
+              - qbittorrent.${SECRET_DOMAIN}
     persistence:
       config:
         enabled: true

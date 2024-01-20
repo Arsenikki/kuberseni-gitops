@@ -1,3 +1,4 @@
+---
 - name: Remove VM
   delegate_to: "{{ target_host }}"
   community.general.proxmox_kvm:
@@ -27,7 +28,7 @@
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
     api_password: "{{ secret_proxmox_root_password }}"
-    # VM generic
+    # VM generic
     node: "{{ target_host }}"
     name: "{{ inventory_hostname }}"
     newid: "{{ vmid }}"
@@ -46,7 +47,7 @@
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
     api_password: "{{ secret_proxmox_root_password }}"
-    # VM generic
+    # VM generic
     node: "{{ target_host }}"
     name: "{{ inventory_hostname }}"
     update: true
@@ -57,7 +58,7 @@
     # VM resources
     cores: "{{ vcpu }}"
     memory: "{{ memory }}"
-    # VM network
+    # VM network
     ipconfig:
       ipconfig0: "ip={{ ansible_host }}/24,gw=192.168.1.1"
   register: vm_modify_output
@@ -74,9 +75,9 @@
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
     api_password: "{{ secret_proxmox_root_password }}"
-    # VM generic
+    # VM generic
     name: "{{ inventory_hostname }}"
-    # VM network
+    # VM network
     interface: net0
     bridge: "{{ hostvars[target_host].network_bridge }}"
 
@@ -87,10 +88,10 @@
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
     api_password: "{{ secret_proxmox_root_password }}"
-    # VM generic
+    # VM generic
     name: "{{ inventory_hostname }}"
     state: "resized"
-    # VM storage
+    # VM storage
     disk: scsi0
     size: "{{ disk_size }}"
 
@@ -101,6 +102,6 @@
     api_host: "{{ proxmox_host }}"
     api_user: "{{ proxmox_username }}"
     api_password: "{{ secret_proxmox_root_password }}"
-    # VM generic
+    # VM generic
     name: "{{ inventory_hostname }}"
     state: started
