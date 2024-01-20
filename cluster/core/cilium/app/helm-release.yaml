@@ -1,3 +1,4 @@
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -35,7 +36,7 @@ spec:
       leaseDuration: 300s
       leaseRenewDeadline: 60s
       leaseRetryPeriod: 10s
-    # See https://docs.cilium.io/en/latest/network/l2-announcements/#sizing-client-rate-limit
+    # See https://docs.cilium.io/en/latest/network/l2-announcements/#sizing-client-rate-limit
     k8sClientRateLimit:
       qps: 5
       burst: 10
@@ -47,13 +48,13 @@ spec:
         enabled: true
       metrics:
         enabled:
-        - dns
-        - drop
-        - tcp
-        - flow
-        - port-distribution
-        - icmp
-        - http
+          - dns
+          - drop
+          - tcp
+          - flow
+          - port-distribution
+          - icmp
+          - http
     operator:
       nodeSelector:
         node-role.kubernetes.io/master: "true"

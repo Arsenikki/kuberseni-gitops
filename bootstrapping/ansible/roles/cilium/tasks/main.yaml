@@ -1,3 +1,4 @@
+---
 - name: Create Cilium Helm chart config
   become: true
   ansible.builtin.template:

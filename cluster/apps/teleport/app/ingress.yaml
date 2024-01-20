@@ -16,13 +16,13 @@ spec:
   entryPoints:
     - websecure
   routes:
-  - kind: Rule
-    match: "HostRegexp(`arsenikki.xyz`, `{subdomain:[a-zA-Z0-9-]+}.arsenikki.xyz`)"
-    services:
-    - name: teleport
-      port: 443
-      nativeLB: true
-      # Instruct Traefik to use HTTPS when calling backend
-      scheme: https  
-      # Reference ServersTransport that disables TLS verification
-      serversTransport: teleport-insecure-https
+    - kind: Rule
+      match: "HostRegexp(`arsenikki.xyz`, `{subdomain:[a-zA-Z0-9-]+}.arsenikki.xyz`)"
+      services:
+        - name: teleport
+          port: 443
+          nativeLB: true
+          # Instruct Traefik to use HTTPS when calling backend
+          scheme: https
+          # Reference ServersTransport that disables TLS verification
+          serversTransport: teleport-insecure-https

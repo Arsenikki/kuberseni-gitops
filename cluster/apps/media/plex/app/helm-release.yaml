@@ -36,14 +36,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: plex.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: plex.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: plex-tls
-          hosts:
-          - plex.${SECRET_DOMAIN}
+          - secretName: plex-tls
+            hosts:
+              - plex.${SECRET_DOMAIN}
     persistence:
       config:
         enabled: true

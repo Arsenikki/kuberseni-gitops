@@ -1,28 +1,29 @@
+---
 apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
-    name: home-assistant
-    namespace: home-automation
+  name: home-assistant
+  namespace: home-automation
 stringData:
-    secret123: ENC[AES256_GCM,data:KoacoCXC+Q==,iv:PCEFZKHG29KSia1REFn6Oz75Uy50KIFyblGlbbTvpg4=,tag:AROrsU0hJtpIxyuuit6eYQ==,type:str]
+  secret123: ENC[AES256_GCM,data:KoacoCXC+Q==,iv:PCEFZKHG29KSia1REFn6Oz75Uy50KIFyblGlbbTvpg4=,tag:AROrsU0hJtpIxyuuit6eYQ==,type:str]
 sops:
-    kms: []
-    gcp_kms: []
-    azure_kv: []
-    hc_vault: []
-    age:
-        - recipient: age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9
-          enc: |
-            -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB0ZkUwajltK0hZTCttRWh1
-            WmxENlhmbVlGWkE3YmtwVFRUdlhSWUxiVFhRCllUQkQzUUYrdVVpWitxWHhqSy9J
-            aDBoUUNWdzhkN2Nic1MydGxJTVNGRE0KLS0tIDFTYXRCd1JPdUtjSC9XaUg5V3Bp
-            R1JGOE9vN1NVQWtidTQva205THFBRjgKvW0TxXGoxmxzD0y5PwmBus/IGXGImnPI
-            Jkbttl4znNGL4OHy1y5B713Ws7V9ah0HNaRc6IGf6lT8wFvGqfsOHw==
-            -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2022-06-01T18:06:34Z"
-    mac: ENC[AES256_GCM,data:PGU7TgF9Ee1f0IGChvSQjQ9YG5PqlKzy5PWQ5xosZmt4+8nrvKBVLtX09IqOEeHow4Sn9TlSB1ULm67UAjDhM5WqUqexNwTvu+kiBL0gK+dRqDAk5u4pd6ChrP86dtpz28aNBwI9XzSesLmuYiLnlZ9PthHEK7GhInawlx6dnsA=,iv:HCEYOR4Ue5c9Mu4SIXpM/MXMpUGIKI85S6EcXkvTAGo=,tag:UuB7kav/mff7woASXn4ixQ==,type:str]
-    pgp: []
-    encrypted_regex: ^(data|stringData)$
-    version: 3.7.1
+  kms: []
+  gcp_kms: []
+  azure_kv: []
+  hc_vault: []
+  age:
+    - recipient: age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB0ZkUwajltK0hZTCttRWh1
+        WmxENlhmbVlGWkE3YmtwVFRUdlhSWUxiVFhRCllUQkQzUUYrdVVpWitxWHhqSy9J
+        aDBoUUNWdzhkN2Nic1MydGxJTVNGRE0KLS0tIDFTYXRCd1JPdUtjSC9XaUg5V3Bp
+        R1JGOE9vN1NVQWtidTQva205THFBRjgKvW0TxXGoxmxzD0y5PwmBus/IGXGImnPI
+        Jkbttl4znNGL4OHy1y5B713Ws7V9ah0HNaRc6IGf6lT8wFvGqfsOHw==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2022-06-01T18:06:34Z"
+  mac: ENC[AES256_GCM,data:PGU7TgF9Ee1f0IGChvSQjQ9YG5PqlKzy5PWQ5xosZmt4+8nrvKBVLtX09IqOEeHow4Sn9TlSB1ULm67UAjDhM5WqUqexNwTvu+kiBL0gK+dRqDAk5u4pd6ChrP86dtpz28aNBwI9XzSesLmuYiLnlZ9PthHEK7GhInawlx6dnsA=,iv:HCEYOR4Ue5c9Mu4SIXpM/MXMpUGIKI85S6EcXkvTAGo=,tag:UuB7kav/mff7woASXn4ixQ==,type:str]
+  pgp: []
+  encrypted_regex: ^(data|stringData)$
+  version: 3.7.1

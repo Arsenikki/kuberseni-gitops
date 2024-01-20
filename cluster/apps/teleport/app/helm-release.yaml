@@ -16,8 +16,8 @@ spec:
   interval: 30m
   values:
     chartMode: standalone
-    # Disable for now as the operator support is still lacking
-    # See https://github.com/gravitational/teleport/issues/29480
+    # Disable for now as the operator support is still lacking
+    # See https://github.com/gravitational/teleport/issues/29480
     operator:
       enabled: false
     clusterName: teleport.${SECRET_DOMAIN}

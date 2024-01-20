@@ -56,7 +56,7 @@ spec:
       ZIGBEE2MQTT_CONFIG_MQTT_KEEPALIVE: 60
       ZIGBEE2MQTT_CONFIG_MQTT_REJECT_UNAUTHORIZED: "true"
       ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://mosquitto.home-automation.svc.cluster.local
-      ZIGBEE2MQTT_CONFIG_SERIAL_PORT: 'tcp://192.168.1.137:8888'
+      ZIGBEE2MQTT_CONFIG_SERIAL_PORT: "tcp://192.168.1.137:8888"
       ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ezsp
     service:
       main:
@@ -79,7 +79,7 @@ spec:
         tls:
           - secretName: zigbee2mqtt-tls
             hosts:
-             - zigbee.${SECRET_DOMAIN}
+              - zigbee.${SECRET_DOMAIN}
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
@@ -114,8 +114,8 @@ spec:
           - --extensions-dir
           - "/config/.vscode"
         volumeMounts:
-        - name: config
-          mountPath: /config
+          - name: config
+            mountPath: /config
         ingress:
           enabled: true
           annotations:
@@ -126,11 +126,11 @@ spec:
             # Let external-dns manage cloudflare DNS records
             external-dns/is-public: "true"
           hosts:
-          - host: "code.zigbee.${SECRET_DOMAIN}"
-            paths:
-            - path: /
-              pathType: Prefix
+            - host: "code.zigbee.${SECRET_DOMAIN}"
+              paths:
+                - path: /
+                  pathType: Prefix
           tls:
-          - secretName: zigbee-vscode-tls
-            hosts:
-            - "code.zigbee.${SECRET_DOMAIN}"
+            - secretName: zigbee-vscode-tls
+              hosts:
+                - "code.zigbee.${SECRET_DOMAIN}"

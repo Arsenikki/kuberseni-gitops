@@ -1,3 +1,4 @@
+---
 recreate_vm: false
 
 proxmox_username: root@pam

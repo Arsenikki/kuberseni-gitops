@@ -1,3 +1,4 @@
+---
 proxmox:
   hosts:
     router:

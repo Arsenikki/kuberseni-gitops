@@ -1,3 +1,4 @@
+---
 server:
   ## The address to listen on.
   host: 0.0.0.0
