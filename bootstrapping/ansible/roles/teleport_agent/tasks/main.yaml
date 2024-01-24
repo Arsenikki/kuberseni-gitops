@@ -1,4 +1,12 @@
 ---
+- name: Remove existing teleport config
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+  - "{{ teleport_config_dir }}"
+  - "{{ teleport_runtime_dir }}"
+
 - name: Create teleport directory
   ansible.builtin.file:
     path: "{{ teleport_config_dir }}"
@@ -38,6 +46,9 @@
   delegate_to: "{{ groups['masters'][1] }}"
   ansible.builtin.shell: kubectl exec -n teleport -ti deployment/teleport-auth -- tctl tokens add --type=node --format=text
   register: token_output
+
+- debug:
+    var: token_output.stdout
 
 - name: Create Teleport join token file
   ansible.builtin.copy:

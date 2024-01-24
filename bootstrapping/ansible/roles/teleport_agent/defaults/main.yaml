@@ -1,6 +1,7 @@
 ---
-teleport_version: v14.1.0
+teleport_version: v14.3.3
 
 teleport_config_dir: /etc/teleport
+teleport_runtime_dir: /var/lib/teleport
 teleport_config_path: "{{ teleport_config_dir }}/teleport-agent.yaml"
 teleport_join_token_path: "{{ teleport_config_dir }}/join-token"
