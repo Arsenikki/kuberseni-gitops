@@ -47,14 +47,11 @@
   ansible.builtin.shell: kubectl exec -n teleport -ti deployment/teleport-auth -- tctl tokens add --type=node --format=text
   register: token_output
 
-- debug:
-    var: token_output.stdout
-
 - name: Create Teleport join token file
   ansible.builtin.copy:
     dest: "{{ teleport_join_token_path }}"
     content: "{{ token_output.stdout }}"
-    mode: "0600"
+    mode: "0400"
 
 - name: Create teleport config.
   ansible.builtin.template:
