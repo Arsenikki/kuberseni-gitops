@@ -24,6 +24,9 @@ spec:
       level: INFO
     clusterName: teleport.arsenikki.xyz
     kubeClusterName: home-cluster
+    # authentication:
+    #   type: github
+    proxyListenerMode: multiplex
     auth:
       teleportConfig:
         auth_service:
