@@ -1,24 +1,28 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+---
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: teleport-insecure-https
+  namespace: teleport
+spec:
+  insecureSkipVerify: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
   name: teleport
-  namespace: kube-system
-  annotations:
-    kubernetes.io/tls-acme: 'true'
+  namespace: teleport
 spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - teleport.arsenikki.xyz
-      secretName: teleport-tls
-  rules:
-    - host: teleport.arsenikki.xyz
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: teleport
-                port:
-                  number: 3080
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: "HostRegexp(`teleport.arsenikki.xyz`, `{subdomain:[a-zA-Z0-9-]+}.teleport.arsenikki.xyz`)"
+      services:
+        - name: teleport
+          port: 443
+          nativeLB: true
+          # Instruct Traefik to use HTTPS when calling backend
+          scheme: https
+          # Reference ServersTransport that disables TLS verification
+          serversTransport: teleport-insecure-https
