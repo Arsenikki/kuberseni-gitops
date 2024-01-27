@@ -16,12 +16,12 @@ spec:
   interval: 30m
   values:
     chartMode: standalone
-    # Disable for now as the operator support is still lacking
-    # See https://github.com/gravitational/teleport/issues/29480
-    operator:
-      enabled: false
     log:
       level: INFO
+    # Disable Kubernetes operator mode for now as the feature is still limited.
+    # See https://github.com/gravitational/teleport/issues/29480 for details.
+    operator:
+      enabled: false
     clusterName: teleport.arsenikki.xyz
     kubeClusterName: home-cluster
     authentication:
@@ -29,15 +29,6 @@ spec:
     proxyListenerMode: multiplex
     service:
       type: ClusterIP
-    ingress:
-      enabled: true
-      # Setting suppressAutomaticWildcards to true will not automatically add *.<clusterName> as a hostname served
-      # by the Ingress. This may be desirable if you don't use Teleport Application Access.
-      suppressAutomaticWildcards: false
-    annotations:
-      ingress:
-        # Automatically generate TLS certificate
-        kubernetes.io/tls-acme: "true"
     podSecurityPolicy:
       enabled: false
     persistence:
