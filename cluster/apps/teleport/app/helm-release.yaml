@@ -34,11 +34,10 @@ spec:
       # Setting suppressAutomaticWildcards to true will not automatically add *.<clusterName> as a hostname served
       # by the Ingress. This may be desirable if you don't use Teleport Application Access.
       suppressAutomaticWildcards: false
-    highAvailability:
-      certManager:
-        enabled: true
-        issuerKind: ClusterIssuer
-        issuerName: letsencrypt-prod
+    annotations:
+      ingress:
+        # Automatically generate TLS certificate
+        kubernetes.io/tls-acme: "true"
     podSecurityPolicy:
       enabled: false
     persistence:
