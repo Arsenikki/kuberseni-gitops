@@ -6,8 +6,7 @@ resources:
   - home-automation
   - media
   - monitoring
-
+  - teleport
   # Singular apps
   - authelia/ks.yaml
   - external-dns/ks.yaml
-  - teleport/ks.yaml

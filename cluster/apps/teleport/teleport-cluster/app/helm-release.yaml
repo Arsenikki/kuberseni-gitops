@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: teleport
+  name: teleport-cluster
   namespace: teleport
 spec:
   chart:
@@ -21,9 +21,8 @@ spec:
     # Disable Kubernetes operator mode for now as the feature is still limited.
     # See https://github.com/gravitational/teleport/issues/29480 for details.
     operator:
-      enabled: false
+      enabled: true
     clusterName: teleport.arsenikki.xyz
-    kubeClusterName: home-cluster
     authentication:
       type: local
     proxyListenerMode: multiplex
