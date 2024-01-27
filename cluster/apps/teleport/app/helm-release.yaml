@@ -32,6 +32,11 @@ spec:
         auth_service:
           cluster_name: main
           message_of_the_day: "Welcome to Teleport!"
+          authentication:
+            type: github
+            second_factor: on
+            passwordless: true
+            headless: true
           proxy_listener_mode: multiplex
     proxy:
       teleportConfig:
