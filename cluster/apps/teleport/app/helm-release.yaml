@@ -22,6 +22,7 @@ spec:
       enabled: false
     log:
       level: INFO
+    clusterName: teleport.arsenikki.xyz
     kubeClusterName: home-cluster
     auth:
       teleportConfig:
@@ -31,8 +32,7 @@ spec:
           proxy_listener_mode: multiplex
     proxy:
       teleportConfig:
-        proxy_service:
-          public_addr: teleport.${SECRET_DOMAIN}
+        proxy_service: {}
     service:
       type: ClusterIP
     ingress:
