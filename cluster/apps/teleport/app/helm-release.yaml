@@ -20,23 +20,33 @@ spec:
     # See https://github.com/gravitational/teleport/issues/29480
     operator:
       enabled: false
-    clusterName: teleport.${SECRET_DOMAIN}
-    kubeClusterName: home-cluster
-    proxyListenerMode: multiplex
     log:
-      level: DEBUG
-    auth_service:
-      enabled: true
-      type: github
+      level: INFO
+    kubeClusterName: home-cluster
+    auth:
+      teleportConfig:
+        auth_service:
+          cluster_name: main
+          message_of_the_day: "Welcome to Teleport!"
+          proxy_listener_mode: multiplex
+    proxy:
+      teleportConfig:
+        proxy_service:
+          public_addr: teleport.${SECRET_DOMAIN}
     service:
       type: ClusterIP
     ingress:
-      enabled: false
+      enabled: true
+      # Setting suppressAutomaticWildcards to true will not automatically add *.<clusterName> as a hostname served
+      # by the Ingress. This may be desirable if you don't use Teleport Application Access.
+      suppressAutomaticWildcards: false
     highAvailability:
       certManager:
         enabled: true
         issuerKind: ClusterIssuer
         issuerName: letsencrypt-prod
+    podSecurityPolicy:
+      enabled: false
     persistence:
       enabled: true
       existingClaimName: teleport-data
