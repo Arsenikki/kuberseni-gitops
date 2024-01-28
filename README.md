@@ -2,24 +2,21 @@
   <img width="500" height="250" src="https://github.com/Arsenikki/kuberseni-gitops/blob/main/docs/public/tech-stack.drawio.png?raw=true">
 
 ## :rocket: GitOps supercharged Kubernetes cluster :sailboat:
-..managed by Flux :robot:
+:computer: Virtualized infrastructure with [Proxmox](https://www.proxmox.com/en/)
 
-..running on hyper-converged infrastructure :scream_cat:
+:robot: VM provisioning and cluster bootstrapping with [Ansible](https://www.ansible.com/)
+
+:sailboat: Application workload management with [Flux](https://github.com/fluxcd/flux2)
 </div>
-
-## :book:&nbsp; Overview
-
-This repository is my home Kubernetes cluster in a declarative state.
-[Flux](https://github.com/fluxcd/flux2) watches my [cluster](./cluster/) directory and makes the changes to my cluster based on the YAML manifests.
-
 ---
 
 ## :gear:&nbsp; Hardware
 
-| Node                     | RAM       | Storage                          | Function                           | Operating System | Quantity
-| ------------------------ | --------- | -------------------------------- | ---------------------------------- | ---------------- | --------
-| Dell Precision Tower 7810| 64GB DDR4 | 2x 1.2T SAS + 16TB Exos X16 | 3x Virtualized master/worker nodes | Proxmox 7.3 | 1
-| Custom PC build          | 32GB DDR4 | 256GB m.2 + 10TB IronWolf Pro        | 1x Worker node with iGPU           | Proxmox 7.3 | 1
+| Node             | CPU       | RAM       | Storage                             | Function                                   | Operating System |
+|------------------|-----------|-----------|-------------------------------------|--------------------------------------------|------------------|
+| Minisforum NBP5  | i5 13500H | 32GB DDR5 | 1TB   m.2                           | 1x k3s Master<br>1x k3s Worker (with iGPU) | Proxmox 8.x      |
+| Custom NAS build | N5105     | 32GB DDR4 | 256GB m.2<br>16TB  HDD<br>10TB  HDD | TrueNAS<br>1x k3s Master<br>1x k3s Worker  | Proxmox 8.x      |
+| Topton router    | N5105     | 16GB DDR4 | 512GB m.2                           | OPNSense<br>1x k3s Master                  | Proxmox 8.x      |
 
 ---
 
@@ -27,30 +24,19 @@ This repository is my home Kubernetes cluster in a declarative state.
 
 The Git repository contains the following directories under `cluster` and are ordered below by how Flux will apply them.
 
-- **base** directory is the entrypoint to Flux
-- **crds** directory contains custom resource definitions (CRDs) that need to exist globally in your cluster before anything else exists
-- **core** directory (depends on **crds**) are important infrastructure applications (grouped by namespace) that should never be pruned by Flux
-- **apps** directory (depends on **core**) is where your common applications (grouped by namespace) could be placed, Flux will prune resources here if they are not tracked by Git anymore
+- **flux** directory is the entrypoint to Flux
+- **core** directory (depends on **flux**) are important infrastructure applications (grouped by namespace). Flux is configured to not prune these resources automatically.
+- **apps** directory (depends on **core**) is where common applications (grouped by namespace) are placed. Flux will prune resources here if they are not tracked by Git anymore
+
+---
+
+## :lock_with_ink_pen:&nbsp; Secret and configuration management
+
+Secrets are encrypted with [sops](https://github.com/mozilla/sops) using [age](https://github.com/FiloSottile/age) before being pushed into this repository. Flux is configured to automatically decrypt these secrets inside the cluster. This allows secret values to be configured in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml) and in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
 
 ---
 
 ## :robot:&nbsp; Automation
 
-* [Renovate](https://github.com/renovatebot/renovate) keeps workloads up-to-date by scanning the repo and opening pull requests when it detects a new container image update or a new helm chart in the upstream repository
-* [Container images](https://github.com/Arsenikki/container-images): Some self-managed container images are automatically built using Github Actions once a new version is detected in the upstream container image registry. Both AMD64 and ARM architectures supported and Trivy is used to scan and provide vulnerability reporting for the produced images.
-
----
-
-## :lock_with_ink_pen:&nbsp; Secret and configmaps management
-
-Secrets are encrypted using [sops](https://github.com/mozilla/sops) before being pushed into this repository.
-The encrypted secrets are then decrypted by sops using the private key inside the cluster.
-For encryption/decryption, I use [age](https://github.com/FiloSottile/age). Secrets and ConfigMap values are stored centrally in [cluster-secrets.yaml](cluster/base/cluster-secrets.yaml) and in [cluster-settings.yaml](cluster/base/cluster-settings.yaml).
-
----
-
-## :handshake:&nbsp; Community
-
-There is an awesome community out there doing similar stuff at [awesome-home-kubernetes](https://github.com/k8s-at-home/awesome-home-kubernetes)!
-
-There is also an active the [k8s@home Discord](https://discord.gg/7PbmHRK) for this community and great discussion.
+* [Renovate](https://github.com/renovatebot/renovate) helps keep workloads up-to-date by scanning the repo and opening pull requests when it detects a new container image update or a new helm chart in the upstream repository
+* [Container images](https://github.com/Arsenikki/container-images): Some self-managed container images are automatically built using Github Actions once a new version is detected in the upstream container image registry. Both AMD64 and ARM architectures supported and Trivy is used to scan and provide vulnerability reporting for the produced images. NOTE: This is no longer maintained.
