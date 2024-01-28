@@ -4,10 +4,11 @@
 ## :rocket: GitOps supercharged Kubernetes cluster :sailboat:
 :computer: Virtualized infrastructure with [Proxmox](https://www.proxmox.com/en/)
 
-:robot: VM provisioning and cluster bootstrapping with [Ansible](https://www.ansible.com/)
+:wrench: VM provisioning and cluster bootstrapping with [Ansible](https://www.ansible.com/)
 
-:sailboat: Application workload management with [Flux](https://github.com/fluxcd/flux2)
+:robot: Application workload management with [Flux](https://github.com/fluxcd/flux2)
 </div>
+
 ---
 
 ## :gear:&nbsp; Hardware
@@ -22,11 +23,11 @@
 
 ## :open_file_folder:&nbsp; Repository structure
 
-The Git repository contains the following directories under `cluster` and are ordered below by how Flux will apply them.
-
-- **flux** directory is the entrypoint to Flux
-- **core** directory (depends on **flux**) are important infrastructure applications (grouped by namespace). Flux is configured to not prune these resources automatically.
-- **apps** directory (depends on **core**) is where common applications (grouped by namespace) are placed. Flux will prune resources here if they are not tracked by Git anymore
+- **bootstrapping** directory contains Ansible playbooks and roles. It's used to spin up VMs inside proxmox, configure those VMs, and lastly bootstrap the k3s Kubernetes cluster.
+- **cluster** directory contains Kubernetes application workloads with following sub-dirs:
+  - **flux** directory is the entrypoint to Flux
+  - **core** directory (depends on **flux**) are important infrastructure applications (grouped by namespace). Flux is configured to not prune these resources automatically.
+  - **apps** directory (depends on **core**) is where common applications (grouped by namespace) are placed. Flux will prune resources here if they are not tracked by Git anymore
 
 ---
 
