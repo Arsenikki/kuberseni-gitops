@@ -57,10 +57,14 @@ spec:
             listener 1883
             allow_anonymous true
             persistence true
-            persistence_location /mosquitto/data
+            persistence_location /data
             connection_messages false
+            autosave_interval 1800
     persistence:
-      config:
+      data: 
+        enabled: true
+        existingClaim: mosquitto-data
+      config-file:
         enabled: true
         type: configMap
         name: mosquitto-config
