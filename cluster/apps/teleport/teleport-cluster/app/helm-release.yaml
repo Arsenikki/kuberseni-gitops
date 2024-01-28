@@ -32,4 +32,4 @@ spec:
       enabled: false
     persistence:
       enabled: true
-      existingClaimName: teleport-data
+      existingClaimName: teleport-cluster-data
