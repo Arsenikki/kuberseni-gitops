@@ -22,21 +22,21 @@ k8s_cluster:
           vmid: 101
           target_host: "router"
           vcpu: 2
-          memory: 8192
+          memory: 6144
           disk_size: "64G"
         k3s-master-02:
           ansible_host: 192.168.1.52
           vmid: 102
           target_host: "minipc"
           vcpu: 2
-          memory: 8192
+          memory: 6144
           disk_size: "64G"
         k3s-master-03:
           ansible_host: 192.168.1.53
           vmid: 103
           target_host: "nas"
           vcpu: 2
-          memory: 8192
+          memory: 6144
           disk_size: "64G"
     workers:
       hosts:
@@ -45,7 +45,7 @@ k8s_cluster:
           vmid: 201
           target_host: "minipc"
           vcpu: 10
-          memory: 24576
+          memory: 20480
           disk_size: "512G"
         k3s-worker-02:
           ansible_host: 192.168.1.62
