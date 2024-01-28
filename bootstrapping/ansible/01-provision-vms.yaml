@@ -64,6 +64,7 @@
 
 - name: Configure QEMU guest agent on VMs
   hosts: k8s_cluster
+  become: true
   tasks:
     - name: Install qemu-guest-agent
       ansible.builtin.package:
