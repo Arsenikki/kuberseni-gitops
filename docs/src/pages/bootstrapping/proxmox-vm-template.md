@@ -1,6 +1,6 @@
 # Create cloudinit-ready VM template in Proxmox
 
-1. Download .img
+1. Download OS img i.e.
 ```
 wget https://cloud-images.ubuntu.com/jammy/20230613/jammy-server-cloudimg-amd64.img
 ```
