@@ -2,7 +2,7 @@
 - name: Install deps
   hosts: masters
   tasks:
-    - name: Wait for /var/lib/dpkg/lock-frontend to be released
+    - name: Wait for '/var/lib/dpkg/lock-frontend' to be released
       ansible.builtin.shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
 
     - name: Ensure pip is installed
@@ -34,7 +34,8 @@
       changed_when: false
       register: current_kernel_version
 
-    - ansible.builtin.set_fact:
+    - name: Set target kernel version
+      ansible.builtin.set_fact:
         target_kernel_version: "6.4.0"
 
     - name: Update worker kernels for GPU support
