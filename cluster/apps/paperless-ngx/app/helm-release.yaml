@@ -30,7 +30,6 @@ spec:
       securityContext:
         fsGroup: 65539
         fsGroupChangePolicy: OnRootMismatch
-
     controllers:
       main:
         containers:
@@ -87,14 +86,14 @@ spec:
         enabled: true
         type: nfs
         server: ${TRUENAS_IP_ADDRESS}
-        path: /apps/paperless/export
+        path: /mnt/main/apps/paperless-ngx/export
         globalMounts:
           - path: /usr/src/paperless/export
       consume:
         enabled: true
         type: nfs
         server: ${TRUENAS_IP_ADDRESS}
-        path: /apps/paperless/consume
+        path: /mnt/main/apps/paperless-ngx/consume
         globalMounts:
           - path: /usr/src/paperless/consume
 ---
