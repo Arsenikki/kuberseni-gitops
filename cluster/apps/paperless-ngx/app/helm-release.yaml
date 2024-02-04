@@ -43,7 +43,7 @@ spec:
               PAPERLESS_PORT: 8000
               PAPERLESS_TIME_ZONE: Europe/London
               PAPERLESS_URL: "https://paperless.${SECRET_DOMAIN}"
-              PAPERLESS_REDIS: redis://redis.database.svc.cluster.local
+              PAPERLESS_REDIS: redis://paperless-ngx-redis-master:6379
               PAPERLESS_ENABLE_HTTP_REMOTE_USER: "true"
     service:
       main:
