@@ -45,9 +45,6 @@ spec:
               PAPERLESS_URL: "https://paperless.${SECRET_DOMAIN}"
               PAPERLESS_REDIS: redis://redis.database.svc.cluster.local
               PAPERLESS_ENABLE_HTTP_REMOTE_USER: "true"
-            envFrom:
-              - secretRef:
-                  name: paperless-ngx-secret
     service:
       main:
         ports:
