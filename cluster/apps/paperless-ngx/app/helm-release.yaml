@@ -26,13 +26,6 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    defaultPodOptions:
-      securityContext:
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: "OnRootMismatch"
-        supplementalGroups: [10000]
     controllers:
       main:
         containers:
@@ -48,6 +41,11 @@ spec:
               PAPERLESS_URL: "https://paperless.${SECRET_DOMAIN}"
               PAPERLESS_REDIS: redis://paperless-ngx-redis-master:6379
               PAPERLESS_ENABLE_HTTP_REMOTE_USER: "true"
+            securityContext:
+              runAsUser: 1000
+              runAsGroup: 1000
+              fsgroup: 1000
+              fsGroupChangePolicy: "OnRootMismatch"
     service:
       main:
         ports:
