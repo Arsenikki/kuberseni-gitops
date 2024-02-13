@@ -39,7 +39,7 @@ data:
           widget:
             type: plex
             url: http://plex.media.svc.cluster.local:32400
-            token: ${SECRET_PLEX_TOKEN}
+            key: ${SECRET_PLEX_TOKEN}
       - Sonarr:
           icon: sonarr.png
           href: https://sonarr.${SECRET_DOMAIN}
