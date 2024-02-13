@@ -100,9 +100,6 @@ data:
         provider: google
         focus: false
         target: _blank
-    - greeting:
-        text_size: xl
-        text: "Welcome!"
     - datetime:
         text_size: l
         format:
