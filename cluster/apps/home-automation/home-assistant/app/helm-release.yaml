@@ -47,14 +47,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-          - host: home.${SECRET_DOMAIN}
+          - host: homeassistant.${SECRET_DOMAIN}
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - secretName: home-assistant-tls
             hosts:
-              - home.${SECRET_DOMAIN}
+              - homeassistant.${SECRET_DOMAIN}
     ### Run as root for now
     # podSecurityContext:
     #   runAsUser: 568
