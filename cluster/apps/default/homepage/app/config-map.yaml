@@ -37,28 +37,28 @@ data:
           href: https://plex.${SECRET_DOMAIN}
           widget:
             type: plex
-            url: https://plex.media.svc.cluster.local
+            url: http://plex.media.svc.cluster.local:32400
             token: ${SECRET_PLEX_TOKEN}
       - Sonarr:
           icon: sonarr.png
           href: https://sonarr.${SECRET_DOMAIN}
           widget:
             type: sonarr
-            url: https://sonarr.media.svc.cluster.local
+            url: http://sonarr.media.svc.cluster.local:8989
             key: ${SECRET_SONARR_API_KEY}
       - Radarr:
           icon: radarr.png
           href: https://radarr.${SECRET_DOMAIN}
           widget:
             type: radarr
-            url: https://radarr.media.svc.cluster.local
+            url: http://radarr.media.svc.cluster.local:7878
             key: ${SECRET_RADARR_API_KEY}
       - qBittorrent:
           icon: qbittorrent.png
           href: https://qbittorrent.${SECRET_DOMAIN}
           widget:
             type: qbittorrent
-            url: https://qbittorrent.media.svc.cluster.local
+            url: http://qbittorrent.media.svc.cluster.local:8080
   settings.yaml: |
     title: Dashboard
     theme: dark
