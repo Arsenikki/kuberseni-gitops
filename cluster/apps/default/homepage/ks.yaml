@@ -5,7 +5,7 @@ metadata:
   name: homepage-app
   namespace: flux-system
 spec:
-  path: ./apps/home-automation/homepage/app
+  path: ./apps/default/homepage/app
   prune: true
   sourceRef:
     kind: OCIRepository
