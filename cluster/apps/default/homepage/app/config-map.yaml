@@ -35,6 +35,7 @@ data:
       - Plex:
           icon: plex.png
           href: https://plex.${SECRET_DOMAIN}
+          siteMonitor: http://plex.media.svc.cluster.local:32400
           widget:
             type: plex
             url: http://plex.media.svc.cluster.local:32400
@@ -42,6 +43,7 @@ data:
       - Sonarr:
           icon: sonarr.png
           href: https://sonarr.${SECRET_DOMAIN}
+          siteMonitor: http://sonarr.media.svc.cluster.local:8989
           widget:
             type: sonarr
             url: http://sonarr.media.svc.cluster.local:8989
@@ -49,6 +51,7 @@ data:
       - Radarr:
           icon: radarr.png
           href: https://radarr.${SECRET_DOMAIN}
+          siteMonitor: http://radarr.media.svc.cluster.local:7878
           widget:
             type: radarr
             url: http://radarr.media.svc.cluster.local:7878
@@ -56,6 +59,7 @@ data:
       - qBittorrent:
           icon: qbittorrent.png
           href: https://qbittorrent.${SECRET_DOMAIN}
+          siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
           widget:
             type: qbittorrent
             url: http://qbittorrent.media.svc.cluster.local:8080
@@ -68,13 +72,9 @@ data:
       Home:
         style: column
         icon: mdi-home-analytics
-      Network:
+      Media:
         style: row
-        columns: 3
-        icon: mdi-server
-      Observability:
-        style: column
-        icon: mdi-chart-line
+        columns: 4
   widgets.yaml: |
     - resources:
         backend: kubernetes
