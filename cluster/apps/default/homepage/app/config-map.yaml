@@ -31,6 +31,15 @@ data:
   kubernetes.yaml: |
     mode: cluster
   services.yaml: |
+    - Home Automation
+      - Home Assistant:
+          icon: homeassistant.png
+          href: https://homeassistant.${SECRET_DOMAIN}
+          siteMonitor: http://homeassistant.home.svc.cluster.local:8123
+          widget:
+            type: homeassistant
+            url: http://homeassistant.home.svc.cluster.local:8123
+            key: ${SECRET_HOMEASSISTANT_ACCESS_TOKEN}
     - Media:
       - Plex:
           icon: plex.png
