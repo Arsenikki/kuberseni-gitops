@@ -31,7 +31,7 @@ data:
   kubernetes.yaml: |
     mode: cluster
   services.yaml: |
-    - Home Automation
+    - Home Automation:
       - Home Assistant:
           icon: homeassistant.png
           href: https://homeassistant.${SECRET_DOMAIN}
@@ -100,14 +100,18 @@ data:
     title: Dashboard
     theme: dark
     color: slate
-    headerStyle: clean
+    headerStyle: boxed
+    statusStyle: dot
     layout:
       Home:
         style: column
         icon: mdi-home-analytics
+      Home Automation:
+        style: row
+        columns: 1
       Media:
         style: row
-        columns: 4
+        columns: 3
   widgets.yaml: |
     - kubernetes:
         cluster:
