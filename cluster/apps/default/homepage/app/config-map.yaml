@@ -99,9 +99,6 @@ data:
       Media:
         style: row
         columns: 4
-    providers:
-      longhorn:
-        url: http://longhorn-frontend.longhorn-system.svc.cluster.local
   widgets.yaml: |
     - kubernetes:
         cluster:
@@ -123,11 +120,6 @@ data:
           memory: true
           # Shows the label, which is always the node name
           showLabel: true
-    - longhorn:
-        expanded: true
-        total: true
-        labels: true
-        nodes: true
     - datetime:
         text_size: l
         format:
