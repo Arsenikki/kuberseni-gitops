@@ -96,10 +96,6 @@ data:
           memory: true
           # Shows the label, which is always the node name
           showLabel: true
-    - search:
-        provider: google
-        focus: false
-        target: _blank
     - datetime:
         text_size: l
         format:
