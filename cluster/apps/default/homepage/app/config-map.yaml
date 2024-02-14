@@ -63,6 +63,22 @@ data:
           widget:
             type: qbittorrent
             url: http://qbittorrent.media.svc.cluster.local:8080
+      - Overseerr:
+          icon: overseerr.png
+          href: https://overseerr.${SECRET_DOMAIN}
+          siteMonitor: http://overseerr.media.svc.cluster.local:5055
+          widget:
+            type: overseerr
+            url: http://overseerr.media.svc.cluster.local:5055
+            key: ${SECRET_OVERSEERR_API_KEY}
+      - Prowlarr:
+          icon: prowlarr.png
+          href: https://prowlarr.${SECRET_DOMAIN}
+          siteMonitor: http://prowlarr.media.svc.cluster.local:8080
+      - Bazarr:
+          icon: bazarr.png
+          href: https://bazarr.${SECRET_DOMAIN}
+          siteMonitor: http://bazarr.media.svc.cluster.local:8080
   settings.yaml: |
     title: Dashboard
     theme: dark
