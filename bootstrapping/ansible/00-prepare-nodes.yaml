@@ -1,0 +1,58 @@
+---
+- name: Prepare proxmox hosts
+  hosts: proxmox
+  become: true
+  pre_tasks:
+    - name: Load secrets
+      delegate_to: proxmox
+      community.sops.load_vars:
+        file: secrets.enc.yaml
+        expressions: ignore
+  tasks:
+    - name: Add "non-free" apt repositories
+      ansible.builtin.apt_repository:
+        filename: "non-free"
+        repo: "{{ item }}"
+        state: present
+      loop:
+        - deb http://deb.debian.org/debian bookworm non-free
+        - deb http://deb.debian.org/debian bookworm non-free-firmware
+
+    - name: Install and update apt dependencies
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      loop:
+        - intel-microcode
+
+    - name: Create Python venv dir
+      ansible.builtin.file:
+        name: /venv/ansible
+        state: directory
+        mode: '0644'
+
+    - name: Install Python venv
+      ansible.builtin.package:
+        name: python3.11-venv
+
+    - name: Install Python in venv
+      ansible.builtin.shell: python3 -m venv /venv/ansible/
+      become: true
+
+    - name: Set venv'd Python interpreter
+      ansible.builtin.set_fact:
+        ansible_python_interpreter: /venv/ansible/bin/python3
+
+    - name: Install required pip packages
+      ansible.builtin.pip:
+        name:
+          - requests==2.31.0
+          - proxmoxer==2.0.1
+        virtualenv: /venv/ansible
+
+    - name: Create user for PVE monitoring
+      become: true
+      ansible.builtin.shell: |
+        pveum user add metrics-exporter@pve -password {{ secret_proxmox_metrics_password }} -comment "Used for exporting PVE metrics"
+        pveum acl modify / -user metrics-exporter@pve -role PVEAuditor
