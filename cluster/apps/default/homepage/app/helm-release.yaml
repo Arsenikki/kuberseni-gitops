@@ -44,6 +44,8 @@ spec:
         annotations:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
         hosts:
           - host: &host home.${SECRET_DOMAIN}
             paths:
