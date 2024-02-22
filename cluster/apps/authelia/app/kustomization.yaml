@@ -6,8 +6,8 @@ resources:
   - persistence
   - helm-release.yaml
   - namespace.yaml
-patchesStrategicMerge:
-  - ./patches/env.yaml
+# patches:
+#   - ./patches/env.yaml
 configMapGenerator:
   - name: authelia-config
     files:
