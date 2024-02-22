@@ -15,20 +15,20 @@
   "schedule": ["on saturday"],
   "flux": {
     "fileMatch": [
-      "(^|/)ansible/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
+      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
     ]
   },
   "helm-values": {
     "fileMatch": [
-      "(^|/)ansible/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
+      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
     ]
   },
   "kubernetes": {
     "fileMatch": [
-      "(^|/)ansible/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)kubernetes/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
+      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
     ]
   },
   "kustomize": {
@@ -221,7 +221,7 @@
       "customType": "regex",
       "description": ["Process custom dependencies"],
       "fileMatch": [
-        "(^|/)ansible/.+\\.ya?ml(\\.j2)?$",
+        "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
         "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
       ],
       "matchStrings": [
