@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: external-dns
-      version: 6.6.0
+      version: 6.34.2
       sourceRef:
         kind: HelmRepository
         name: bitnami-charts
@@ -19,7 +19,7 @@ spec:
     image:
       registry: k8s.gcr.io
       repository: external-dns/external-dns
-      tag: v0.12.0
+      tag: v0.14.0
     logLevel: debug
     domainFilters:
       - "${SECRET_DOMAIN}"
@@ -29,14 +29,13 @@ spec:
     cloudflare:
       secretName: cloudflare-api-token
       email: "${SECRET_CLOUDFLARE_EMAIL}"
-      proxied: true
+      proxied: false
     policy: sync
     crd:
       # disabled, pulled from source repo in crds/
       create: false
       apiversion: externaldns.k8s.io/v1alpha1
       kind: DNSEndpoint
-    txtOwnerId: ""
     annotationFilter: "external-dns/is-public in (true)"
     resources:
       requests:
