@@ -49,9 +49,7 @@ export const SIDEBAR: Sidebar = {
     en: {
         'Introduction': [{ text: 'Introduction', link: 'introduction' },],
         'Cluster bootstrapping': [
-            { text: 'Ansible', link: 'bootstrapping/ansible' },
-            { text: 'Flux', link: 'bootstrapping/flux' },
-            { text: 'Terraform', link: 'bootstrapping/terraform' },
+            { text: 'Ansible', link: 'bootstrapping' },
         ],
         'Cluster maintenance': [{ text: 'Page 4', link: 'maintenance/placeholder' }],
     },
