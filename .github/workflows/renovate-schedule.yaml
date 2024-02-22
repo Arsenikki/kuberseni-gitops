@@ -1,7 +1,6 @@
 
 ---
-
-name: Schedule - Renovate Helm Releases
+name: Renovate - Automatic dependency updates
 
 on: # yamllint disable-line rule:truthy
   workflow_dispatch:
@@ -9,30 +8,57 @@ on: # yamllint disable-line rule:truthy
   - cron: '0 */12 * * *'
 
 jobs:
-  renovate-helm-releases:
-    runs-on: ubuntu-20.04
+  renovate:
+    name: Renovate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      matrix:
+        paths: ["cluster"]
+        resources: ["helm-release", "kustomization"]
     steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 1
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: pull
 
-    - name: Renovate Helm Releases
-      uses: k8s-at-home/renovate-helm-releases@v1
-      with:
-        cluster-path: "./cluster"
+      - name: Checkout Default Branch
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.repository.default_branch }}"
+          path: default
 
-    - name: Create pull request for renovatebot helm-release annotations
-      uses: peter-evans/create-pull-request@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        branch: renovate-annotations
-        delete-branch: true
-        title: "chore(deps): update renovate annotations"
-        signoff: false
-        committer: GitHub <noreply@github.com>
-        author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-        commit-message: "chore(deps): update renovate annotations"
-        body: |
-          Update HelmReleases inorder for Renovate to pick up new versions of Helm charts
-        labels: renovate/annotations
+      - name: Diff Resources
+        uses: docker://ghcr.io/allenporter/flux-local:main
+        with:
+          args: >-
+            diff ${{ matrix.resources }}
+            --unified 6
+            --path /github/workspace/pull/${{ matrix.paths }}
+            --path-orig /github/workspace/default/${{ matrix.paths }}
+            --strip-attrs "helm.sh/chart,checksum/config,app.kubernetes.io/version,chart"
+            --limit-bytes 10000
+            --all-namespaces
+            --sources "home-kubernetes"
+            --output-file diff.patch
+
+      - name: Generate Diff
+        id: diff
+        run: |
+          cat diff.patch
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          cat diff.patch >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - if: ${{ steps.diff.outputs.diff != '' }}
+        name: Add comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: "${{ github.event.pull_request.number }}/${{ matrix.paths }}/${{ matrix.resources }}"
+          message-failure: Diff was not successful
+          message: |
+            ```diff
+            ${{ steps.diff.outputs.diff }}
+            ```
