@@ -34,7 +34,8 @@ spec:
     ports:
       web:
         port: 80
-        redirectTo: websecure
+        redirectTo: 
+          port: websecure
       websecure:
         port: 443
     # Enable both CRD and annotation methods of defining ingress
