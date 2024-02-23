@@ -31,7 +31,7 @@ spec:
               PAPERLESS_CONSUMPTION_DIR: /library/consume
               PAPERLESS_EXPORT_DIR: /library/export
               PAPERLESS_ENABLE_HTTP_REMOTE_USER: "true"
-              PAPERLESS_OCR_LANGUAGE: eng+fin
+              PAPERLESS_OCR_LANGUAGE: eng
               PAPERLESS_PORT: 8000
               PAPERLESS_TIME_ZONE: Europe/London
               PAPERLESS_URL: "https://paperless.${SECRET_DOMAIN}"
