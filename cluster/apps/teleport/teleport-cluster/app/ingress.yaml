@@ -19,7 +19,7 @@ spec:
     - kind: Rule
       match: "HostRegexp(`teleport.arsenikki.xyz`, `{subdomain:[a-zA-Z0-9-]+}.teleport.arsenikki.xyz`)"
       services:
-        - name: teleport
+        - name: teleport-cluster
           port: 443
           nativeLB: true
           # Instruct Traefik to use HTTPS when calling backend
