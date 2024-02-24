@@ -22,7 +22,7 @@ spec:
         - name: teleport-cluster
           port: 443
           nativeLB: true
-          # Instruct Traefik to use HTTPS when calling backend
           scheme: https
-          # Reference ServersTransport that disables TLS verification
+          # Reference ServersTransport that disables TLS verification.
+          # This is required because Teleport uses self-signed certificates.
           serversTransport: teleport-insecure-https
