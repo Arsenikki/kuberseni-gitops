@@ -16,9 +16,10 @@ spec:
   interval: 30m
   values:
     roles: kube,app,discovery 
-    proxyAddr: 
-    authToken: ${SECRET_TELEPORT_AGENT_AUTH_TOKEN}
+    proxyAddr: teleport-cluster.teleport.svc.cluster.local:3025
+    joinParams:
+      method: kubernetes
     kubeClusterName: home-cluster
     apps:
       - name: home-assistant
-        uri: https://home.arsenikki.xyz
+        uri: https://homeassistant.${SECRET_DOMAIN}
