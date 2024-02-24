@@ -72,6 +72,11 @@ spec:
       runAsGroup: 568
       runAsNonRoot: false
       fsGroup: 568
+    nodeSelector:
+      node-role.kubernetes.io/master: "true"
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: "Exists"
     resources:
       requests:
         cpu: 10m
