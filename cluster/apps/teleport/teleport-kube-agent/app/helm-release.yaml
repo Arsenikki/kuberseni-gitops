@@ -17,8 +17,8 @@ spec:
   values:
     log:
       level: DEBUG
-    roles: kube,app,discovery 
-    proxyAddr: teleport-cluster.teleport.svc.cluster.local:443
+    roles: kube,app,discovery
+    proxyAddr: teleport.arsenikki.xyz:443
     joinParams:
       method: kubernetes
       # Following must match the name of the token in token.yaml
