@@ -23,13 +23,13 @@ spec:
     operator:
       enabled: true
     clusterName: teleport.arsenikki.xyz
+    acme: true
+    acmeEmail: ${SECRET_AUTHELIA_EMAIL}
     authentication:
       type: local
     proxyListenerMode: multiplex
-    service:
-      type: ClusterIP
     podSecurityPolicy:
       enabled: false
-    persistence:
-      enabled: true
-      existingClaimName: teleport-cluster-data
+    # persistence:
+    #   enabled: true
+    #   existingClaimName: teleport-cluster-data
