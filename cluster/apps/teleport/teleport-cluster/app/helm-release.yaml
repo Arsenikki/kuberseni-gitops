@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: teleport-cluster
-      version: 14.3.3
+      version: 15.0.2
       sourceRef:
         kind: HelmRepository
         name: teleport-charts
@@ -18,7 +18,7 @@ spec:
     chartMode: standalone
     log:
       level: DEBUG
-    # Disable Kubernetes operator mode for now as the feature is still limited.
+    # NOTE: Kubernetes operator mode and the CRDs are still quite limited.
     # See https://github.com/gravitational/teleport/issues/29480 for details.
     operator:
       enabled: true
