@@ -19,6 +19,8 @@ spec:
     proxyAddr: teleport-cluster.teleport.svc.cluster.local:3025
     joinParams:
       method: kubernetes
+      # Following must match the name of the token in token.yaml
+      tokenName: "kubernetes-join-token"
     kubeClusterName: home-cluster
     apps:
       - name: home-assistant
