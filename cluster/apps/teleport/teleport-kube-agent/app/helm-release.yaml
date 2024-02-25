@@ -15,8 +15,10 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
+    log:
+      level: DEBUG
     roles: kube,app,discovery 
-    proxyAddr: teleport-cluster.teleport.svc.cluster.local:3025
+    proxyAddr: teleport-cluster.teleport.svc.cluster.local:443
     joinParams:
       method: kubernetes
       # Following must match the name of the token in token.yaml
