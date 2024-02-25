@@ -18,6 +18,7 @@ spec:
     log:
       level: DEBUG
     roles: kube,app,discovery
+    insecureSkipProxyTLSVerify: true
     proxyAddr: teleport.arsenikki.xyz:443
     joinParams:
       method: kubernetes
