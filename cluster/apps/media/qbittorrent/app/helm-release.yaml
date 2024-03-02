@@ -15,19 +15,22 @@ spec:
         namespace: flux-system
   interval: 30m
   values:
-    # controller:
-    #   type: statefulset
+    controller:
+      type: statefulset
     image:
       repository: ghcr.io/onedr0p/qbittorrent
-      tag: 4.5.5
+      tag: 4.6.3
     env:
       TZ: "Europe/London"
       UMASK: "022"
       QBITTORRENT__PORT: 8080
       QBITTORRENT__BT_PORT: 50413
       QBT_BitTorrent__Session__Interface: wg0
-      QBT_BitTorrent__Session__InterfaceAddress:
       QBT_BitTorrent__Session__InterfaceName: wg0
+      QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
+      QBT_Preferences__WebUI__AuthSubnetWhitelist: |-
+        ${CILIUM_LB_POOL}, ${NETWORK_K8S_SERVICE_CIDR}, ${NETWORK_K8S_CLUSTER_CIDR}
+      QBT_Preferences__WebUI__LocalHostAuth: false
       QBT_BitTorrent__Session__DefaultSavePath: "/data/downloads"
     hostname: qbittorrent
     service:
