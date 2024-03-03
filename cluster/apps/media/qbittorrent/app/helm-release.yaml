@@ -56,7 +56,7 @@ spec:
         gluetun:
           image:
             repository: ghcr.io/qdm12/gluetun
-            tag: v3.35.0@sha256:a98d1ec99e09a1b806aff7f0c3d8a133a8ede7d3d7a250b62029a39a61f01525
+            tag: v3.37.0
         env:
           - name: VPN_SERVICE_PROVIDER
             value: airvpn
@@ -88,9 +88,9 @@ spec:
           - name: HEALTH_VPN_DURATION_INITIAL
             value: "20s"
           - name: HEALTH_VPN_DURATION_ADDITION
-            value: "1m"
+            value: "600s"
           - name: HEALTH_SUCCESS_WAIT_DURATION
-            value: "30m"
+            value: "1200s"
         securityContext:
           privileged: true
           capabilities:
