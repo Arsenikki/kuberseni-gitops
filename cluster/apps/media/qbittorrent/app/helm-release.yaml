@@ -81,6 +81,16 @@ spec:
             value: ${SECRET_WG_PRESHARED_KEY}
           - name: LOG_LEVEL
             value: debug
+            # Current VPN provider seems to have issues with health checks,
+            # so making them less frequent
+          - name: HEALTH_TARGET_ADDRESS
+            value: "cloudflare.com:443"
+          - name: HEALTH_VPN_DURATION_INITIAL
+            value: "10s"
+          - name: HEALTH_VPN_DURATION_ADDITION
+            value: "30s"
+          - name: HEALTH_SUCCESS_WAIT_DURATION
+            value: "300s"
         securityContext:
           privileged: true
           capabilities:
