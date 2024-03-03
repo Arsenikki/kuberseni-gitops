@@ -86,11 +86,11 @@ spec:
           - name: HEALTH_TARGET_ADDRESS
             value: "cloudflare.com:443"
           - name: HEALTH_VPN_DURATION_INITIAL
-            value: "10s"
+            value: "20s"
           - name: HEALTH_VPN_DURATION_ADDITION
-            value: "30s"
+            value: "1m"
           - name: HEALTH_SUCCESS_WAIT_DURATION
-            value: "300s"
+            value: "30m"
         securityContext:
           privileged: true
           capabilities:
