@@ -24,6 +24,7 @@ spec:
               tag: 0.7.2
             env:
               TZ: "Europe/London"
+              CSS_YOUTUBE_API_KEY: ${SECRET_YOUTUBE_API_KEY}
         strategy: RollingUpdate
         pod:
           hostNetwork: true
