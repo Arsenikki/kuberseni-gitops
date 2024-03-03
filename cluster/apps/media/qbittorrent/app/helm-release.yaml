@@ -71,8 +71,8 @@ spec:
             value: "10.42.0.0/16,10.43.0.0/16"
           - name: DOT
             value: "off"
-          - name: SERVER_CITIES
-            value: Alblasserdam
+          - name: SERVER_COUNTRIES
+            value: Netherlands
           - name: WIREGUARD_ADDRESSES
             value: ${SECRET_WG_ADDRESSES}
           - name: WIREGUARD_PRIVATE_KEY
