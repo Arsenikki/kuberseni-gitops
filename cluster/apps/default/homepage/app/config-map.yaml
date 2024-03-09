@@ -72,6 +72,8 @@ data:
           widget:
             type: qbittorrent
             url: http://qbittorrent.media.svc.cluster.local:8080
+            username: ${SECRET_USERNAME}
+            password: ${SECRET_QBITTORRENT_PASSWORD}
       - Overseerr:
           icon: overseerr.png
           href: https://overseerr.${SECRET_DOMAIN}
