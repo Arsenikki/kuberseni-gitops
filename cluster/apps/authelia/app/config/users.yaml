@@ -1,8 +1,8 @@
 ---
 users:
-  "${SECRET_AUTHELIA_USERNAME}":
-    email: "${SECRET_AUTHELIA_EMAIL}"
+  "${SECRET_USERNAME}":
+    email: "${SECRET_EMAIL}"
     password: "${SECRET_AUTHELIA_PASSWORD}"
-    displayname: "${SECRET_AUTHELIA_USERNAME}"
+    displayname: "${SECRET_USERNAME}"
     groups:
       - admins
