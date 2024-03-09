@@ -19,7 +19,7 @@ spec:
       level: DEBUG
     roles: kube,app,discovery
     insecureSkipProxyTLSVerify: true
-    proxyAddr: teleport.arsenikki.xyz:443
+    proxyAddr: teleport.${SECRET_DOMAIN}:443
     joinParams:
       method: kubernetes
       # Following must match the name of the token in token.yaml

@@ -22,7 +22,7 @@ spec:
     # See https://github.com/gravitational/teleport/issues/29480 for details.
     operator:
       enabled: true
-    clusterName: teleport.arsenikki.xyz
+    clusterName: teleport.${SECRET_DOMAIN}
     acme: true
     acmeEmail: ${SECRET_AUTHELIA_EMAIL}
     authentication:

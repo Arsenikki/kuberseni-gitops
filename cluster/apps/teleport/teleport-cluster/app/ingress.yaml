@@ -17,7 +17,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: "HostRegexp(`teleport.arsenikki.xyz`, `{subdomain:[a-zA-Z0-9-]+}.teleport.arsenikki.xyz`)"
+      match: "HostRegexp(`teleport.${SECRET_DOMAIN}`, `{subdomain:[a-zA-Z0-9-]+}.teleport.${SECRET_DOMAIN}`)"
       services:
         - name: teleport-cluster
           port: 443
