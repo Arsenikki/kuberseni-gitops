@@ -21,7 +21,7 @@ spec:
           main:
             image:
               repository: ghcr.io/gabe565/castsponsorskip
-              tag: 0.7.2
+              tag: 0.7.4
             env:
               TZ: "Europe/London"
               CSS_YOUTUBE_API_KEY: ${SECRET_YOUTUBE_API_KEY}
