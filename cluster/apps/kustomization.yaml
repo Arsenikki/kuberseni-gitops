@@ -10,6 +10,6 @@ resources:
   - teleport
   # Singular apps
   - authelia/ks.yaml
-  - database/ks.yaml
+  - cloudnative-pg/ks.yaml
   - external-dns/ks.yaml
   - paperless-ngx/ks.yaml
