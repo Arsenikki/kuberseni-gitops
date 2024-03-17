@@ -1,0 +1,24 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+  namespace: database
+  labels:
+    app.kubernetes.io/name: postgres-db
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.2-10
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 20Gi
+    storageClass: longhorn-fast-replicated
+  enableSuperuserAccess: true
+  # superuserSecret:
+  #   name: postgres-superuser
+  postgresql:
+    parameters:
+      max_connections: "300"
+      shared_buffers: 512MB
+  monitoring:
+    enablePodMonitor: true
