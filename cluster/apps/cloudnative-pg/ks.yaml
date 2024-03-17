@@ -21,6 +21,7 @@ spec:
         name: cluster-settings
       - kind: Secret
         name: cluster-secrets
+  prune: true
   wait: false
   interval: 30m
   retryInterval: 1m
@@ -50,6 +51,7 @@ spec:
         name: cluster-settings
       - kind: Secret
         name: cluster-secrets
+  prune: true
   wait: false
   interval: 30m
   retryInterval: 1m
