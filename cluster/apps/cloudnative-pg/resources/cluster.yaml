@@ -3,7 +3,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: postgres
-  namespace: database
+  namespace: cloudnative-pg
   labels:
     app.kubernetes.io/name: postgres-db
 spec:
