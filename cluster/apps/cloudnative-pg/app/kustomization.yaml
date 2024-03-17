@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   # - postgres-superuser-secret.yaml
   - helm-release.yaml
+  - namespace.yaml
   # - prometheus-rule.yaml
   - service.yaml
 # configMapGenerator:
