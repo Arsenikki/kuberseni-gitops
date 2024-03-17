@@ -5,7 +5,7 @@ metadata:
   name: cloudnative-pg-app
   namespace: flux-system
 spec:
-  path: ./cluster/apps/cloudnative-pg/app
+  path: ./apps/cloudnative-pg/app
   sourceRef:
     kind: OCIRepository
     name: kuberseni-gitops-source
@@ -33,7 +33,7 @@ metadata:
   name: cloudnative-pg-resources
   namespace: flux-system
 spec:
-  path: ./cluster/apps/cloudnative-pg/resources
+  path: ./apps/cloudnative-pg/resources
   sourceRef:
     kind: OCIRepository
     name: kuberseni-gitops-source
