@@ -5,6 +5,7 @@ resources:
   - bitnami-charts.yaml
   - bjw-charts.yaml
   - cilium-charts.yaml
+  - cloudnative-pg-charts.yaml
   - democratic-csi-charts.yaml
   - grafana-charts.yaml
   - intel-charts.yaml
