@@ -105,11 +105,11 @@ spec:
             # Let external-dns manage cloudflare DNS records
             external-dns/is-public: "true"
           hosts:
-            - host: "code.home.${SECRET_DOMAIN}"
+            - host: "code.homeassistant.${SECRET_DOMAIN}"
               paths:
                 - path: /
                   pathType: Prefix
           tls:
             - secretName: home-assistant-vscode-tls
               hosts:
-                - "code.home.${SECRET_DOMAIN}"
+                - "code.homeassistant.${SECRET_DOMAIN}"
