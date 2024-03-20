@@ -33,11 +33,15 @@ spec:
       tag: 2024.3.0
     env:
       TZ: "Europe/London"
+    # Temporary workaround for mDNS discovery used by Homekit
+    hostNetwork: true
     service:
       main:
         ports:
           http:
             port: 8123
+          homekit:
+            port: 21063
     ingress:
       main:
         enabled: true
