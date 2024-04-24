@@ -66,5 +66,8 @@ spec:
         existingClaim: deemix-config
       media:
         enabled: true
-        mountPath: /data
+        globalMounts:
+          - path: /downloads
+            subPath: music
+            readOnly: false
         existingClaim: media-pvc
