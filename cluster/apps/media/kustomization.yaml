@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - bazarr/ks.yaml
   - cast-sponsor-skip/ks.yaml
+  - deemix/ks.yaml
   - lidarr/ks.yaml
   - overseerr/ks.yaml
   - plex/ks.yaml
