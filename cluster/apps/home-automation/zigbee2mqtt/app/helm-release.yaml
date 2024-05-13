@@ -57,6 +57,11 @@ spec:
                 memory: 500Mi
             securityContext:
               privileged: true
+            nodeSelector:
+              kubernetes.io/hostname: "k3s-master-01"
+            tolerations:
+              - key: CriticalAddonsOnly
+                operator: "Exists"
     service:
       main:
         ports:
