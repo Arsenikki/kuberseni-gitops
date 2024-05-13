@@ -97,5 +97,6 @@ spec:
         enabled: true
         type: hostPath
         hostPath: *usbdevice
+        hostPathType: CharDevice
         globalMounts:
           - path: *usbdevice
