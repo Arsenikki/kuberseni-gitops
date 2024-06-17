@@ -24,7 +24,7 @@ spec:
       TZ: "Europe/London"
       UMASK: "022"
       QBITTORRENT__PORT: 8080
-      QBITTORRENT__BT_PORT: 21188
+      QBITTORRENT__BT_PORT: 50413
       QBT_BitTorrent__Session__Interface: wg0
       QBT_BitTorrent__Session__InterfaceName: wg0
       QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
@@ -44,9 +44,9 @@ spec:
         ports:
           bittorrent:
             enabled: true
-            port: 21188
+            port: 50413
             protocol: TCP
-            targetPort: 21188
+            targetPort: 50413
     addons:
       netshoot:
         enabled: true
@@ -67,7 +67,7 @@ spec:
           - name: FIREWALL_INPUT_PORTS
             value: "8080"
           - name: FIREWALL_VPN_INPUT_PORTS
-            value: 21188
+            value: 50413
             # Allow access to k8s subnets
           - name: FIREWALL_OUTBOUND_SUBNETS
             value: "10.42.0.0/16,10.43.0.0/16"
