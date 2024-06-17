@@ -66,6 +66,8 @@ spec:
             value: wg0
           - name: FIREWALL_INPUT_PORTS
             value: "8080"
+          - name: FIREWALL_VPN_INPUT_PORTS
+            value: 50413
             # Allow access to k8s subnets
           - name: FIREWALL_OUTBOUND_SUBNETS
             value: "10.42.0.0/16,10.43.0.0/16"
