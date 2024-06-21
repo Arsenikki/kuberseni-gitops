@@ -49,7 +49,6 @@ spec:
       media:
         enabled: true
         globalMounts:
-          - path: /data
-            subPath: workouts
+          - path: /data/downloads/workouts
             readOnly: false
         existingClaim: media-pvc
