@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ytdl-config
+  namespace: media
+data:
+  config.yaml: ENC[AES256_GCM,data:X0/qWMRscrvLon3Mc+eO1KzctZjKsgjqFe+pZrhFYIHcm0Xm7+gGkXxKYZ+vYDpKCorRXXEFPEVCQjTiNsRBj+N2Cui4YbDDlkmxHFqG1+QJkMXbehUs65A2EYMdGevlemhEe5FZ7EVS3y4hzrKyuX8BAidof6c/MsQZuTFte3p6uOujt5rF5Pyeb9Dr74u/AWAJe9Nju+6PqqqYckP9SD6dzU9CTiwccMAfFpmgIyL0I3JF0CXI1VyILwhWF5xYsGU1nncbAShHi4GYYJkv5G6ycaxKHznqpwdTyvF3OUp3+XeihZUgeIu1S+h7Fu9SRydfLlv/k3ppzsiN4TRg1AbQtsKd/RtraYA2/su1PPQHfJUNKdb81xuex2pC8sc39PGfNrCYVuhL+XcJM7nEjsNjl7BtoyhHiE6nVme6LIkLtTKLBI0fxJRzDWQ/kVK0+rcgEH6Ig0NGWg70/EqHY8lEYuf5qTUyF7974vrr8SI/X0gpheL3SCjQHIs80cu4Fg7UzXBhUxBucMgeUm5ylfRAI3xOpKQMOAGAbQ1QbjXFklcC6du0fbgG9/HSHFYFdn2TwqXeBTqqYvT5HCgs/o3wVard4nPsWRhNbOBBR44ZeOu2soZEmyhNHVSzI+kz3cRqME/0rZMn/i19jIDGKXfdQlVH0lK46Z1wUufF3QPOctPv6zYe83G0uNO1Aa7Z4DKXnfy/OIUOGJp3qCdudPcRY739,iv:v1UF4wZAHYHffzO6k4Cnka9f4bmjsYqhkKzXRoDGjSs=,tag:2VXN0BE1ccib6+dO6PrYcQ==,type:str]
+sops:
+  kms: []
+  gcp_kms: []
+  azure_kv: []
+  hc_vault: []
+  age:
+    - recipient: age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQL3lFamlaYmFiVlJ1Tk5V
+        K1dzU1JrQit0c0s4Y0w3ZFdDOFNpbFBVK1EwCkk4L1RjclIyVmpveWtDajRUMDl0
+        dUVkRnJPbzZLVUZhN1M2eWt1aUxPUkkKLS0tIG5uMnhpODMyYmE0a0g0L1JTUk8w
+        R3VyS0o0b3hBY0JTdGpzei9wVnZIMU0KhdRV8onhjLig8aGUoz6meHigvLGFJ/Fr
+        uoFczI+Kx5f1Nct22vjKD6qXgVkoEV1TQ6HV/jqLKD1fzrqf4bfDdA==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2024-06-21T21:58:19Z"
+  mac: ENC[AES256_GCM,data:KPtC1BzLqSuJ/g6yCdc2mdFpxFNk43FPm7aGvwviNA3giZFof0yENCQLnKK4MyeajpVajeTDoqfbKpVnDymxXHQaN26U0o80/JoGWt80lxFjzxFP7HX/1+/PWvX+QTCRnPQ+e65nGI/X6GKOeeIyDTL1VyG/MvMaEcRUA2FX5GA=,iv:c9FFo3cD+ssXl5ZAwbHU5WJpkXUu09+JY4GNNfPlx60=,tag:19yE8wTHo6IizXfLQMuKKA==,type:str]
+  pgp: []
+  encrypted_regex: ^(data|stringData)$
+  version: 3.7.3
