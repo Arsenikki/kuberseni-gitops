@@ -38,6 +38,7 @@ spec:
       config:
         enabled: true
         type: configMap
+        name: ytdl-config
         globalMounts:
           - path: /config
             readOnly: true
