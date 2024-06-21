@@ -34,6 +34,9 @@ spec:
                 memory: 250M
               limits:
                 memory: 1G
+    service:
+      main:
+        enabled: false
     persistence:
       config:
         enabled: true
