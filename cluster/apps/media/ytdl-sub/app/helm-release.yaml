@@ -46,6 +46,14 @@ spec:
           - path: /config/config.yaml
             subPath: config.yaml
             readOnly: true
+      subscription:
+        enabled: true
+        type: configMap
+        name: ytdl-subscription
+        globalMounts:
+          - path: /config/subscription.yaml
+            subPath: subscription.yaml
+            readOnly: true
       media:
         enabled: true
         globalMounts:

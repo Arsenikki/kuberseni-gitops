@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: ytdl-config
+    namespace: media
+data:
+    config.yaml: ENC[AES256_GCM,data:dyZSemOJVdb52Pay4DZwklOFgkCE5493QKdVfKnhAIbvrDI5CncI0DS/Whe4gtS1TEEMtZnzbaSBIsFfV4EDMZ6htNCnnQT05z8HztmTS8QGXHQcOx002a+DcxxHnxEOQdqyxEm7zqusD38tnjRvmLsbMZm62RRNLq6rkoOni5pZg/vGa8opc5SWQgOZ/p6c,iv:RY5N68ZRU6cP2aOlbMH5E6PYuYdKTHOztl897YSGtQo=,tag:v+DhPPFvj/ahx32nUqaVog==,type:str]
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age:
+        - recipient: age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzeU9VV2lLR2ZoQ0RreE01
+            MEpZOXhXOW9kYzJZcEl3VzQvMzZ2dWNLNWh3ClBkRkhTL0tlMHFqNy9hTnRIOGov
+            cnhKMUx3bHJsSXlOY3hscUhMdmFLdXMKLS0tIHJkQXRpNVZNM1M1eVI4SlpVZjFG
+            RkFkb2hSTW5NcCttSlczbE9MQ296MW8K3eNIC+zZIStYLjLzoUxQILCVTsiR0dH4
+            KemcqK8VS0mcQEE/UhdAxrRjkOe/st/su7DW1ZDVaXnWmXueNnGP3w==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2024-06-21T23:59:45Z"
+    mac: ENC[AES256_GCM,data:QDfAy9rYDRAC06Bs65Tev4YxvWMTj+9wUrKrE6j30OQzp+0ud2z8x4N0AMIp8FUbmBykXjfJfZsx/mqC2BVYpczP20AnUh7Ay+kiG0paPHgloIsm2hhTZq7Hr33v9X/CpVgGAOsbh5F7v6crWUWEqgYsnRaWPAB7+KK7Uq+Ly4E=,iv:QpIbRyVL3knmUgslJX2SgWaqReZotxlpjfYGKDercPc=,tag:TKEmczdfyNin9jPbDqJUNQ==,type:str]
+    pgp: []
+    encrypted_regex: ^(data|stringData)$
+    version: 3.7.3
