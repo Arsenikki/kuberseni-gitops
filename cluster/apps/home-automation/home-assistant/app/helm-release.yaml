@@ -30,7 +30,7 @@ spec:
       type: statefulset
     image:
       repository: ghcr.io/home-assistant/home-assistant
-      tag: 2024.6.0
+      tag: 2024.6.4
     env:
       TZ: "Europe/London"
     # Temporary workaround for mDNS discovery used by Homekit
