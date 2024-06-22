@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-    name: ytdl-subscription
+    name: ytdl-subscriptions
     namespace: media
 data:
-    subscription.yaml: ENC[AES256_GCM,data:kCoxgCzjot5lwhuOqiRUCCLrSnTa3PiUx5qkkJEZ06jKa6bKLR7NZcQBj8d9OpNKvGZ3ff/46D5QW39U2yfhKssJ7pEJaeRkxmy2289qVa1qeYDr8FCFMy7UPscDNu4zoVNKhDcJTUh2PD8jUNhxDmK6LXlbofZGr0gYbI7kNUoIeoJDmbGuyGHqkD/goG2NPmAlvhlXe2ZHlZq3SAWzYa1weBxcvEe/M42POLA1n8zT50PNHSwBphs=,iv:qkdmqVNYbs69fzp1o7XJtSxw2J5krIi4Nr65QjVlzqg=,tag:tgXQqWRtSw1W3u+iJiE3CA==,type:str]
+    subscriptions.yaml: ENC[AES256_GCM,data:n0i++rKucDiQ/EtsxmEDeBELL0aCaBZhanA8fNcMvTRm6qT1g8KUULAlEksKX0KqFkSNt7GEPAvkHwt3FJazkolVzE9Q9AP00xn34B7SQ6HeQfO/38q4VL7wMJ7HP28yTxmRHg+GEG+b01G+OX5RrLuqlnOK8Ors5kmLUahbVrXat09SNE9MfIoyBK7LNcn2NlsOIu3CqRSL40K6B/flBDQ69070mZf1BONUSSaXk+gQ28B7FHwc55lcTYVMF7TN9NWoFMazUMMbXg==,iv:cptsjq/9OUIKcDOvL44CmfaHX0gkaac6zrm/UGWcA7c=,tag:IT8KXl7dRhEDVKxDq8HC4Q==,type:str]
 sops:
     kms: []
     gcp_kms: []
@@ -20,8 +20,8 @@ sops:
             dVc2QVhHNU96aHlycU9OQmNTZm54dmcKVWMunDCdk8VWF4WhVMFyXu1K+Dy/WFdx
             VgkgcsMYZOZj/9Iu9LeS4wIEpqv+aytmbIUsIDAp3jCVhnb1aUnTbg==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2024-06-22T00:05:18Z"
-    mac: ENC[AES256_GCM,data:2zJmTFheBvw6i2njgMibow9HuSBu61lgFvQLdIL4Zilhwd95LA+AHNgkblDruVHxVVUVl3XLU3FzUzbVp6lGQXT/C5sZby3sLVPS0KGBAkbOBNt9z7OqAr4TbVV6fy9SI6DmJnppqrDPCn7kyTyvJFMhlLIRgR6h+cQC6C03wE4=,iv:RLkbEnCprQ607uBYoblcDYeFwp4de4rfQMgqb8Nsqas=,tag:P3HR9iiiCJACsUoXWiFdmg==,type:str]
+    lastmodified: "2024-06-22T09:21:48Z"
+    mac: ENC[AES256_GCM,data:kiz4u1+ayjIPSUvXkI2MOOA5Yo6afZ2OZDNBrQhLIvokSnaYL0nfUltIpl6A2O0W4TtYs8eNGBul5a4uJs2SKgrYmwWTwRD7eaX9OpV3hMPC9mkx8VmOx8R+H+/0r08MAfyJc/fc8hXOpafJTL0KW5fnWSeyft8yNT8Qt3XBOsM=,iv:mApPFKEzDpzm/BKsXzU3TMPb5vnhtlfLoxqQxMcpRhY=,tag:LxL7jU5XtcaUa18csvmDwQ==,type:str]
     pgp: []
     encrypted_regex: ^(data|stringData)$
     version: 3.7.3

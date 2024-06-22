@@ -33,7 +33,7 @@ spec:
                 cpu: 15m
                 memory: 250M
               limits:
-                memory: 1G
+                memory: 8G
     service:
       main:
         enabled: false
@@ -49,25 +49,23 @@ spec:
       subscription:
         enabled: true
         type: configMap
-        name: ytdl-subscription
+        name: ytdl-subscriptions
         globalMounts:
-          - path: /config/subscription.yaml
-            subPath: subscription.yaml
+          - path: /config/subscriptions.yaml
+            subPath: subscriptions.yaml
             readOnly: true
       media:
         enabled: true
         globalMounts:
-          - path: /data/workouts
-            subPath: workouts
+          - path: /data/custom
+            subPath: custom
             readOnly: false
         existingClaim: media-pvc
       tmp:
         enabled: true
         type: emptyDir
-        globalMounts:
-          - path: /data/downloads/ytdl
-            subPath: ytdl
-            readOnly: false
+        medium: Memory
+        mountPath: /tmp/ytdl-sub
     defaultPodOptions:
       enableServiceLinks: true
       securityContext:

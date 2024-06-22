@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - config.yaml
   - helm-release.yaml
-  - subscription.yaml
+  - subscriptions.yaml
