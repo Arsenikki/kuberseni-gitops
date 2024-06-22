@@ -61,6 +61,13 @@ spec:
             subPath: workouts
             readOnly: false
         existingClaim: media-pvc
+      tmp:
+        enabled: true
+        type: emptyDir
+        globalMounts:
+          - path: /data/downloads/ytdl
+            subPath: ytdl
+            readOnly: false
     defaultPodOptions:
       enableServiceLinks: true
       securityContext:
