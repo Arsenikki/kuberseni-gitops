@@ -1,0 +1,43 @@
+- name: Check if default ACME account is registered
+  ansible.builtin.command:
+    cmd: pvenode acme plugin list
+  register: acme_plugin_list
+  changed_when: false
+  ignore_errors: true
+
+- name: Create ACME plugin, account, and domain config
+  when: pve_acme_plugin_name | string not in acme_plugin_list.stdout
+  block:
+    - name: Create DNS plugin temp file
+      ansible.builtin.tempfile:
+        state: file
+      register: temp_config
+
+    - name: Fill DNS config file
+      ansible.builtin.copy:
+        content: "{{ pve_acme_plugin_data }}"
+        dest: "{{ temp_config.path }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Add ACME plugin configuration
+      ansible.builtin.command:
+        cmd: pvenode acme plugin add dns {{ pve_acme_plugin_name }} --api {{ pve_acme_plugin_api }} --validation-delay {{ pve_acme_validation_delay }} --data {{ temp_config.path }}
+
+    - name: Clear temporary file
+      ansible.builtin.file:
+        path: "{{ temp_config.path }}"
+        state: absent
+      when: temp_config.path is defined
+
+    - name: Create ACME account
+      ansible.builtin.expect:
+        command: pvenode acme account register cloudflare {{ secret_email }} --directory {{ pve_acme_account_directory }}
+        responses:
+          Do you agree to the above terms.*: y
+      notify: Order ACME certificates
+
+    - name: Add ACME domain configuration
+      ansible.builtin.shell: |
+        pvenode config set --acme account=cloudflare --acmedomain0 domain={{ inventory_hostname }}.{{ secret_domain }},plugin=cloudflare
+      notify: Order ACME certificates
