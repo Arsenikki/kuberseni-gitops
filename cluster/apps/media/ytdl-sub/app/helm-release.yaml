@@ -48,8 +48,8 @@ spec:
       media:
         enabled: true
         globalMounts:
-          - path: /data/custom
-            subPath: custom
+          - path: /data/workouts
+            subPath: workouts
             readOnly: false
         existingClaim: media-pvc
       tmp:
