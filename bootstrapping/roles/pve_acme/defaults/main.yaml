@@ -1,0 +1,10 @@
+---
+pve_acme_account_name: cloudflare
+pve_acme_account_directory: "https://acme-v02.api.letsencrypt.org/directory"
+
+pve_acme_validation_delay: 30
+pve_acme_plugin_name: cloudflare
+pve_acme_plugin_api: "cf"
+pve_acme_plugin_data: |
+  CF_Token={{ secret_cloudflare_token }}
+  CF_Zone_ID={{ secret_cloudflare_zone_id }}

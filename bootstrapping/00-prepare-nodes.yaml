@@ -49,6 +49,7 @@
         name:
           - requests==2.31.0
           - proxmoxer==2.0.1
+          - pexpect==4.9.0
         virtualenv: /venv/ansible
 
     - name: Create user for PVE monitoring
@@ -56,3 +57,8 @@
       ansible.builtin.shell: |
         pveum user add metrics-exporter@pve -password {{ secret_proxmox_metrics_password }} -comment "Used for exporting PVE metrics"
         pveum acl modify / -user metrics-exporter@pve -role PVEAuditor
+    
+- name: Configure PVE certificates
+  hosts: proxmox
+  roles:
+  - pve_acme
