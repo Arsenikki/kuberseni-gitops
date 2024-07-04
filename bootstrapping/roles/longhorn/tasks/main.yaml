@@ -45,6 +45,26 @@
     state: present
     update_cache: true
 
+- name: Create multipath config file
+  ansible.builtin.file:
+    path: /etc/multipath.conf
+    state: touch
+    mode: '0644'
+
+- name: Add blocklist to config file
+  ansible.builtin.copy:
+    dest: /etc/multipath.conf
+    content: |
+      defaults {
+          user_friendly_names yes
+      }
+      # Blacklist all devices to fix a longhorn volume failing to Start
+      # See here: https://longhorn.io/kb/troubleshooting-volume-with-multipath/
+      blacklist {
+          devnode "^sd[a-z0-9]+"
+      }
+  notify: "longhorn : Start or restart multipath service"
+
 - name: Collect Longhorn dependency statuses
   ansible.builtin.shell: |
     set -e
