@@ -12,4 +12,5 @@ resources:
   - authelia/ks.yaml
   - cloudnative-pg/ks.yaml
   - external-dns/ks.yaml
+  - meshcentral/ks.yaml
   - paperless-ngx/ks.yaml
