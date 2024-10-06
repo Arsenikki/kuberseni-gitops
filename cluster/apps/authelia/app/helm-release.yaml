@@ -31,7 +31,7 @@ spec:
       strategy: RollingUpdate
     image:
       repository: ghcr.io/authelia/authelia
-      tag: 4.38.2
+      tag: 4.38.16
     # Set config path explicitly as otherwise default filepath extension is '.yml'. Yuck!
     args: ["--config", "/config/configuration.yaml"]
     enableServiceLinks: false
