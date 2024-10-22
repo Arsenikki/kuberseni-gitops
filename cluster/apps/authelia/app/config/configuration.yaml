@@ -8,7 +8,9 @@ log:
   ## Level of verbosity for logs: info, debug, trace.
   level: info
 
-jwt_secret: ${SECRET_AUTHELIA_JWT_TOKEN}
+identity_validation:
+  reset_password:
+    jwt_secret: ${SECRET_AUTHELIA_JWT_TOKEN}
 
 authentication_backend:
   file:
@@ -25,9 +27,20 @@ storage:
     password: ${SECRET_AUTHELIA_POSTGRES_PASSWORD}
 
 totp:
-  issuer: authelia.com
+  disable: false
+  issuer: "USERNAME.com"
+  algorithm: "sha1"
+  digits: 6
   period: 30
   skew: 1
+  secret_size: 32
+  allowed_algorithms:
+    - "SHA1"
+  allowed_digits:
+    - 6
+  allowed_periods:
+    - 30
+  disable_reuse_security_policy: true
 
 # https://docs.authelia.com/configuration/access-control.html
 access_control:

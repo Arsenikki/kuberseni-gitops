@@ -31,7 +31,7 @@ spec:
       strategy: RollingUpdate
     image:
       repository: ghcr.io/authelia/authelia
-      tag: 4.38.2
+      tag: 4.38.16
     # Set config path explicitly as otherwise default filepath extension is '.yml'. Yuck!
     args: ["--config", "/config/configuration.yaml"]
     enableServiceLinks: false
@@ -49,14 +49,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: auth.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: auth.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: authelia-tls
-          hosts:
-          - auth.${SECRET_DOMAIN}
+          - secretName: authelia-tls
+            hosts:
+              - auth.${SECRET_DOMAIN}
     podSecurityContext:
       container:
         runAsUser: 568
