@@ -17,7 +17,7 @@ spec:
   values:
     image:
       repository: ghcr.io/onedr0p/radarr
-      tag: 5.4.6.8723
+      tag: 5.12.2.9335
     env:
       TZ: "Europe/London"
     service:
