@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: postgres-db
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2-10
-  instances: 3
+  instances: 1
   bootstrap:
     initdb:
       database: immich
