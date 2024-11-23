@@ -9,7 +9,7 @@ resources:
   - monitoring
   # Singular apps
   - authelia/ks.yaml
-  - cloudnative-pg/ks.yaml
+  # - cloudnative-pg/ks.yaml
   - external-dns/ks.yaml
   # - meshcentral/ks.yaml - was unable to get access to web UI working
   - paperless-ngx/ks.yaml
