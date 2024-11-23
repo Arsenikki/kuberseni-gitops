@@ -17,7 +17,7 @@ spec:
   values:
     image:
       repository: ghcr.io/onedr0p/readarr-develop
-      tag: 0.3.18.2411
+      tag: 0.3.32
     env:
       TZ: "Europe/London"
     service:
@@ -37,14 +37,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: readarr.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: readarr.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: readarr-tls
-          hosts:
-          - readarr.${SECRET_DOMAIN}
+          - secretName: readarr-tls
+            hosts:
+              - readarr.${SECRET_DOMAIN}
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568

@@ -16,8 +16,8 @@ spec:
   interval: 30m
   values:
     image:
-      repository: ghcr.io/onedr0p/prowlarr-develop
-      tag: 1.25.4.4818
+      repository: ghcr.io/onedr0p/prowlarr
+      tag: 1.26.1
     env:
       TZ: "Europe/London"
     service:
@@ -36,14 +36,14 @@ spec:
           # Let external-dns manage cloudflare DNS records
           external-dns/is-public: "true"
         hosts:
-        - host: prowlarr.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: prowlarr.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: prowlarr-tls
-          hosts:
-          - prowlarr.${SECRET_DOMAIN}
+          - secretName: prowlarr-tls
+            hosts:
+              - prowlarr.${SECRET_DOMAIN}
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
