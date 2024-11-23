@@ -7,10 +7,9 @@ resources:
   - home-automation
   - media
   - monitoring
-  - teleport
   # Singular apps
   - authelia/ks.yaml
   - cloudnative-pg/ks.yaml
   - external-dns/ks.yaml
-  - meshcentral/ks.yaml
+  # - meshcentral/ks.yaml - was unable to get access to web UI working
   - paperless-ngx/ks.yaml

@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-nfs
+  namespace: media
+spec:
+  storageClassName: immich-nfs
+  capacity:
+    storage: 1Mi # Size does not matter
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: ${TRUENAS_IP_ADDRESS}
+    path: /mnt/main/apps/immich
+  # Note: The first two options are strictly for NFSv4.2
+  mountOptions:
+    - nfsvers=4.2
+    - nconnect=8
+    - hard
+    - noatime
+    - nodiratime
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-nfs
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: immich-nfs
+  resources:
+    requests:
+      storage: 1Mi # Size does not matter
