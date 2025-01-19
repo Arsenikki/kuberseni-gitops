@@ -10,5 +10,5 @@
 - ansible.builtin.import_playbook: 04-install-longhorn-dependencies.yaml
 
 - ansible.builtin.import_playbook: 05-flux-bootstrap.yaml
-
-- ansible.builtin.import_playbook: 06-install-teleport-agents.yaml
+# Disable teleport agent for now
+# - ansible.builtin.import_playbook: 06-install-teleport-agents.yaml
