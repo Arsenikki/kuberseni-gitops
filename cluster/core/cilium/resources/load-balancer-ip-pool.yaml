@@ -6,3 +6,4 @@ metadata:
 spec:
   cidrs:
     - cidr: "${CILIUM_LB_POOL}"
+  disabled: false
