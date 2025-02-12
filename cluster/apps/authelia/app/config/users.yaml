@@ -1,8 +1,0 @@
----
-users:
-  "${SECRET_USERNAME}":
-    email: "${SECRET_EMAIL}"
-    password: "${SECRET_AUTHELIA_PASSWORD}"
-    displayname: "${SECRET_USERNAME}"
-    groups:
-      - admins
