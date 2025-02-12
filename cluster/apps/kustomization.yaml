@@ -8,7 +8,8 @@ resources:
   - media
   - monitoring
   # Singular apps
-  - authelia/ks.yaml
+  # - authelia/ks.yaml
+  - oauth2-proxy/ks.yaml
   # - cloudnative-pg/ks.yaml
   - external-dns/ks.yaml
   # - meshcentral/ks.yaml - was unable to get access to web UI working
