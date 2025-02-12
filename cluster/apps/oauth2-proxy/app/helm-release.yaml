@@ -40,7 +40,7 @@ spec:
       email-domain: "*"
       cookie-domain: ".${SECRET_DOMAIN}"
       whitelist-domain: ".${SECRET_DOMAIN}"
-      github-user: "arsenikki"
+      github-user: "Arsenikki"
     resources:
       requests:
         cpu: "200m"
