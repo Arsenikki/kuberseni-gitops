@@ -26,7 +26,7 @@ spec:
   uninstall:
     keepHistory: false
   values:
-    kubeProxyReplacement: strict
+    kubeProxyReplacement: true
     k8sServiceHost: "${KUBE_VIP_API_SERVER_IP}"
     k8sServicePort: 6443
     # See https://docs.cilium.io/en/latest/network/l2-announcements/#l2-announcements-l2-aware-lb-beta
