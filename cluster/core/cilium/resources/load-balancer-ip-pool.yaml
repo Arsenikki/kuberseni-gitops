@@ -4,6 +4,6 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: pool
 spec:
-  cidrs:
+  blocks:
     - cidr: "${CILIUM_LB_POOL}"
   disabled: false
