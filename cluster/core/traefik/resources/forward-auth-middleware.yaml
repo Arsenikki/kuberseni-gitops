@@ -1,20 +1,34 @@
----
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: forward-auth
   namespace: traefik
 spec:
-  forwardAuth:
-    address: http://oauth2-proxy.auth.svc.cluster.local/oauth2/auth
-    authResponseHeaders:
-      - X-Auth-Request-User
-      - Set-Cookie
+  chain:
+    middlewares:
+      - name: forward-auth-error-redirect
+      - name: forward-auth-sign-in
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: redirect-sign-in
+  name: forward-auth-sign-in
+  namespace: traefik
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.auth.svc.cluster.local/oauth2/auth
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+      - X-Auth-Request-Groups
+      - X-Auth-Request-Preferred-Username
+      - Authorization
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: forward-auth-error-redirect
   namespace: traefik
 spec:
   errors:
