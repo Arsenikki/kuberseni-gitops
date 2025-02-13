@@ -29,15 +29,10 @@ spec:
     service:
       enabled: true
       type: LoadBalancer
+      annotations:
+        io.cilium/lb-ipam-ips: "${TRAEFIK_LB}"
       spec:
-        loadBalancerIP: "${TRAEFIK_LB}"
-    ports:
-      web:
-        port: 80
-        redirectTo: 
-          port: websecure
-      websecure:
-        port: 443
+        externalTrafficPolicy: Local
     # Enable both CRD and annotation methods of defining ingress
     providers:
       kubernetesCRD:
@@ -66,7 +61,7 @@ spec:
         drop: [ALL]
         add: [NET_BIND_SERVICE]
       readOnlyRootFilesystem: true
-      allowPrivilegeEscalation: false  
+      allowPrivilegeEscalation: false
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
