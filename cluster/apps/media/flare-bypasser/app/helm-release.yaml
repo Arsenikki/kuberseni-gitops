@@ -48,4 +48,5 @@ spec:
       app:
         controller: flare-bypasser
         ports:
-          http: 20080
+          http:
+            port: 8080
