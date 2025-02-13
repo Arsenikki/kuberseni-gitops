@@ -1,35 +1,37 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: forward-auth
-  namespace: traefik
+  name: oauth
 spec:
   chain:
     middlewares:
-      - name: forward-auth-error-redirect
-      - name: forward-auth-sign-in
+      - name: traefik-https-redirect@kubernetescrd
+      - name: oauth-errors
+      - name: oauth-forward
 ---
+# https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#configuring-for-use-with-the-traefik-v2-forwardauth-middleware
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: forward-auth-sign-in
-  namespace: traefik
+  name: oauth-headers
+  namespace: auth
 spec:
-  forwardAuth:
-    address: http://oauth2-proxy.auth.svc.cluster.local/oauth2/auth
-    trustForwardHeader: true
-    authResponseHeaders:
-      - X-Auth-Request-User
-      - X-Auth-Request-Email
-      - X-Auth-Request-Groups
-      - X-Auth-Request-Preferred-Username
-      - Authorization
+  headers:
+    sslRedirect: true
+    stsSeconds: 315360000
+    browserXssFilter: true
+    contentTypeNosniff: true
+    forceSTSHeader: true
+    sslHost: ${SECRET_DOMAIN}
+    stsIncludeSubdomains: true
+    stsPreload: true
+    frameDeny: true
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: forward-auth-error-redirect
-  namespace: traefik
+  name: oauth-errors
+  namespace: auth
 spec:
   errors:
     status:
@@ -38,4 +40,14 @@ spec:
       name: oauth2-proxy
       namespace: auth
       port: 80
-    query: "/oauth2/sign_in"
+    query: "/oauth2/sign_in?rd={url}"
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: oauth-forward
+  namespace: auth
+spec:
+  forwardAuth:
+    address: https://auth.${SECRET_DOMAIN}/oauth2/auth
+    trustForwardHeader: true
