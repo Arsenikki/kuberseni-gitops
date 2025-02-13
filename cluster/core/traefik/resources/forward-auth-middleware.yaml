@@ -1,4 +1,3 @@
----
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -7,35 +6,36 @@ metadata:
 spec:
   chain:
     middlewares:
-      - name: forward-auth-errors
+      - name: forward-auth-error-redirect
       - name: forward-auth-sign-in
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: oauth2-proxy-errors
+  name: forward-auth-error-redirect
   namespace: traefik
 spec:
   errors:
     status:
       - "401-403"
-    query: /oauth2/sign_in
     service:
       name: oauth2-proxy
       namespace: auth
       port: 80
+    query: "/oauth2/sign_in"
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: oauth2-proxy-sign-in
+  name: forward-auth-sign-in
   namespace: traefik
 spec:
   forwardAuth:
-    address: http://oauth2-proxy.auth.svc/oauth2/auth
+    address: http://oauth2-proxy.auth.svc.cluster.local/oauth2/auth
     trustForwardHeader: true
     authResponseHeaders:
+      - X-Auth-Request-User
+      - X-Auth-Request-Email
+      - X-Auth-Request-Groups
+      - X-Auth-Request-Preferred-Username
       - Authorization
-      - Set-Cookie
-      - X-Auth-User
-      - X-Secret
