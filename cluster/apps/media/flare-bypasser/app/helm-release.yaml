@@ -1,0 +1,45 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: flare-bypasser
+  namespace: flare-bypasser
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.1
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-charts
+        namespace: flux-system
+  timeout: 20m
+  maxHistory: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: ghcr.io/yoori/flare-bypasser
+              tag: v0.1.53
+            env:
+              TZ: "Europe/London"
+              UNUSED: "false"
+              SAVE_CHALLENGE_SCREENSHOTS: "true"
+            resources:
+              requests:
+                cpu: 15m
+                memory: 250M
+              limits:
+                memory: 1G
