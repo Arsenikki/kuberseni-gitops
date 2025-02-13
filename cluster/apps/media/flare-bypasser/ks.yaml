@@ -5,7 +5,7 @@ metadata:
   name: flare-bypasser-app
   namespace: flux-system
 spec:
-  path: ./apps/flare-bypasser/app
+  path: ./apps/media/flare-bypasser/app
   sourceRef:
     kind: OCIRepository
     name: kuberseni-gitops-source
