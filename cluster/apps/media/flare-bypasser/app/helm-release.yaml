@@ -43,3 +43,9 @@ spec:
                 memory: 250M
               limits:
                 memory: 1G
+    service:
+      main:
+        controller: main
+        ports:
+          http:
+            port: 20080
