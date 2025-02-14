@@ -5,7 +5,7 @@ resources:
   - bazarr/ks.yaml
   - cast-sponsor-skip/ks.yaml
   # - deemix/ks.yaml
-  - flare-bypasser/ks.yaml
+  - flare-solverr/ks.yaml
   # - immich/ks.yaml
   - lidarr/ks.yaml
   - overseerr/ks.yaml

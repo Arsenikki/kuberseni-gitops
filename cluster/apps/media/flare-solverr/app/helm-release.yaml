@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: flare-bypasser
+  name: flare-solverr
   namespace: media
 spec:
   interval: 15m
@@ -28,16 +28,14 @@ spec:
     keepHistory: false
   values:
     controllers:
-      flare-bypasser:
+      flare-solverr:
         containers:
           app:
             image:
-              repository: ghcr.io/yoori/flare-bypasser
-              tag: v0.1.53
+              repository: ghcr.io/flaresolverr/flaresolverr
+              tag: v3.3.21
             env:
               TZ: "Europe/London"
-              UNUSED: "false"
-              SAVE_CHALLENGE_SCREENSHOTS: "true"
             resources:
               requests:
                 cpu: 15m
@@ -46,7 +44,7 @@ spec:
                 memory: 1G
     service:
       app:
-        controller: flare-bypasser
+        controller: flare-solverr
         ports:
           http:
-            port: 8080
+            port: 8191
