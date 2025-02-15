@@ -24,7 +24,7 @@ spec:
       TZ: "Europe/London"
       UMASK: "022"
       QBITTORRENT__PORT: 8080
-      QBITTORRENT__BT_PORT: 50413
+      QBITTORRENT__BT_PORT: 21188
       QBT_BitTorrent__Session__Interface: wg0
       QBT_BitTorrent__Session__InterfaceName: wg0
       QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
@@ -44,9 +44,9 @@ spec:
         ports:
           bittorrent:
             enabled: true
-            port: 50413
+            port: 21188
             protocol: TCP
-            targetPort: 50413
+            targetPort: 21188
     addons:
       netshoot:
         enabled: true
