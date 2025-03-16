@@ -2,44 +2,48 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
-  name: external-dns
-  namespace: networking
+  name: &app external-dns
+  namespace: external-dns
 spec:
   interval: 5m
   chart:
     spec:
       chart: external-dns
-      version: 8.6.0
+      version: 1.15.2
       sourceRef:
         kind: HelmRepository
-        name: bitnami-charts
+        name: external-dns-charts
         namespace: flux-system
       interval: 5m
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
-    image:
-      registry: registry.k8s.io
-      repository: external-dns/external-dns
-      tag: v0.15.1
-    logLevel: debug
     domainFilters:
       - "${SECRET_DOMAIN}"
-    sources:
-      - ingress
-    provider: cloudflare
-    cloudflare:
-      secretName: cloudflare-api-token
-      email: "${SECRET_CLOUDFLARE_EMAIL}"
-      proxied: false
+    env:
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: cloudflare-api-token
+            key: token
+    extraArgs:
+      - --cloudflare-dns-records-per-page=1000
+      # - --cloudflare-proxied
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
+      - --ignore-ingress-tls-spec
+    fullnameOverride: *app
     policy: sync
-    crd:
-      # disabled, pulled from source repo in crds/
-      create: false
-      apiversion: externaldns.k8s.io/v1alpha1
-      kind: DNSEndpoint
-    annotationFilter: "external-dns/is-public in (true)"
+    provider:
+      name: cloudflare
     resources:
       requests:
         cpu: 10m
         memory: 100Mi
       limits:
         memory: 250Mi
+    sources: ["crd", "ingress"]
+    txtOwnerId: main
+    txtPrefix: "k8s."
