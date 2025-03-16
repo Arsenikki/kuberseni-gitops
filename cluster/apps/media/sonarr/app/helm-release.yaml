@@ -33,17 +33,15 @@ spec:
           kubernetes.io/tls-acme: "true"
           # Use forward-auth middleware for authentication
           traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
-          # Let external-dns manage cloudflare DNS records
-          external-dns/is-public: "true"
         hosts:
-        - host: sonarr.${SECRET_DOMAIN}
-          paths:
-          - path: /
-            pathType: Prefix
+          - host: sonarr.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
         tls:
-        - secretName: sonarr-tls
-          hosts:
-          - sonarr.${SECRET_DOMAIN}
+          - secretName: sonarr-tls
+            hosts:
+              - sonarr.${SECRET_DOMAIN}
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
