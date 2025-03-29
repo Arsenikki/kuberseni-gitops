@@ -8,4 +8,5 @@ resources:
   - intel-gpu-plugin/ks.yaml
   - longhorn/ks.yaml
   - node-feature-discovery/ks.yaml
+  - reloader/ks.yaml
   - traefik/ks.yaml
