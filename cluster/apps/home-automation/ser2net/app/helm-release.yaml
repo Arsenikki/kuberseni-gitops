@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ser2net
+  namespace: home-automation
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 3.7.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-charts
+        namespace: flux-system
+  maxHistory: 2
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    defaultPodOptions:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: "k3s-master-01"
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: "Exists"
+    controllers:
+      main:
+        replicas: 1
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jippi/docker-ser2net
+              tag: 4.6.4
+    persistence:
+      config:
+        type: configMap
+        name: ser2net-config
+        globalMounts:
+          - path: /etc/ser2net/ser2net.yaml
+            subPath: config.yaml
+            readOnly: true
+      usb:
+        enabled: true
+        type: hostPath
+        hostPath: &usbdevice /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
+        hostPathType: CharDevice
+        globalMounts:
+          - path: *usbdevice
+    resources:
+      requests:
+        cpu: 5m
+        memory: 10Mi
+      limits:
+        memory: 256Mi
