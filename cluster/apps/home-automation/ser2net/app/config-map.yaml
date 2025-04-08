@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ser2net-config
-  namespace: ser2net
+  namespace: home-automation
 data:
   ser2net.yaml: |
     connection: &con01
