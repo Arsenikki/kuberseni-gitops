@@ -50,7 +50,7 @@ spec:
         name: ser2net-config
         globalMounts:
           - path: /etc/ser2net/ser2net.yaml
-            subPath: config.yaml
+            subPath: ser2net.yaml
             readOnly: true
       usb:
         enabled: true
