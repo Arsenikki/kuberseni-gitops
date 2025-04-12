@@ -44,6 +44,12 @@ spec:
             image:
               repository: ghcr.io/jippi/docker-ser2net
               tag: 4.6.4
+    service:
+      main:
+        controller: main
+        ports:
+          http:
+            port: 20108
     persistence:
       config:
         type: configMap
