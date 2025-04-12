@@ -7,7 +7,7 @@ metadata:
 data:
   ser2net.yaml: |
     connection: &con01
-    accepter: tcp,20108
-    connector: serialdev,/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00,115200n81,local,dtr=off,rts=off
-    options:
-      kickolduser: true
+      accepter: tcp,20108
+      connector: serialdev,/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00,115200n81,local,dtr=off,rts=off
+      options:
+        kickolduser: true
