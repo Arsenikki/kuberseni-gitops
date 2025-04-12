@@ -54,7 +54,6 @@ spec:
               ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://mosquitto.home-automation.svc.cluster.local
               ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE: 115200
               ZIGBEE2MQTT_CONFIG_SERIAL_PORT: tcp://ser2net.home-automation.svc.cluster.local:20108
-              ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ezsp
             resources:
               requests:
                 cpu: 10m
