@@ -53,7 +53,7 @@ spec:
               ZIGBEE2MQTT_CONFIG_MQTT_REJECT_UNAUTHORIZED: "true"
               ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://mosquitto.home-automation.svc.cluster.local
               ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE: 115200
-              ZIGBEE2MQTT_CONFIG_SERIAL_PORT: &usbdevice /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
+              ZIGBEE2MQTT_CONFIG_SERIAL_PORT: tcp://ser2net.home-automation.svc.cluster.local:20108
               ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: ember
             resources:
               requests:
@@ -92,10 +92,10 @@ spec:
       config:
         enabled: true
         existingClaim: *app
-      usb:
-        enabled: true
-        type: hostPath
-        hostPath: *usbdevice
-        hostPathType: CharDevice
-        globalMounts:
-          - path: *usbdevice
+      # usb:
+      #   enabled: true
+      #   type: hostPath
+      #   hostPath: *usbdevice
+      #   hostPathType: CharDevice
+      #   globalMounts:
+      #     - path: *usbdevice
