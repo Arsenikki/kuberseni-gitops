@@ -17,7 +17,7 @@ spec:
   values:
     image:
       repository: prompve/prometheus-pve-exporter
-      tag: 2.3.1
+      tag: 3.5.5
     env:
       TZ: "Europe/London"
       PVE_USER: "${SECRET_PROXMOX_METRICS_USERNAME}"
