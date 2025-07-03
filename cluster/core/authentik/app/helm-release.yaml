@@ -1,0 +1,50 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: authentik
+      version: 2025.6.3
+      sourceRef:
+        kind: HelmRepository
+        name: goauthentik/authentik
+        namespace: flux-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    authentik:
+      secret_key: "PleaseGenerateA50CharKey"
+      postgresql:
+        password: "ThisIsNotASecurePassword"
+      log_level: debug
+    server:
+      ingress:
+        enabled: true
+        hosts:
+          - authentik.arsenikki.casa
+        annotations:
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
+          # Let external-dns manage cloudflare DNS records
+          external-dns/is-public: "true"
+        tls:
+          - secretName: authentik-tls
+            hosts:
+              - authentik.arsenikki.casa
+    postgresql:
+      enabled: true
+      auth:
+        password: "ThisIsNotASecurePassword"
+    redis:
+      enabled: true
