@@ -24,6 +24,9 @@ spec:
       retries: 3
   values:
     authentik:
+      # Token and password only valid for the first boot
+      bootstrap_token: supersecrettoken
+      bootstrap_password: supersecretpassword
       secret_key: "PleaseGenerateA50CharKey"
       postgresql:
         password: "ThisIsNotASecurePassword"
