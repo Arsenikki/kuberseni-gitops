@@ -47,7 +47,7 @@ spec:
         tls:
           - secretName: authentik-tls
             hosts:
-              - authentik.${SECRET_DOMAIN}}
+              - authentik.${SECRET_DOMAIN}
     postgresql:
       enabled: true
       auth:
