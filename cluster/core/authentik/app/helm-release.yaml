@@ -35,7 +35,7 @@ spec:
       ingress:
         enabled: true
         hosts:
-          - authentik.arsenikki.casa
+          - authentik.${SECRET_DOMAIN}
         annotations:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
@@ -44,7 +44,7 @@ spec:
         tls:
           - secretName: authentik-tls
             hosts:
-              - authentik.arsenikki.casa
+              - authentik.${SECRET_DOMAIN}}
     postgresql:
       enabled: true
       auth:

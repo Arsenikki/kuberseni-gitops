@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# yamllint disable
+---
+version: 1
+metadata:
+  name: update-embedded-outpost
+entries:
+    # Ensure dependencies are applied first
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: radarr
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: sonarr
+      required: true
+    # Patch default embedded outpost to include apps
+  - model: authentik_outposts.outpost
+    state: present
+    identifiers:
+      name: "authentik Embedded Outpost"
+    attrs:
+      providers:
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "radarr"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
+      config:
+        authentik_host: https://authentik.${SECRET_DOMAIN}

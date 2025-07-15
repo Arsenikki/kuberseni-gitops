@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- middleware.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: authentik-blueprints
+    files:
+      # outposts
+      - ./blueprints/embedded-outpost.yaml
+      
+      # apps & providers
+      # - ./blueprints/qbittorrent.yaml
+      - ./blueprints/sonarr.yaml
+      - ./blueprints/radarr.yaml
