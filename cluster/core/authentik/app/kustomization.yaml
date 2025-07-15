@@ -4,3 +4,16 @@ kind: Kustomization
 resources:
 - helm-release.yaml
 - namespace.yaml
+- middleware.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: authentik-blueprints
+    files:
+      # outposts
+      - ./blueprints/embedded-outpost.yaml
+      
+      # apps & providers
+      # - ./blueprints/qbittorrent.yaml
+      - ./blueprints/sonarr.yaml
+      - ./blueprints/radarr.yaml

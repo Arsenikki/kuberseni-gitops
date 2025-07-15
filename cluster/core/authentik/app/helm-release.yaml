@@ -31,6 +31,9 @@ spec:
       postgresql:
         password: "ThisIsNotASecurePassword"
       log_level: debug
+    blueprints:
+      configMaps:
+        - authentik-blueprints
     server:
       ingress:
         enabled: true
