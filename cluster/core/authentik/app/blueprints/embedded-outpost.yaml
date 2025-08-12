@@ -27,3 +27,6 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
       config:
         authentik_host: https://authentik.${SECRET_DOMAIN}
+        kubernetes_ingress_annotations: 
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
