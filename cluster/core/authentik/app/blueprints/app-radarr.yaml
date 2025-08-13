@@ -10,8 +10,8 @@ entries:
       name: *app
     attrs:
       basic_auth_enabled: true
-      basic_auth_username: radarr_user
-      basic_auth_password: radarr_password
+      basic_auth_user_attribute: radarr_user
+      basic_auth_password_attribute: radarr_password
       authorization_flow:
         !Find [
           authentik_flows.flow,
