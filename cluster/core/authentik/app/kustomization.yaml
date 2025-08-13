@@ -15,5 +15,5 @@ configMapGenerator:
       
       # apps & providers
       # - ./blueprints/qbittorrent.yaml
-      - ./blueprints/sonarr.yaml
-      - ./blueprints/radarr.yaml
+      - ./blueprints/app-sonarr.yaml
+      - ./blueprints/app-radarr.yaml
