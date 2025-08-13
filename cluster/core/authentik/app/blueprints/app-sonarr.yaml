@@ -10,8 +10,8 @@ entries:
       name: *app
     attrs:
       basic_auth_enabled: true
-      basic_auth_username: sonarr_user
-      basic_auth_password: sonarr_password
+      basic_auth_user_attribute: sonarr_user
+      basic_auth_password_attribute: sonarr_password
       authorization_flow:
         !Find [
           authentik_flows.flow,
