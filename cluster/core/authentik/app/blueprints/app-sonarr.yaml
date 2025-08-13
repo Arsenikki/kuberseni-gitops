@@ -27,7 +27,7 @@ entries:
           authentik_flows.flow,
           [slug, "default-provider-invalidation-flow"],
         ]
-      mode: forward_single
+      mode: proxy
       external_host: https://sonarr.${SECRET_DOMAIN}
       access_token_validity: hours=1
 
