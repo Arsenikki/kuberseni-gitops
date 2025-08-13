@@ -9,6 +9,9 @@ entries:
     identifiers:
       name: *app
     attrs:
+      basic_auth_enabled: true
+      basic_auth_username: ${SECRET_SONARR_USERNAME}
+      basic_auth_password: ${SECRET_SONARR_PASSWORD}
       authorization_flow:
         !Find [
           authentik_flows.flow,
