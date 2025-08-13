@@ -32,7 +32,7 @@ spec:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
           # Use forward-auth middleware for authentication
-          traefik.ingress.kubernetes.io/router.middlewares: "traefik-forward-auth@kubernetescrd"
+          traefik.ingress.kubernetes.io/router.middlewares: "authentik-ak-outpost-authentik-embedded-outpost@kubernetescrd"
         hosts:
           - host: sonarr.${SECRET_DOMAIN}
             paths:
