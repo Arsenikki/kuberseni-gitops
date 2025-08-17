@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+---
+version: 1
+metadata:
+  name: &app qbittorrent
+entries:
+  - id: provider
+    model: authentik_providers_proxy.proxyprovider
+    identifiers:
+      name: *app
+    attrs:
+      authorization_flow:
+        !Find [
+          authentik_flows.flow,
+          [slug, "default-provider-authorization-implicit-consent"],
+        ]
+      signing_key:
+        !Find [
+          authentik_crypto.certificatekeypair,
+          [name, "authentik Self-signed Certificate"],
+        ]
+      invalidation_flow:
+        !Find [
+          authentik_flows.flow,
+          [slug, "default-provider-invalidation-flow"],
+        ]
+      mode: proxy
+      external_host: https://qbittorrent.${SECRET_DOMAIN}
+      access_token_validity: hours=1
+
+  - id: application
+    model: authentik_core.application
+    identifiers:
+      slug: *app
+    attrs:
+      name: *app
+      group: Apps
+      icon: https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/New_qBittorrent_Logo.svg/2048px-New_qBittorrent_Logo.svg.png
+      provider: !KeyOf provider
+      policy_engine_mode: any

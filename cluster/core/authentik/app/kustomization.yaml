@@ -3,8 +3,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: authentik
 resources:
-- helm-release.yaml
-- namespace.yaml
+  - helm-release.yaml
+  - middleware.yaml
+  - namespace.yaml
 generatorOptions:
   disableNameSuffixHash: true
 configMapGenerator:
@@ -12,8 +13,9 @@ configMapGenerator:
     files:
       # outposts
       - ./blueprints/embedded-outpost.yaml
-      
+
       # apps & providers
-      # - ./blueprints/qbittorrent.yaml
-      - ./blueprints/app-sonarr.yaml
+      - ./blueprints/app-prowlarr.yaml
+      - ./blueprints/app-qbittorrent.yaml
       - ./blueprints/app-radarr.yaml
+      - ./blueprints/app-sonarr.yaml
