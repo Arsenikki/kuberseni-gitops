@@ -25,7 +25,7 @@ entries:
           [slug, "default-provider-invalidation-flow"],
         ]
       mode: proxy
-      internal_host: qbittorrent.media.svc.cluster.local:8080
+      internal_host: http://qbittorrent.media.svc.cluster.local:8080
       external_host: https://qbittorrent.${SECRET_DOMAIN}
       access_token_validity: hours=1
 

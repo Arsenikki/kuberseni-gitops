@@ -28,7 +28,7 @@ entries:
           [slug, "default-provider-invalidation-flow"],
         ]
       mode: proxy
-      internal_host: radarr.media.svc.cluster.local:7878
+      internal_host: http://radarr.media.svc.cluster.local:7878
       external_host: https://radarr.${SECRET_DOMAIN}
       access_token_validity: hours=1
 

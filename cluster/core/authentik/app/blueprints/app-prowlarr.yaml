@@ -25,7 +25,7 @@ entries:
           [slug, "default-provider-invalidation-flow"],
         ]
       mode: proxy
-      internal_host: prowlarr.media.svc.cluster.local:9696
+      internal_host: http://prowlarr.media.svc.cluster.local:9696
       external_host: https://prowlarr.${SECRET_DOMAIN}
       access_token_validity: hours=1
 
