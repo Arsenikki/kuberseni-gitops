@@ -113,7 +113,7 @@ spec:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
           # Use forward-auth middleware for authentication
-          traefik.ingress.kubernetes.io/router.middlewares: "authentik-ak-outpost-authentik-embedded-outpost@kubernetescrd"
+          traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
         hosts:
           - host: qbittorrent.${SECRET_DOMAIN}
             paths:
