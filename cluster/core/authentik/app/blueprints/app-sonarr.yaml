@@ -28,6 +28,7 @@ entries:
           [slug, "default-provider-invalidation-flow"],
         ]
       mode: proxy
+      internal_host: sonarr.media.svc.cluster.local:8989
       external_host: https://sonarr.${SECRET_DOMAIN}
       access_token_validity: hours=1
 
