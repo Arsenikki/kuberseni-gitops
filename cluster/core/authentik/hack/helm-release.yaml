@@ -48,6 +48,7 @@ spec:
       main:
         enabled: true
         annotations:
+          external-dns/is-public: "true"
           kubernetes.io/tls-acme: "true"
           traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
         hosts:
