@@ -19,3 +19,4 @@ configMapGenerator:
       - ./blueprints/app-qbittorrent.yaml
       - ./blueprints/app-radarr.yaml
       - ./blueprints/app-sonarr.yaml
+      - ./blueprints/app-whoami.yaml
