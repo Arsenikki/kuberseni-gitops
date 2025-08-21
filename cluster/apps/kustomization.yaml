@@ -8,7 +8,7 @@ resources:
   - media
   - monitoring
   # Singular apps
-  - cloudflared/ks.yaml
+  # - cloudflared/ks.yaml
   - external-dns/ks.yaml
   # - cloudnative-pg/ks.yaml
   # - meshcentral/ks.yaml
