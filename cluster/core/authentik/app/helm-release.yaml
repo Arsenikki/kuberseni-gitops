@@ -51,6 +51,6 @@ spec:
     postgresql:
       enabled: true
       auth:
-        password: "ThisIsNotASecurePassword"
+        password: ${AUTHENTIK_POSTGRES_PASSWORD}
     redis:
       enabled: true
