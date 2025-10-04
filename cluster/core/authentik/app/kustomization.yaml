@@ -15,6 +15,7 @@ configMapGenerator:
       - ./blueprints/embedded-outpost.yaml
 
       # apps & providers
+      - ./blueprints/app-n8n.yaml
       - ./blueprints/app-prowlarr.yaml
       - ./blueprints/app-qbittorrent.yaml
       - ./blueprints/app-radarr.yaml
