@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/common-4.3.0/charts/library/common/values.schema.json
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: n8n
+  namespace: n8n
+spec:
+  chart:
+    spec:
+      chart: app-template
+      version: 4.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-charts
+        namespace: flux-system
+  interval: 30m
+  values:
+    controllers:
+      main:
+        containers:
+          app:
+            image:
+              repository: docker.n8n.io/n8nio/n8n
+              tag: 1.62.3
+            env:
+              N8N_HOST: "n8n.${SECRET_DOMAIN}"
+              N8N_PORT: "5678"
+              N8N_PROTOCOL: "https"
+              WEBHOOK_URL: "https://n8n.${SECRET_DOMAIN}/"
+              TZ: "Europe/London"
+              GENERIC_TIMEZONE: "Europe/London"
+              N8N_TEMPLATES_ENABLED: true
+              N8N_RUNNERS_ENABLED: true
+            resources:
+              requests:
+                cpu: 300m
+                memory: 512M
+              limits:
+                memory: 1024M
+        pod:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: "OnRootMismatch"
+
+    service:
+      main:
+        controller: main
+        ports:
+          http:
+            port: 5678
+
+    ingress:
+      main:
+        enabled: true
+        className: traefik
+        annotations:
+          # Automatically generate TLS certificate
+          kubernetes.io/tls-acme: "true"
+          # Use forward-auth middleware for authentication
+          traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+        hosts:
+          - host: n8n.${SECRET_DOMAIN}
+            paths:
+              - path: /
+                pathType: Prefix
+                service:
+                  identifier: main
+                  port: http
+        tls:
+          - secretName: n8n-tls
+            hosts:
+              - n8n.${SECRET_DOMAIN}
+
+    persistence:
+      config:
+        enabled: true
+        existingClaim: n8n-config
+        globalMounts:
+          - path: /home/node/.n8n
