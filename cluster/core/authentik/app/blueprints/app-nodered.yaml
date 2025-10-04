@@ -25,7 +25,7 @@ entries:
           [slug, "default-provider-invalidation-flow"],
         ]
       mode: proxy
-      internal_host: http://node-red.homeautomation.svc.cluster.local:1880
+      internal_host: http://node-red.home-automation.svc.cluster.local:1880
       external_host: https://nodered.${SECRET_DOMAIN}
       access_token_validity: hours=1
 
