@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+---
+version: 1
+metadata:
+  name: &app nodered
+entries:
+  - id: provider
+    model: authentik_providers_proxy.proxyprovider
+    identifiers:
+      name: *app
+    attrs:
+      authorization_flow:
+        !Find [
+          authentik_flows.flow,
+          [slug, "default-provider-authorization-implicit-consent"],
+        ]
+      signing_key:
+        !Find [
+          authentik_crypto.certificatekeypair,
+          [name, "authentik Self-signed Certificate"],
+        ]
+      invalidation_flow:
+        !Find [
+          authentik_flows.flow,
+          [slug, "default-provider-invalidation-flow"],
+        ]
+      mode: proxy
+      internal_host: http://node-red.homeautomation.svc.cluster.local:1880
+      external_host: https://nodered.${SECRET_DOMAIN}
+      access_token_validity: hours=1
+
+  - id: application
+    model: authentik_core.application
+    identifiers:
+      slug: *app
+    attrs:
+      name: *app
+      group: Apps
+      icon: https://repository-images.githubusercontent.com/193215554/df34b36d-279c-496c-91c2-959dd9c9f13d
+      provider: !KeyOf provider
+      policy_engine_mode: any
