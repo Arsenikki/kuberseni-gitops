@@ -50,7 +50,7 @@ spec:
         annotations:
           external-dns/is-public: "true"
           kubernetes.io/tls-acme: "true"
-          traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+          traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
         hosts:
           - host: whoami.${SECRET_DOMAIN}
             paths:
