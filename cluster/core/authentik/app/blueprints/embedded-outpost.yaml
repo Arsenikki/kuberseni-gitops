@@ -35,6 +35,16 @@ entries:
       identifiers:
         name: whoami
       required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: nodered
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: zigbee2mqtt
+      required: true
   # Patch default embedded outpost to include apps
   - model: authentik_outposts.outpost
     state: present
@@ -48,6 +58,8 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "radarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "whoami"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "nodered"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "zigbee2mqtt"]]
       config:
         authentik_host: https://authentik.${SECRET_DOMAIN}
         kubernetes_disabled_components:

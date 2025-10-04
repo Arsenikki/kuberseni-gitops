@@ -21,3 +21,5 @@ configMapGenerator:
       - ./blueprints/app-radarr.yaml
       - ./blueprints/app-sonarr.yaml
       - ./blueprints/app-whoami.yaml
+      - ./blueprints/app-nodered.yaml
+      - ./blueprints/app-zigbee2mqtt.yaml
