@@ -5,7 +5,7 @@ metadata:
   name: update-embedded-outpost
 entries:
   # Ensure dependencies are applied first
-  - model: authentil_blueprints.metaapplyblueprint
+  - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
         name: n8n
