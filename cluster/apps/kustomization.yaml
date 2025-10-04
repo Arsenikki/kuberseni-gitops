@@ -10,6 +10,7 @@ resources:
   # Singular apps
   # - cloudflared/ks.yaml
   - external-dns/ks.yaml
+  - n8n/ks.yaml
   # - cloudnative-pg/ks.yaml
   # - meshcentral/ks.yaml
   - oauth2-proxy/ks.yaml
