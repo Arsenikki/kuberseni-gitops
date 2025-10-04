@@ -60,7 +60,7 @@ spec:
           # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"
           # Use forward-auth middleware for authentication
-          traefik.ingress.kubernetes.io/router.middlewares: "authentik-authentik-forward-auth@kubernetescrd"
+          traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
         hosts:
           - host: n8n.${SECRET_DOMAIN}
             paths:
