@@ -24,7 +24,7 @@ spec:
           *app :
             image:
               repository: ghcr.io/ylianst/meshcentral
-              tag: 1.1.27
+              tag: 1.1.53
             env:
               TZ: Europe/London
               NODE_ENV: production
