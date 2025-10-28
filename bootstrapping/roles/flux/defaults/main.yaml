@@ -1,6 +1,6 @@
 ---
 # renovate: datasource=github-releases depName=fluxcd/flux2
-flux_cli_version: 2.2.3
+flux_cli_version: 2.7.3
 flux_cli_url: https://github.com/fluxcd/flux2/releases/download/v{{ flux_cli_version }}/flux_{{ flux_cli_version }}_linux_amd64.tar.gz
 
 # OCI artifact url to be installed
