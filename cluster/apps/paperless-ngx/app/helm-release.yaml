@@ -21,7 +21,7 @@ spec:
           main:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
-              tag: 2.7.2
+              tag: 2.19.3
             env:
               PAPERLESS_CONSUMER_POLLING: 5
               PAPERLESS_CONSUMER_RECURSIVE: "true"
