@@ -17,12 +17,18 @@ provider "proxmox" {
   endpoint  = var.pve_api_url
   api_token = "${var.pve_token_id}=${var.pve_token_secret}"
   insecure  = true
+  
+  ssh {
+    agent                = false
+    username             = "root"
+    private_key          = file(var.ssh_private_key_path)
+  }
 }
 
 # Download Talos image if enabled
 resource "proxmox_virtual_environment_download_file" "talos_image" {
   datastore_id            = "local"
-  node_name               = "pve"
+  node_name               = "minipc"
   content_type            = "iso"
   url                     = var.talos_image_url
 }
@@ -98,15 +104,8 @@ resource "proxmox_virtual_environment_vm" "talos_vm" {
     enabled  = true
     firewall = false
   }
-
-  # Cloud-init configuration for initial setup
   initialization {
-    type = "nocloud"
-
-    dns {
-      servers = var.dns_servers
-    }
-
+    datastore_id = "local-lvm"
     ip_config {
       ipv4 {
         address = "dhcp"
@@ -119,14 +118,6 @@ resource "proxmox_virtual_environment_vm" "talos_vm" {
 
   # Tags for organization
   tags = ["talos", each.value.node_type.role]
-
-
-  # Lifecycle management
-  lifecycle {
-    ignore_changes = [
-      initialization[0].user_data_file_id,
-    ]
-  }
 
   # Ensure VMs are created sequentially within each node type
   depends_on = [proxmox_virtual_environment_download_file.talos_image]

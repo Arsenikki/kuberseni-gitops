@@ -8,7 +8,6 @@ output "vm_info" {
       description    = v.description
       node_name      = v.node_name
       vm_id          = v.vm_id
-      status         = v.status
       tags           = v.tags
       cpu_cores      = v.cpu[0].cores
       memory_mb      = v.memory[0].dedicated

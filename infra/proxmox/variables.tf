@@ -20,6 +20,11 @@ variable "pve_api_url" {
   }
 }
 
+variable "ssh_private_key_path" {
+  description = "Path to SSH private key for Proxmox host access"
+  type        = string
+}
+
 # Node Configuration
 variable "node_name" {
   description = "Proxmox node name where VMs will be created"
@@ -55,12 +60,6 @@ variable "vm_id_base" {
 variable "talos_image_url" {
   description = "URL for the Talos Linux image"
   type        = string
-}
-
-variable "dns_servers" {
-  description = "DNS servers for VMs"
-  type        = list(string)
-  default     = ["8.8.8.8", "8.8.4.4"]
 }
 
 # Additional Configuration
