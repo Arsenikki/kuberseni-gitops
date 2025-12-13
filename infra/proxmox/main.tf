@@ -117,7 +117,7 @@ resource "proxmox_virtual_environment_vm" "talos_vm" {
   machine = "q35,viommu=intel"
 
   # Tags for organization
-  tags = ["talos", each.value.node_type.role]
+  tags = concat(["terraformed"], [each.value.node_type.role], var.additional_tags)
 
   # Ensure VMs are created sequentially within each node type
   depends_on = [proxmox_virtual_environment_download_file.talos_image]
