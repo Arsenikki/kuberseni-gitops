@@ -1,0 +1,25 @@
+[project]
+name = "temporal-python"
+version = "0.1.0"
+description = "Temporal workflows for Talos management"
+requires-python = ">=3.10"
+readme = "README.md"
+
+dependencies = [
+	"temporalio==1.8.0",
+	"pydantic==2.6.3",
+	"pyyaml==6.0.1",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# No distributable Python packages; we use this project file
+# only to install runtime dependencies for the worker image.
+packages = []
+
+[tool.uv]
+# uv settings optional; keeping minimal config
+
