@@ -10,3 +10,10 @@ Thumbs.db
 kubeconfig**.yaml
 # vscode-sops
 .decrypted~*.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
