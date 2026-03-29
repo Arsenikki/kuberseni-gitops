@@ -61,7 +61,7 @@ spec:
             connection_messages false
             autosave_interval 1800
     persistence:
-      data: 
+      data:
         enabled: true
         existingClaim: mosquitto-data
       config-file:
