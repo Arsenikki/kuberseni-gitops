@@ -1,0 +1,13 @@
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.*
+terraform/terraform.tfvars
+!terraform/secrets.tfvars
+
+# Talos — generated configs
+talos/_out/
+
+# Allow encrypted secrets (SOPS)
+!talos/talsecret.yaml
