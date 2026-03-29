@@ -1,0 +1,18 @@
+# mise configuration for kuberseni-gitops project
+# Run `mise install` to install all tools
+
+[tools]
+# Talos tooling
+talhelper = "latest"
+talosctl = "latest"
+
+# Configuration management
+sops = "latest"
+age = "latest"
+
+# Infrastructure as Code
+opentofu = "1.11.5"
+
+# Utilities
+yq = "latest"
+task = "latest"
