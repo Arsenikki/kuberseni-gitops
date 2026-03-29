@@ -1,8 +1,8 @@
 # OPNSense Kea DHCP configuration for Talos VMs
-# 
+#
 # IMPORTANT: This configuration requires migrating OPNSense from ISC DHCP to Kea DHCP.
 # The browningluke/opnsense Terraform provider only supports Kea DHCP, not ISC DHCP.
-# 
+#
 # Options:
 # 1. Migrate OPNSense to Kea DHCP (Services → Kea DHCPv4), then apply this config
 # 2. Manually configure DHCP reservations in ISC DHCP (Services → DHCPv4 → [LAN])

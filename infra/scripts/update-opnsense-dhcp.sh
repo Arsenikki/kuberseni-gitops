@@ -36,7 +36,7 @@ OUTPUTS=$(tofu output -json)
 echo "$OUTPUTS" | jq -r '.controlplane_macs.value | to_entries[] | "\(.key),\(.value)"' | while IFS=, read -r hostname mac; do
     ip=$(echo "$OUTPUTS" | jq -r ".controlplane_ips.value[\"$hostname\"]")
     echo "Control Plane: $hostname - MAC: $mac - IP: $ip"
-    
+
     # OPNSense API call to add/update DHCP static mapping
     # API endpoint: /api/dhcpv4/leases/addStaticMap
     curl -s -k -u "$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET" \
@@ -56,7 +56,7 @@ done
 echo "$OUTPUTS" | jq -r '.worker_macs.value | to_entries[] | "\(.key),\(.value)"' | while IFS=, read -r hostname mac; do
     ip=$(echo "$OUTPUTS" | jq -r ".worker_ips.value[\"$hostname\"]")
     echo "Worker: $hostname - MAC: $mac - IP: $ip"
-    
+
     curl -s -k -u "$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET" \
         -X POST "https://$OPNSENSE_HOST/api/dhcpv4/leases/addStaticMap" \
         -H "Content-Type: application/json" \

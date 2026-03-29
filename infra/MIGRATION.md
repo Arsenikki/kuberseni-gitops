@@ -10,7 +10,7 @@ Migration from k3s/Ansible to Talos Linux + Terraform infrastructure.
 
 **VMs currently running:**
 - `cp-01` - 192.168.1.51 (router node)
-- `cp-02` - 192.168.1.52 (minipc node)  
+- `cp-02` - 192.168.1.52 (minipc node)
 - `cp-03` - 192.168.1.53 (nas node)
 - `worker-01` - 192.168.1.61 (minipc node)
 - ~~`worker-02` - 192.168.1.62 (nas node)~~ - Removed due to disk space constraints
@@ -40,8 +40,8 @@ Migration from k3s/Ansible to Talos Linux + Terraform infrastructure.
 
 ## Phase 1: Preparation
 
-**Status:** Complete ✅  
-**Owner:** Claude  
+**Status:** Complete ✅
+**Owner:** Claude
 **Dependencies:** None
 
 ### Tasks
@@ -89,36 +89,52 @@ Migration from k3s/Ansible to Talos Linux + Terraform infrastructure.
 
 ## Phase 2: Infrastructure Provisioning
 
-**Status:** Not Started  
-**Owner:** —  
+**Status:** In Progress 🔄
+**Owner:** —
 **Dependencies:** Phase 1
 
 ### Tasks
 
-- [ ] Run Terraform to provision VMs
+- [x] Run Terraform to provision VMs
   ```bash
   task terraform:apply
   ```
-- [ ] Verify all 4 VMs created successfully
-  - control-plane-01 (router/192.168.1.41)
-  - control-plane-02 (minipc/192.168.1.42)
-  - control-plane-03 (nas/192.168.1.43)
-  - worker-01 (minipc/192.168.1.44)
-- [ ] Verify VMs boot into Talos maintenance mode
-- [ ] Check network connectivity (ping each VM from local machine)
+- [x] Verify all 4 VMs created successfully
+  - control-plane-01 (router/VM ID 1001)
+  - control-plane-02 (minipc/VM ID 1002)
+  - control-plane-03 (nas/VM ID 1003)
+  - worker-01 (minipc/VM ID 2001)
+- [x] Verify VMs boot into Talos maintenance mode
+- [ ] **Configure DHCP reservations** for static IPs
+  - **Status:** Pending - OPNSense uses ISC DHCP, Terraform provider only supports Kea DHCP
+  - **Options:**
+    1. Manually configure DHCP reservations in OPNSense ISC DHCP (Services → DHCPv4 → [LAN])
+       - Run `cd infra/terraform && tofu output` to get MAC addresses
+    2. Migrate OPNSense to Kea DHCP, then apply `dhcp.tf` config
+    3. Consider migrating to dnsmasq or other DHCP server with Terraform support
+  - **Note:** VMs currently have random DHCP IPs; need static IPs before applying Talos configs
+- [ ] Reboot VMs after DHCP reservations configured to get correct static IPs
+- [ ] Check network connectivity (ping each VM from local machine on static IPs)
 
 ### Validation
 
-- All VMs running in Proxmox
-- VMs accessible on expected IPs
-- Talos maintenance console accessible: `talosctl --nodes <ip> --insecure health`
+- [x] All VMs running in Proxmox
+- [ ] VMs accessible on expected IPs (.41-.44)
+- [ ] Talos maintenance console accessible: `talosctl --nodes <ip> --insecure health`
+
+### Notes
+
+- VMs provisioned successfully with UEFI firmware
+- Talos v1.12.6 ISO downloaded to all Proxmox nodes
+- Worker-01 has GPU extensions configured (i915, intel-ucode)
+- DHCP automation blocked on OPNSense DHCP server migration
 
 ---
 
 ## Phase 3: Talos Bootstrap
 
-**Status:** Not Started  
-**Owner:** —  
+**Status:** Not Started
+**Owner:** —
 **Dependencies:** Phase 2
 
 ### Tasks
@@ -162,8 +178,8 @@ Migration from k3s/Ansible to Talos Linux + Terraform infrastructure.
 
 ## Phase 4: Core Infrastructure
 
-**Status:** Not Started  
-**Owner:** —  
+**Status:** Not Started
+**Owner:** —
 **Dependencies:** Phase 3
 
 ### Tasks
@@ -241,8 +257,8 @@ Migration from k3s/Ansible to Talos Linux + Terraform infrastructure.
 
 ## Phase 5: Application Workloads
 
-**Status:** Not Started  
-**Owner:** —  
+**Status:** Not Started
+**Owner:** —
 **Dependencies:** Phase 4
 
 ### Strategy
@@ -329,8 +345,8 @@ Migrate applications one namespace at a time. Test each before proceeding.
 
 ## Phase 6: Validation & Cleanup
 
-**Status:** Not Started  
-**Owner:** —  
+**Status:** Not Started
+**Owner:** —
 **Dependencies:** Phase 5
 
 ### Tasks
