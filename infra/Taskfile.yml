@@ -1,0 +1,214 @@
+version: "3"
+
+vars:
+  TALOS_DIR: "{{.ROOT_DIR}}/talos"
+  TF_DIR: "{{.ROOT_DIR}}/terraform"
+  TALOSCONFIG: "{{.TALOS_DIR}}/_out/talosconfig"
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  install:
+    desc: Install all project dependencies via mise (with lockfile verification)
+    cmds:
+      - mise install --locked
+
+  # ── Full lifecycle ────────────────────────────────────────────────────────
+
+  up:
+    desc: Full cluster bootstrap (terraform → talos apply → bootstrap → kubeconfig)
+    cmds:
+      - task: terraform:apply
+      - task: talos:generate
+      - task: talos:apply-controlplane
+      - task: talos:bootstrap
+      - task: talos:apply-workers
+      - task: talos:kubeconfig
+
+  down:
+    desc: Destroy all Proxmox VMs
+    cmds:
+      - task: terraform:destroy
+
+  # ── Terraform ─────────────────────────────────────────────────────────────
+
+  terraform:create-api-token:
+    desc: Create Proxmox API token for Terraform (one-time setup)
+    prompt: This will create a terraform@pve user and API token on Proxmox. Continue?
+    vars:
+      PROXMOX_HOST:
+        sh: 'bash -c ''read -p "Proxmox host IP [192.168.1.10]: " host </dev/tty && echo "${host:-192.168.1.10}"'''
+      SSH_KEY: '{{.SSH_KEY | default "~/.ssh/arsenikki"}}'
+    cmds:
+      - |
+        echo "Creating Terraform user and API token on {{.PROXMOX_HOST}}..."
+        ssh -i {{.SSH_KEY}} root@{{.PROXMOX_HOST}} 'bash -s' <<'EOF'
+        set -e
+
+        # Create terraform user if not exists
+        if ! pveum user list | grep -q "terraform@pve"; then
+          echo "Creating terraform@pve user..."
+          pveum user add terraform@pve --comment "Terraform automation user"
+        else
+          echo "User terraform@pve already exists"
+        fi
+
+        # Delete old token if exists (to allow regeneration)
+        if pveum user token list terraform@pve | grep -q "provider"; then
+          echo "Removing old token..."
+          pveum user token remove terraform@pve provider
+        fi
+
+        # Create API token with privilege separation disabled
+        echo "Creating API token..."
+        pveum user token add terraform@pve provider --privsep=0
+
+        # Grant Administrator role
+        echo "Granting permissions..."
+        pveum aclmod / -user terraform@pve -role Administrator
+
+        echo ""
+        echo "✅ API token created successfully!"
+        echo "Copy the token secret shown above - it won't be shown again"
+        EOF
+      - |
+        echo ""
+        echo "Update infra/terraform/terraform.tfvars with:"
+        echo "  proxmox_endpoint  = \"https://{{.PROXMOX_HOST}}:8006/\""
+        echo "  proxmox_api_token = \"terraform@pve!provider=<SECRET_FROM_ABOVE>\""
+
+  terraform:init:
+    desc: Initialise Terraform providers
+    dir: "{{.TF_DIR}}"
+    cmds:
+      - tofu init
+
+  terraform:plan:
+    desc: Plan Proxmox VM changes
+    dir: "{{.TF_DIR}}"
+    deps: [terraform:init]
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu plan -var-file={}'
+
+  terraform:apply:
+    desc: Provision Proxmox VMs
+    dir: "{{.TF_DIR}}"
+    deps: [terraform:init]
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu apply -var-file={}'
+
+  terraform:destroy:
+    desc: Destroy Proxmox VMs
+    dir: "{{.TF_DIR}}"
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu destroy -var-file={}'
+
+  # ── OPNSense ──────────────────────────────────────────────────────────────
+
+  opnsense:update-dhcp:
+    desc: Update OPNSense DHCP static mappings from Terraform outputs
+    prompt: This will add/update DHCP reservations in OPNSense. Continue?
+    vars:
+      OPNSENSE_API_KEY:
+        sh: 'bash -c ''read -sp "OPNSense API Key: " key </dev/tty && echo "$key"'''
+      OPNSENSE_API_SECRET:
+        sh: 'bash -c ''read -sp "OPNSense API Secret: " secret </dev/tty && echo "$secret"'''
+    cmds:
+      - ./scripts/update-opnsense-dhcp.sh "{{.OPNSENSE_API_KEY}}" "{{.OPNSENSE_API_SECRET}}"
+
+  # ── Talos ─────────────────────────────────────────────────────────────────
+
+  talos:gensecret:
+    desc: Generate Talos cluster secrets (encrypt talsecret.yaml with sops before committing)
+    dir: "{{.TALOS_DIR}}"
+    cmds:
+      - talhelper gensecret > talsecret.yaml
+      - echo "Remember to encrypt talsecret.yaml with sops before committing"
+    status:
+      - test -f talsecret.yaml
+
+  talos:generate:
+    desc: Generate per-node Talos machine configs via talhelper
+    dir: "{{.TALOS_DIR}}"
+    deps: [talos:gensecret]
+    cmds:
+      - talhelper genconfig
+
+  talos:apply-controlplane:
+    desc: Apply Talos config to all control plane nodes (parallel)
+    deps:
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-01 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-02 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-03 }
+
+  talos:apply-workers:
+    desc: Apply Talos config to all worker nodes (parallel)
+    deps:
+      - task: talos:_apply-node
+        vars: { HOSTNAME: worker-01 }
+
+  talos:_apply-node:
+    internal: true
+    vars:
+      NODE_IP:
+        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - >-
+        talosctl apply-config --insecure
+        --nodes {{.NODE_IP}}
+        --file {{.TALOS_DIR}}/_out/{{.HOSTNAME}}.yaml
+
+  talos:bootstrap:
+    desc: Bootstrap the Talos cluster (run once, after first apply)
+    vars:
+      CP1_IP:
+        sh: yq '.nodes[] | select(.hostname == "control-plane-01") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - talosctl --talosconfig {{.TALOSCONFIG}} bootstrap --nodes {{.CP1_IP}}
+
+  talos:kubeconfig:
+    desc: Fetch kubeconfig and merge into ~/.kube/config
+    vars:
+      CP1_IP:
+        sh: yq '.nodes[] | select(.hostname == "control-plane-01") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - talosctl --talosconfig {{.TALOSCONFIG}} kubeconfig --nodes {{.CP1_IP}} --merge
+
+  # Control planes are upgraded sequentially to preserve etcd quorum;
+  # workers run in parallel.
+  talos:upgrade:
+    desc: Upgrade Talos on all nodes
+    cmds:
+      - task: talos:_upgrade-node
+        vars: { HOSTNAME: control-plane-01 }
+      - task: talos:_upgrade-node
+        vars: { HOSTNAME: control-plane-02 }
+      - task: talos:_upgrade-node
+        vars: { HOSTNAME: control-plane-03 }
+      - task: talos:_upgrade-workers
+
+  talos:_upgrade-workers:
+    internal: true
+    deps:
+      - task: talos:_upgrade-node
+        vars: { HOSTNAME: worker-01 }
+
+  talos:_upgrade-node:
+    internal: true
+    vars:
+      NODE_IP:
+        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+      TALOS_VERSION:
+        sh: yq '.talosVersion' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - >-
+        talosctl --talosconfig {{.TALOSCONFIG}}
+        upgrade --nodes {{.NODE_IP}}
+        --image ghcr.io/siderolabs/installer:{{.TALOS_VERSION}}
+        --wait
