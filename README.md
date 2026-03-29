@@ -4,7 +4,7 @@
 ## :rocket: GitOps supercharged Kubernetes cluster :sailboat:
 :computer: Virtualized infrastructure with [Proxmox](https://www.proxmox.com/en/)
 
-:wrench: VM provisioning and cluster bootstrapping with [Ansible](https://www.ansible.com/)
+:wrench: Talos OS based VMs provisioned with [Terraform](https://www.terraform.io/) for immutable infrastructure
 
 :robot: Application workload management with [Flux](https://github.com/fluxcd/flux2)
 </div>
@@ -15,15 +15,15 @@
 
 | Node             | CPU       | RAM       | Storage                             | Function                                   | Operating System |
 |------------------|-----------|-----------|-------------------------------------|--------------------------------------------|------------------|
-| Minisforum NBP5  | i5 13500H | 32GB DDR5 | 1TB   m.2                           | 1x k3s Master<br>1x k3s Worker (with iGPU) | Proxmox 8.x      |
-| Custom NAS build | N5105     | 32GB DDR4 | 256GB m.2<br>16TB  HDD<br>10TB  HDD | TrueNAS<br>1x k3s Master<br>1x k3s Worker  | Proxmox 8.x      |
-| Topton router    | N5105     | 16GB DDR4 | 512GB m.2                           | OPNSense<br>1x k3s Master                  | Proxmox 8.x      |
+| Minisforum NBP5  | i5 13500H | 32GB DDR5 | 1TB   m.2                           | 1x Talos Master<br>1x Talos Worker (with iGPU) | Proxmox 8.x  |
+| Custom NAS build | N5105     | 32GB DDR4 | 256GB m.2<br>16TB  HDD<br>10TB  HDD | TrueNAS<br>1x Talos Master<br>1x Talos Worker  | Proxmox 8.x  |
+| Topton router    | N5105     | 16GB DDR4 | 512GB m.2                           | OPNSense<br>1x Talos Master                    | Proxmox 8.x  |
 
 ---
 
 ## :open_file_folder:&nbsp; Repository structure
 
-- **bootstrapping** directory contains Ansible playbooks and roles. It's used to spin up VMs inside proxmox, configure those VMs, and lastly bootstrap the k3s Kubernetes cluster.
+- **infra** directory contains [Terraform](https://www.terraform.io/) code for provisioning VMs in Proxmox, Talos machine configs, and cluster bootstrap tooling.
 - **cluster** directory contains Kubernetes application workloads with following sub-dirs:
   - **flux** directory is the entrypoint to Flux
   - **core** directory (depends on **flux**) are important infrastructure applications (grouped by namespace). Flux is configured to not prune these resources automatically.
