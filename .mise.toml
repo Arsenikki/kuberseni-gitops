@@ -16,3 +16,4 @@ opentofu = "1.11.5"
 # Utilities
 yq = "latest"
 task = "latest"
+prek = "latest"
