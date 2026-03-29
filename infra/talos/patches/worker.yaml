@@ -1,0 +1,12 @@
+# Applied to worker-01 (Minisforum NBP5 — Intel i5-13500H with Intel Arc iGPU)
+# Extensions: siderolabs/i915 (GPU drivers/firmware), siderolabs/intel-ucode (CPU microcode)
+# Defined in talconfig.yaml schematic
+
+# Load i915 kernel module for Intel GPU
+machine:
+  kernel:
+    modules:
+      - name: i915
+  kubelet:
+    extraArgs:
+      node-labels: intel.feature.node.kubernetes.io/gpu=true

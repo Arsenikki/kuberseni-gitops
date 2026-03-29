@@ -1,0 +1,10 @@
+machine:
+  time:
+    servers:
+      - time.cloudflare.com
+  sysctls:
+    fs.inotify.max_user_watches: "1048576"
+    fs.inotify.max_user_instances: "8192"
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: "true"
