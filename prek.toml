@@ -25,14 +25,6 @@ hooks = [
 ]
 
 [[repos]]
-repo = "https://github.com/google/yamlfmt"
-rev = "v0.17.0"
-hooks = [
-    # Disabled: yamlfmt removes --- document markers which are conventional in K8s manifests
-    # { id = "yamlfmt", files = "\\.(yaml|yml)$", exclude = "(secrets\\.tfvars|talsecret\\.yaml|\\.sops\\.yaml|mise\\.lock)" },
-]
-
-[[repos]]
 repo = "https://github.com/antonbabenko/pre-commit-terraform"
 rev = "v1.96.2"
 hooks = [
