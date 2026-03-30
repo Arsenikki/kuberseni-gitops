@@ -11,15 +11,15 @@ hooks = [
     { id = "check-merge-conflict" },
     { id = "check-case-conflict" },
     { id = "mixed-line-ending" },
-    
+
     # YAML checks
     { id = "check-yaml", args = ["--unsafe"] },  # --unsafe allows custom tags (like SOPS)
     { id = "sort-simple-yaml" },
-    
+
     # Security checks
     { id = "detect-private-key" },
     { id = "detect-aws-credentials", args = ["--allow-missing-credentials"] },
-    
+
     # Large files
     { id = "check-added-large-files", args = ["--maxkb=1024"] },
 ]
@@ -28,7 +28,8 @@ hooks = [
 repo = "https://github.com/google/yamlfmt"
 rev = "v0.17.0"
 hooks = [
-    { id = "yamlfmt", files = "\\.(yaml|yml)$", exclude = "(secrets\\.tfvars|talsecret\\.yaml|\\.sops\\.yaml|mise\\.lock)" },
+    # Disabled: yamlfmt removes --- document markers which are conventional in K8s manifests
+    # { id = "yamlfmt", files = "\\.(yaml|yml)$", exclude = "(secrets\\.tfvars|talsecret\\.yaml|\\.sops\\.yaml|mise\\.lock)" },
 ]
 
 [[repos]]
@@ -52,7 +53,7 @@ hooks = [
 repo = "local"
 hooks = [
     # OpenTofu formatting (use our project-local opentofu)
-    { 
+    {
         id = "tofu-fmt",
         name = "OpenTofu fmt",
         entry = "tofu",
