@@ -1,7 +1,7 @@
 # prek configuration for kuberseni-gitops
 # https://github.com/j178/prek
 
-[[tool.prek.repos]]
+[[repos]]
 repo = "https://github.com/pre-commit/pre-commit-hooks"
 rev = "v6.0.0"
 hooks = [
@@ -16,27 +16,39 @@ hooks = [
     { id = "check-yaml", args = ["--unsafe"] },  # --unsafe allows custom tags (like SOPS)
     { id = "sort-simple-yaml" },
     
+    # Security checks
+    { id = "detect-private-key" },
+    { id = "detect-aws-credentials", args = ["--allow-missing-credentials"] },
+    
     # Large files
     { id = "check-added-large-files", args = ["--maxkb=1024"] },
 ]
 
-[[tool.prek.repos]]
+[[repos]]
 repo = "https://github.com/google/yamlfmt"
 rev = "v0.17.0"
 hooks = [
     { id = "yamlfmt", files = "\\.(yaml|yml)$", exclude = "(secrets\\.tfvars|talsecret\\.yaml|\\.sops\\.yaml|mise\\.lock)" },
 ]
 
-[[tool.prek.repos]]
+[[repos]]
 repo = "https://github.com/antonbabenko/pre-commit-terraform"
-rev = "v2.3.3"
+rev = "v1.96.2"
 hooks = [
-    { id = "terraform_fmt" },
-    { id = "terraform_validate", args = ["--hook-config=--retry-once-with-cleanup=true"] },
-    { id = "terraform_tflint" },
+    # Exclude SOPS-encrypted files to prevent breaking encryption metadata
+    { id = "terraform_fmt", exclude = "secrets\\.tfvars" },
+    { id = "terraform_validate", args = ["--hook-config=--retry-once-with-cleanup=true"], exclude = "secrets\\.tfvars" },
+    { id = "terraform_tflint", exclude = "secrets\\.tfvars" },
 ]
 
-[[tool.prek.repos]]
+[[repos]]
+repo = "https://github.com/gitleaks/gitleaks"
+rev = "v8.21.2"
+hooks = [
+    { id = "gitleaks" },
+]
+
+[[repos]]
 repo = "local"
 hooks = [
     # OpenTofu formatting (use our project-local opentofu)
