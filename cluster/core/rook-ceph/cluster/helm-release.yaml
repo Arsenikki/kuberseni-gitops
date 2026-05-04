@@ -31,20 +31,15 @@ spec:
         useAllDevices: false
         nodes:
           - name: worker-01
-            devices:
-              # /dev/sdb = 350GB virtual disk backed by minipc NVMe (scsi1 in Proxmox)
-              - name: /dev/sdb
-                config:
-                  deviceClass: nvme
-          # worker-02 HDD devices — uncomment and set correct paths after adding disk passthrough in Proxmox
+            # Picks up the 500GB Ceph virtual disk (all unused disks on this node)
+            useAllDevices: true
+            config:
+              deviceClass: nvme
+          # worker-02: uncomment after adding HDD passthrough disks in Proxmox
           # - name: worker-02
-          #   devices:
-          #     - name: /dev/sdb
-          #       config:
-          #         deviceClass: hdd
-          #     - name: /dev/sdc
-          #       config:
-          #         deviceClass: hdd
+          #   useAllDevices: true
+          #   config:
+          #     deviceClass: hdd
 
     # Fast NVMe block pool — replaces longhorn-fast-replicated for config PVCs
     cephBlockPools:

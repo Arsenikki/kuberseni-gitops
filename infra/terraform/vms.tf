@@ -1,16 +1,16 @@
 locals {
   # Proxmox node names — verify with: pvesh get /nodes
   controlplane_vms = {
-    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2, memory = 6144,  disk_size = 64,  ip = "192.168.1.41" }
-    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2, memory = 6144,  disk_size = 64,  ip = "192.168.1.42" }
-    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2, memory = 6144,  disk_size = 64,  ip = "192.168.1.43" }
+    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2, memory = 6144,  disk_size = 50,  ip = "192.168.1.41" }
+    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2, memory = 6144,  disk_size = 50,  ip = "192.168.1.42" }
+    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2, memory = 6144,  disk_size = 50,  ip = "192.168.1.43" }
   }
 
   worker_vms = {
     # ceph_disk_size: extra virtual disk for Ceph OSD (0 = none, uses HDD passthrough instead)
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 512, ceph_disk_size = 350, ip = "192.168.1.44" }
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, ceph_disk_size = 500, ip = "192.168.1.44" }
     # worker-02: HDD passthrough disks (16TB + 10TB) added manually in Proxmox after VM creation
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 64,  ceph_disk_size = 0,   ip = "192.168.1.45" }
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, ceph_disk_size = 0,   ip = "192.168.1.45" }
   }
 
   all_vms = merge(local.controlplane_vms, local.worker_vms)
