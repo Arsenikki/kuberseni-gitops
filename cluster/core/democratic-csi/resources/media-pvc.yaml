@@ -9,5 +9,5 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 8000Gi
+      storage: 14000Gi
   storageClassName: truenas-nfs-csi
