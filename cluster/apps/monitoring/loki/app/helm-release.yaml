@@ -50,7 +50,7 @@ spec:
       replicas: 1
       persistence:
         size: 10Gi
-        storageClass: longhorn-fast-replicated
+        storageClass: ceph-block
     test:
       enabled: false
     monitoring:
