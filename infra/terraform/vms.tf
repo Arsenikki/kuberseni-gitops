@@ -7,9 +7,10 @@ locals {
   }
 
   worker_vms = {
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 512, ip = "192.168.1.44" }
-    # worker-02: Ceph HDD storage node on NAS (16TB + 10TB HDD passthroughs added manually in Proxmox after VM creation)
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 64,  ip = "192.168.1.45" }
+    # ceph_disk_size: extra virtual disk for Ceph OSD (0 = none, uses HDD passthrough instead)
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 512, ceph_disk_size = 350, ip = "192.168.1.44" }
+    # worker-02: HDD passthrough disks (16TB + 10TB) added manually in Proxmox after VM creation
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 64,  ceph_disk_size = 0,   ip = "192.168.1.45" }
   }
 
   all_vms = merge(local.controlplane_vms, local.worker_vms)
@@ -134,6 +135,17 @@ resource "proxmox_virtual_environment_vm" "worker" {
     size         = each.value.disk_size
     file_format  = "raw"
     discard      = "on"
+  }
+
+  dynamic "disk" {
+    for_each = each.value.ceph_disk_size > 0 ? [1] : []
+    content {
+      datastore_id = var.vm_datastore
+      interface    = "scsi1"
+      size         = each.value.ceph_disk_size
+      file_format  = "raw"
+      discard      = "on"
+    }
   }
 
   cdrom {
