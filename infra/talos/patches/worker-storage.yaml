@@ -1,0 +1,7 @@
+# Applied to worker-02 (NAS machine — Ceph HDD storage node)
+# Hosts 16TB + 10TB HDD OSDs for Rook/Ceph media storage pool
+
+machine:
+  kubelet:
+    extraArgs:
+      node-labels: node-role.kubernetes.io/storage=true

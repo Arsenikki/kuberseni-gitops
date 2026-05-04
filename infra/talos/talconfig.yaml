@@ -74,6 +74,23 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.1.1
+    patches:
+      - "@./patches/worker-gpu.yaml"
+
+  - hostname: worker-02
+    ipAddress: 192.168.1.45
+    installDisk: /dev/sda
+    controlPlane: false
+    networkInterfaces:
+      - interface: eth0
+        dhcp: false
+        addresses:
+          - 192.168.1.45/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+    patches:
+      - "@./patches/worker-storage.yaml"
 
 controlPlane:
   patches:
@@ -83,4 +100,4 @@ controlPlane:
 worker:
   patches:
     - "@./patches/all.yaml"
-    - "@./patches/worker.yaml"
+    - "@./patches/worker-common.yaml"

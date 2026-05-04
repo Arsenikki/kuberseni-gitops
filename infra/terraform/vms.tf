@@ -8,6 +8,8 @@ locals {
 
   worker_vms = {
     worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 512, ip = "192.168.1.44" }
+    # worker-02: Ceph HDD storage node on NAS (16TB + 10TB HDD passthroughs added manually in Proxmox after VM creation)
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 64,  ip = "192.168.1.45" }
   }
 
   all_vms = merge(local.controlplane_vms, local.worker_vms)
@@ -16,15 +18,19 @@ locals {
   proxmox_nodes = toset([for v in local.all_vms : v.proxmox_node])
 }
 
-# Download the Talos ISO to each Proxmox node that hosts a VM
-resource "proxmox_virtual_environment_download_file" "talos_iso" {
+# Download the Talos nocloud disk image from Image Factory to each Proxmox node
+# The nocloud image supports cloud-init datasource for network config via Proxmox initialization block
+# Custom schematic with qemu-guest-agent: ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+resource "proxmox_virtual_environment_download_file" "talos_image" {
   for_each = local.proxmox_nodes
 
-  content_type = "iso"
-  datastore_id = var.iso_datastore
-  node_name    = each.key
-  url          = "https://github.com/siderolabs/talos/releases/download/${var.talos_version}/metal-amd64.iso"
-  file_name    = "talos-${var.talos_version}-amd64.iso"
+  content_type            = "iso"
+  datastore_id            = var.iso_datastore
+  node_name               = each.key
+  url                     = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${var.talos_version}/nocloud-amd64.raw.zst"
+  file_name               = "talos-${var.talos_version}-nocloud-amd64.img"
+  decompression_algorithm = "zst"
+  overwrite               = false
 }
 
 resource "proxmox_virtual_environment_vm" "controlplane" {
@@ -34,9 +40,9 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   node_name = each.value.proxmox_node
   vm_id     = each.value.vm_id
 
-  # Talos does not use the QEMU guest agent
+  # Enable QEMU guest agent (included in custom schematic)
   agent {
-    enabled = false
+    enabled = true
   }
 
   # UEFI firmware (efi_disk enables OVMF/UEFI automatically)
@@ -55,8 +61,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     dedicated = each.value.memory
   }
 
-  # Boot from disk first; falls back to ISO when disk is empty
-  boot_order = ["scsi0", "ide2"]
+  boot_order = ["ide2", "scsi0"]
 
   disk {
     datastore_id = var.vm_datastore
@@ -67,12 +72,21 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   }
 
   cdrom {
-    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+    file_id   = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
     interface = "ide2"
   }
 
   network_device {
     bridge = each.value.network_bridge
+  }
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "${each.value.ip}/24"
+        gateway = var.network_gateway
+      }
+    }
   }
 
   operating_system {
@@ -112,7 +126,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     dedicated = each.value.memory
   }
 
-  boot_order = ["scsi0", "ide2"]
+  boot_order = ["ide2", "scsi0"]
 
   disk {
     datastore_id = var.vm_datastore
@@ -123,12 +137,21 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
 
   cdrom {
-    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+    file_id   = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
     interface = "ide2"
   }
 
   network_device {
     bridge = each.value.network_bridge
+  }
+
+  initialization {
+    ip_config {
+      ipv4 {
+        address = "${each.value.ip}/24"
+        gateway = var.network_gateway
+      }
+    }
   }
 
   operating_system {
