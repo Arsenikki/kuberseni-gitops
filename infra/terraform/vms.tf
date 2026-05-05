@@ -37,9 +37,10 @@ resource "proxmox_virtual_environment_download_file" "talos_image" {
 resource "proxmox_virtual_environment_vm" "controlplane" {
   for_each = local.controlplane_vms
 
-  name      = each.key
-  node_name = each.value.proxmox_node
-  vm_id     = each.value.vm_id
+  name           = each.key
+  node_name      = each.value.proxmox_node
+  vm_id          = each.value.vm_id
+  stop_on_destroy = true
 
   # Enable QEMU guest agent (included in custom schematic)
   agent {
@@ -103,9 +104,10 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
 resource "proxmox_virtual_environment_vm" "worker" {
   for_each = local.worker_vms
 
-  name      = each.key
-  node_name = each.value.proxmox_node
-  vm_id     = each.value.vm_id
+  name            = each.key
+  node_name       = each.value.proxmox_node
+  vm_id           = each.value.vm_id
+  stop_on_destroy = true
 
   agent {
     enabled = false
@@ -158,6 +160,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
 
   initialization {
+    datastore_id = var.vm_datastore
     ip_config {
       ipv4 {
         address = "${each.value.ip}/24"

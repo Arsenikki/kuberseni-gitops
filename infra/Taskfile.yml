@@ -152,6 +152,8 @@ tasks:
     deps:
       - task: talos:_apply-node
         vars: { HOSTNAME: worker-01 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: worker-02 }
 
   talos:_apply-node:
     internal: true
@@ -198,6 +200,8 @@ tasks:
     deps:
       - task: talos:_upgrade-node
         vars: { HOSTNAME: worker-01 }
+      - task: talos:_upgrade-node
+        vars: { HOSTNAME: worker-02 }
 
   talos:_upgrade-node:
     internal: true
