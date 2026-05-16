@@ -63,19 +63,16 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     dedicated = each.value.memory
   }
 
-  boot_order = ["ide2", "scsi0"]
+  boot_order = ["scsi0"]
 
+  # Talos nocloud image is the boot disk; initialization block provides cloud-init net config on ide2
   disk {
     datastore_id = var.vm_datastore
     interface    = "scsi0"
     size         = each.value.disk_size
+    file_id      = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
     file_format  = "raw"
     discard      = "on"
-  }
-
-  cdrom {
-    file_id   = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
-    interface = "ide2"
   }
 
   network_device {
@@ -83,6 +80,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   }
 
   initialization {
+    datastore_id = var.vm_datastore
     ip_config {
       ipv4 {
         address = "${each.value.ip}/24"
@@ -95,10 +93,6 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     type = "l26"
   }
 
-  lifecycle {
-    # Prevent Terraform from re-imaging a running node if the ISO changes
-    ignore_changes = [cdrom]
-  }
 }
 
 resource "proxmox_virtual_environment_vm" "worker" {
@@ -129,12 +123,14 @@ resource "proxmox_virtual_environment_vm" "worker" {
     dedicated = each.value.memory
   }
 
-  boot_order = ["ide2", "scsi0"]
+  boot_order = ["scsi0"]
 
+  # Talos nocloud image is the boot disk; initialization block provides cloud-init net config on ide2
   disk {
     datastore_id = var.vm_datastore
     interface    = "scsi0"
     size         = each.value.disk_size
+    file_id      = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
     file_format  = "raw"
     discard      = "on"
   }
@@ -148,11 +144,6 @@ resource "proxmox_virtual_environment_vm" "worker" {
       file_format  = "raw"
       discard      = "on"
     }
-  }
-
-  cdrom {
-    file_id   = proxmox_virtual_environment_download_file.talos_image[each.value.proxmox_node].id
-    interface = "ide2"
   }
 
   network_device {
@@ -173,7 +164,4 @@ resource "proxmox_virtual_environment_vm" "worker" {
     type = "l26"
   }
 
-  lifecycle {
-    ignore_changes = [cdrom]
-  }
 }

@@ -3,7 +3,9 @@ version: "3"
 vars:
   TALOS_DIR: "{{.ROOT_DIR}}/talos"
   TF_DIR: "{{.ROOT_DIR}}/terraform"
-  TALOSCONFIG: "{{.TALOS_DIR}}/_out/talosconfig"
+  TALOSCONFIG: "{{.TALOS_DIR}}/clusterconfig/talosconfig"
+  CLUSTER_NAME:
+    sh: yq '.clusterName' {{.TALOS_DIR}}/talconfig.yaml
 
 tasks:
   default:
@@ -164,7 +166,7 @@ tasks:
       - >-
         talosctl apply-config --insecure
         --nodes {{.NODE_IP}}
-        --file {{.TALOS_DIR}}/_out/{{.HOSTNAME}}.yaml
+        --file {{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-{{.HOSTNAME}}.yaml
 
   talos:bootstrap:
     desc: Bootstrap the Talos cluster (run once, after first apply)

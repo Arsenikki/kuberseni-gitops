@@ -4,4 +4,4 @@
 machine:
   kubelet:
     extraArgs:
-      node-labels: node-role.kubernetes.io/storage=true
+      node-labels: node.kubernetes.io/storage-node=true

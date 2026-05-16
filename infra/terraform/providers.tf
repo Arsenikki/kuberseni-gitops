@@ -6,10 +6,6 @@ terraform {
       source  = "bpg/proxmox"
       version = "~> 0.99"
     }
-    opnsense = {
-      source  = "browningluke/opnsense"
-      version = "~> 0.16.1"
-    }
   }
 
   # Uncomment to use remote state (e.g. an S3-compatible store on TrueNAS)
@@ -32,10 +28,10 @@ provider "proxmox" {
   endpoint  = var.proxmox_endpoint
   api_token = var.proxmox_api_token
   insecure  = true # set to false if Proxmox has a trusted TLS cert
-}
 
-provider "opnsense" {
-  uri        = var.opnsense_url
-  api_key    = var.opnsense_api_key
-  api_secret = var.opnsense_api_secret
+  # Required for disk image imports (file_id on disk blocks copies via SSH)
+  ssh {
+    username    = "root"
+    private_key = file(pathexpand("~/.ssh/arsenikki"))
+  }
 }
