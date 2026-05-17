@@ -9,7 +9,8 @@ service:
   main:
     type: LoadBalancer
     annotations:
-      io.cilium/lb-ipam-ips: "192.168.1.201"
+      # Transition IP — old cluster owns 192.168.1.201; update to 201 at cutover
+    io.cilium/lb-ipam-ips: "192.168.1.221"
     externalTrafficPolicy: Cluster
     ports:
       http:
