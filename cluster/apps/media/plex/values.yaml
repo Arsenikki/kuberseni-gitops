@@ -1,0 +1,61 @@
+image:
+  repository: ghcr.io/onedr0p/plex
+  tag: 1.41.4.9463-630c9f557
+
+env:
+  TZ: "Europe/London"
+
+service:
+  main:
+    type: LoadBalancer
+    annotations:
+      io.cilium/lb-ipam-ips: "192.168.1.201"
+    externalTrafficPolicy: Cluster
+    ports:
+      http:
+        port: 32400
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: plex.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: plex-tls
+        hosts:
+          - plex.arsenikki.casa
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: plex-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+  transcode:
+    enabled: true
+    type: emptyDir
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: OnRootMismatch
+  supplementalGroups:
+    - 44
+    - 110
+
+resources:
+  requests:
+    gpu.intel.com/i915: 1
+    cpu: 2
+    memory: 1024Mi
+  limits:
+    gpu.intel.com/i915: 1
+    memory: 4096Mi

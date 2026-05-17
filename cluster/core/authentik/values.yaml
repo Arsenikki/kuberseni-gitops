@@ -1,0 +1,37 @@
+authentik:
+  # Secrets come from ESO ExternalSecret → authentik-secrets k8s Secret
+  # see cluster/core/authentik/externalsecrets.yaml
+  existingSecret: authentik-secrets
+  existingSecretKey:
+    bootstrapToken: AUTHENTIK_BOOTSTRAP_TOKEN
+    bootstrapPassword: AUTHENTIK_BOOTSTRAP_PASSWORD
+    secretKey: AUTHENTIK_SECRET_KEY
+    postgresqlPassword: AUTHENTIK_POSTGRES_PASSWORD
+  log_level: debug
+
+blueprints:
+  configMaps:
+    - authentik-blueprints
+
+server:
+  ingress:
+    enabled: true
+    hosts:
+      - authentik.arsenikki.casa
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      external-dns/is-public: "true"
+    tls:
+      - secretName: authentik-tls
+        hosts:
+          - authentik.arsenikki.casa
+
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: authentik-secrets
+    secretKeys:
+      adminPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
+
+redis:
+  enabled: true

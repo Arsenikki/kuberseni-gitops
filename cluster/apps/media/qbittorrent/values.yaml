@@ -1,0 +1,144 @@
+controller:
+  type: statefulset
+
+image:
+  repository: ghcr.io/onedr0p/qbittorrent
+  tag: 5.0.4
+
+env:
+  TZ: "Europe/London"
+  UMASK: "022"
+  QBITTORRENT__PORT: 8080
+  QBITTORRENT__BT_PORT: 21188
+  QBT_BitTorrent__Session__Interface: wg0
+  QBT_BitTorrent__Session__InterfaceName: wg0
+  QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
+  # Network ranges allowed to bypass WebUI auth
+  QBT_Preferences__WebUI__AuthSubnetWhitelist: "192.168.1.0/24, 10.42.0.0/16, 10.43.0.0/16"
+  QBT_Preferences__WebUI__LocalHostAuth: false
+  QBT_BitTorrent__Session__DefaultSavePath: "/data/downloads"
+
+hostname: qbittorrent
+
+service:
+  main:
+    ports:
+      http:
+        port: 8080
+  bittorrent:
+    enabled: true
+    type: ClusterIP
+    ports:
+      bittorrent:
+        enabled: true
+        port: 21188
+        protocol: TCP
+        targetPort: 21188
+
+addons:
+  netshoot:
+    enabled: true
+  vpn:
+    enabled: true
+    type: gluetun
+    gluetun:
+      image:
+        repository: ghcr.io/qdm12/gluetun
+        tag: v3.39.1
+    env:
+      - name: VPN_SERVICE_PROVIDER
+        value: airvpn
+      - name: VPN_TYPE
+        value: wireguard
+      - name: VPN_INTERFACE
+        value: wg0
+      - name: FIREWALL_INPUT_PORTS
+        value: 8080
+      - name: FIREWALL_VPN_INPUT_PORTS
+        value: 21188
+      - name: FIREWALL_OUTBOUND_SUBNETS
+        value: "10.42.0.0/16,10.43.0.0/16"
+      - name: DOT
+        value: "off"
+      - name: SERVER_COUNTRIES
+        value: Netherlands
+      # WireGuard secrets injected from ESO → qbittorrent-vpn-secret
+      - name: WIREGUARD_ADDRESSES
+        valueFrom:
+          secretKeyRef:
+            name: qbittorrent-vpn-secret
+            key: WG_ADDRESSES
+      - name: WIREGUARD_PRIVATE_KEY
+        valueFrom:
+          secretKeyRef:
+            name: qbittorrent-vpn-secret
+            key: WG_PRIVATE_KEY
+      - name: WIREGUARD_PRESHARED_KEY
+        valueFrom:
+          secretKeyRef:
+            name: qbittorrent-vpn-secret
+            key: WG_PRESHARED_KEY
+      - name: LOG_LEVEL
+        value: debug
+      - name: HEALTH_TARGET_ADDRESS
+        value: "cloudflare.com:443"
+      - name: HEALTH_VPN_DURATION_INITIAL
+        value: "20s"
+      - name: HEALTH_VPN_DURATION_ADDITION
+        value: "600s"
+      - name: HEALTH_SUCCESS_WAIT_DURATION
+        value: "1200s"
+    securityContext:
+      privileged: true
+      capabilities:
+        add:
+          - NET_ADMIN
+          - SYS_MODULE
+
+probes:
+  liveness:
+    enabled: false
+  readiness:
+    enabled: false
+  startup:
+    enabled: false
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
+    hosts:
+      - host: qbittorrent.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: qbittorrent-tls
+        hosts:
+          - qbittorrent.arsenikki.casa
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: qbittorrent-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+securityContext:
+  runAsUser: 568
+  runAsGroup: 568
+
+podSecurityContext:
+  fsGroup: 568
+  fsGroupChangePolicy: OnRootMismatch
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    memory: 3000Mi

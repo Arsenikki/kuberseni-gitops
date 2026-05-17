@@ -1,0 +1,27 @@
+alertmanager:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 24h
+    serviceMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 200Mi
+
+grafana:
+  defaultDashboardsEnabled: true
+
+kube-state-metrics:
+  collectors: []
+  extraArgs:
+    - --custom-resource-state-only=true
+  rbac:
+    extraRules:
+      - apiGroups:
+          - argoproj.io
+        resources:
+          - applications
+          - appprojects
+        verbs: ["list", "watch"]

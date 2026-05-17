@@ -1,0 +1,52 @@
+image:
+  repository: ghcr.io/onedr0p/radarr
+  tag: 5.17.2.9580
+
+env:
+  TZ: "Europe/London"
+
+service:
+  main:
+    ports:
+      http:
+        port: 7878
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
+    hosts:
+      - host: radarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: radarr-tls
+        hosts:
+          - radarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: radarr-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256M
+  limits:
+    memory: 1024M

@@ -1,0 +1,200 @@
+---
+# ApplicationSet for all user-facing apps.
+# Each element specifies the Helm chart source; values come from cluster/apps/<namespace>/<name>/values.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          # default namespace
+          - name: homepage
+            namespace: default
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 2.5.0
+            valuesPath: cluster/apps/default/homepage/values.yaml
+            syncWave: "5"
+
+          # home-automation namespace
+          - name: home-assistant
+            namespace: home-automation
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/home-automation/home-assistant/values.yaml
+            syncWave: "5"
+          - name: mosquitto
+            namespace: home-automation
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/home-automation/mosquitto/values.yaml
+            syncWave: "5"
+          - name: node-red
+            namespace: home-automation
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/home-automation/node-red/values.yaml
+            syncWave: "5"
+          - name: zigbee2mqtt
+            namespace: home-automation
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 2.5.0
+            valuesPath: cluster/apps/home-automation/zigbee2mqtt/values.yaml
+            syncWave: "5"
+          - name: ser2net
+            namespace: home-automation
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 3.7.3
+            valuesPath: cluster/apps/home-automation/ser2net/values.yaml
+            syncWave: "5"
+
+          # media namespace
+          - name: plex
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/plex/values.yaml
+            syncWave: "5"
+          - name: sonarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/sonarr/values.yaml
+            syncWave: "5"
+          - name: radarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/radarr/values.yaml
+            syncWave: "5"
+          - name: prowlarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/prowlarr/values.yaml
+            syncWave: "5"
+          - name: qbittorrent
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/qbittorrent/values.yaml
+            syncWave: "5"
+          - name: bazarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/bazarr/values.yaml
+            syncWave: "5"
+          - name: overseerr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/overseerr/values.yaml
+            syncWave: "5"
+          - name: lidarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/lidarr/values.yaml
+            syncWave: "5"
+          - name: readarr
+            namespace: media
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 1.5.1
+            valuesPath: cluster/apps/media/readarr/values.yaml
+            syncWave: "5"
+
+          # singular apps
+          - name: n8n
+            namespace: n8n
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 4.3.0
+            valuesPath: cluster/apps/n8n/values.yaml
+            syncWave: "5"
+          - name: paperless-ngx
+            namespace: paperless-ngx
+            repoURL: https://bjw-s.github.io/helm-charts
+            chart: app-template
+            targetRevision: 2.5.0
+            valuesPath: cluster/apps/paperless-ngx/values.yaml
+            syncWave: "5"
+          - name: external-dns
+            namespace: external-dns
+            repoURL: https://kubernetes-sigs.github.io/external-dns/
+            chart: external-dns
+            targetRevision: 1.15.2
+            valuesPath: cluster/apps/external-dns/values.yaml
+            syncWave: "4"
+          - name: oauth2-proxy
+            namespace: oauth2-proxy
+            repoURL: https://oauth2-proxy.github.io/manifests
+            chart: oauth2-proxy
+            targetRevision: 7.12.8
+            valuesPath: cluster/apps/oauth2-proxy/values.yaml
+            syncWave: "5"
+
+          # monitoring
+          - name: kube-prometheus-stack
+            namespace: monitoring
+            repoURL: https://prometheus-community.github.io/helm-charts
+            chart: kube-prometheus-stack
+            targetRevision: 57.0.1
+            valuesPath: cluster/apps/monitoring/kube-prometheus-stack/values.yaml
+            syncWave: "5"
+          - name: loki
+            namespace: monitoring
+            repoURL: https://grafana.github.io/helm-charts
+            chart: loki
+            targetRevision: 5.23.0
+            valuesPath: cluster/apps/monitoring/loki/values.yaml
+            syncWave: "5"
+
+  template:
+    metadata:
+      name: "{{ .name }}"
+      namespace: argocd
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .syncWave }}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: kuberseni
+      sources:
+        - repoURL: "{{ .repoURL }}"
+          chart: "{{ .chart }}"
+          targetRevision: "{{ .targetRevision }}"
+          helm:
+            valueFiles:
+              - "$values/{{ .valuesPath }}"
+        - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ .namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,52 @@
+image:
+  repository: ghcr.io/onedr0p/bazarr
+  tag: 1.4.3
+
+env:
+  TZ: "Europe/London"
+
+service:
+  main:
+    ports:
+      http:
+        port: 6767
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
+    hosts:
+      - host: bazarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: bazarr-tls
+        hosts:
+          - bazarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: bazarr-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64M
+  limits:
+    memory: 512M

@@ -1,0 +1,4 @@
+config:
+  core:
+    sources:
+      - pci
