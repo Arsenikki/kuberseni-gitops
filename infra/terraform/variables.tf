@@ -32,22 +32,3 @@ variable "network_gateway" {
   type        = string
   default     = "192.168.1.1"
 }
-
-# OPNSense provider configuration
-variable "opnsense_url" {
-  description = "OPNSense API URL, e.g. https://192.168.1.1"
-  type        = string
-  default     = "https://192.168.1.1"
-}
-
-variable "opnsense_api_key" {
-  description = "OPNSense API key (from System → Access → Users → API keys)"
-  type        = string
-  sensitive   = true
-}
-
-variable "opnsense_api_secret" {
-  description = "OPNSense API secret (from System → Access → Users → API keys)"
-  type        = string
-  sensitive   = true
-}

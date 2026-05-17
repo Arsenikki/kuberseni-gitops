@@ -1,0 +1,6 @@
+kuberseni-control-plane-01.yaml
+kuberseni-control-plane-02.yaml
+kuberseni-control-plane-03.yaml
+kuberseni-worker-01.yaml
+talosconfig
+kuberseni-worker-02.yaml
