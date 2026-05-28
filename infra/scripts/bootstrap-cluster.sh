@@ -24,7 +24,7 @@ kubectl --context "$CONTEXT" get nodes --no-headers | awk '{print "  node:", $1,
 
 echo "  fetching credentials from 1Password..."
 CREDENTIALS_B64=$(op document get "homelab Credentials File" | base64)
-CONNECT_TOKEN=$(op item get "homelab auth" --fields password)
+CONNECT_TOKEN=$(op item get "homelab Access Token: homelab" --fields credential --reveal 2>/dev/null)
 echo "  credentials: ✓"
 echo "  connect token: ✓"
 echo ""
@@ -78,6 +78,8 @@ echo "  Token secret created ✓"
 
 # ── ClusterSecretStore ────────────────────────────────────────────────────────
 echo ""
+echo "→ Waiting for ESO CRDs to be established..."
+kube wait --for=condition=established crd/clustersecretstores.external-secrets.io --timeout=60s
 echo "→ Applying ClusterSecretStore..."
 kube apply -f "$REPO_ROOT/cluster/bootstrap/eso/secretstore.yaml"
 echo "  ClusterSecretStore applied ✓"

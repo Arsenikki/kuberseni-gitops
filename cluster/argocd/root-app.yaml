@@ -13,7 +13,7 @@ spec:
   project: kuberseni
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
-    targetRevision: main
+    targetRevision: feat/talos
     path: cluster/argocd
   destination:
     server: https://kubernetes.default.svc

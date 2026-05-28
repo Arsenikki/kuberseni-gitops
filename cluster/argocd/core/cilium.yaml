@@ -20,7 +20,7 @@ spec:
         valueFiles:
           - $values/cluster/core/cilium/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: main
+      targetRevision: feat/talos
       ref: values
   destination:
     server: https://kubernetes.default.svc

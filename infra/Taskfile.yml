@@ -35,6 +35,23 @@ tasks:
     cmds:
       - task: terraform:destroy
 
+  # ── ArgoCD bootstrap ──────────────────────────────────────────────────────
+
+  argocd:bootstrap:
+    desc: Bootstrap ArgoCD, ESO, 1Password Connect and apply root Application
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/bootstrap-cluster.sh
+
+  argocd:password:
+    desc: Print the initial ArgoCD admin password
+    cmds:
+      - kubectl --context admin@kuberseni get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d && echo
+
+  argocd:port-forward:
+    desc: Port-forward ArgoCD UI to localhost:8080
+    cmds:
+      - kubectl --context admin@kuberseni port-forward svc/argocd-server -n argocd 8080:443
+
   # ── Terraform ─────────────────────────────────────────────────────────────
 
   terraform:create-api-token:

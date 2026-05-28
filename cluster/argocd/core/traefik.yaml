@@ -18,7 +18,7 @@ spec:
         valueFiles:
           - $values/cluster/core/traefik/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: main
+      targetRevision: feat/talos
       ref: values
   destination:
     server: https://kubernetes.default.svc
