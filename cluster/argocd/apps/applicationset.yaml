@@ -156,6 +156,13 @@ spec:
         - repoURL: https://github.com/Arsenikki/kuberseni-gitops
           targetRevision: feat/talos
           ref: values
+        # Deploy any extra manifests (PVCs, ExternalSecrets) from the app directory.
+        # values.yaml is excluded — it's not a k8s manifest.
+        - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+          targetRevision: feat/talos
+          path: '{{ trimSuffix "/values.yaml" .valuesPath }}'
+          directory:
+            exclude: "values.yaml"
       destination:
         server: https://kubernetes.default.svc
         namespace: "{{ .namespace }}"
