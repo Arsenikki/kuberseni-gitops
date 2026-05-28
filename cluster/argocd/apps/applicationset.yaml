@@ -15,7 +15,7 @@ spec:
           # default namespace
           - name: homepage
             namespace: default
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 2.5.0
             valuesPath: cluster/apps/default/homepage/values.yaml
@@ -24,28 +24,28 @@ spec:
           # home-automation namespace
           - name: home-assistant
             namespace: home-automation
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/home-automation/home-assistant/values.yaml
             syncWave: "5"
           - name: mosquitto
             namespace: home-automation
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/home-automation/mosquitto/values.yaml
             syncWave: "5"
           - name: node-red
             namespace: home-automation
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/home-automation/node-red/values.yaml
             syncWave: "5"
           - name: zigbee2mqtt
             namespace: home-automation
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 2.5.0
             valuesPath: cluster/apps/home-automation/zigbee2mqtt/values.yaml
@@ -54,70 +54,70 @@ spec:
           # media namespace
           - name: plex
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/plex/values.yaml
             syncWave: "5"
           - name: sonarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/sonarr/values.yaml
             syncWave: "5"
           - name: radarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/radarr/values.yaml
             syncWave: "5"
           - name: prowlarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/prowlarr/values.yaml
             syncWave: "5"
           - name: qbittorrent
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/qbittorrent/values.yaml
             syncWave: "5"
           - name: bazarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/bazarr/values.yaml
             syncWave: "5"
           - name: overseerr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/overseerr/values.yaml
             syncWave: "5"
           - name: lidarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/lidarr/values.yaml
             syncWave: "5"
           - name: readarr
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 1.5.1
             valuesPath: cluster/apps/media/readarr/values.yaml
             syncWave: "5"
           - name: cast-sponsor-skip
             namespace: media
-            repoURL: https://bjw-s.github.io/helm-charts
+            repoURL: https://bjw-s-labs.github.io/helm-charts
             chart: app-template
             targetRevision: 2.5.0
             valuesPath: cluster/apps/media/cast-sponsor-skip/values.yaml
