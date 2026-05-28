@@ -2,16 +2,16 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: "${SECRET_DOMAIN/./-}"
+  name: arsenikki-casa
   namespace: traefik
 spec:
-  secretName: "${SECRET_DOMAIN/./-}-tls"
+  secretName: arsenikki-casa-tls
   privateKey:
     rotationPolicy: Always
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
-  commonName: "${SECRET_DOMAIN}"
+  commonName: "arsenikki.casa"
   dnsNames:
-    - "${SECRET_DOMAIN}"
-    - "*.${SECRET_DOMAIN}"
+    - "arsenikki.casa"
+    - "*.arsenikki.casa"
