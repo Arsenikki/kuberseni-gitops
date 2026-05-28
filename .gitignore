@@ -17,3 +17,4 @@ kubeconfig**.yaml
 .terraform/
 .terraform.lock.hcl
 *.tfvars
+1password-credentials.json
