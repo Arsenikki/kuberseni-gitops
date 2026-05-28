@@ -5,29 +5,28 @@
 # Prerequisites:
 #   - kubectl context admin@kuberseni is set and cluster is reachable
 #   - op CLI signed in to my.1password.eu (eval $(op signin --account my.1password.eu))
-#   - 1password-credentials.json downloaded from 1password.com → Integrations → Connect
+#   Credentials are read directly from 1Password (Private vault):
+#     - "homelab Credentials File" (Document) — the Connect server JSON
+#     - "homelab auth" (password field)        — the Connect access token
 
 set -euo pipefail
 
 CONTEXT="admin@kuberseni"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CREDENTIALS_FILE="${1:-$REPO_ROOT/1password-credentials.json}"
+OP_ACCOUNT="my.1password.eu"
 
 kube() { kubectl --context "$CONTEXT" "$@"; }
+op()   { command op "$@" --account "$OP_ACCOUNT"; }
 
 # ── Preflight ─────────────────────────────────────────────────────────────────
 echo "→ Checking prerequisites..."
 kubectl --context "$CONTEXT" get nodes --no-headers | awk '{print "  node:", $1, $2}'
 
-if [[ ! -f "$CREDENTIALS_FILE" ]]; then
-  echo ""
-  echo "ERROR: 1password-credentials.json not found at: $CREDENTIALS_FILE"
-  echo "Download it from: 1password.com → Integrations → 1Password Connect → your server"
-  echo "Then re-run: bash infra/scripts/bootstrap-cluster.sh /path/to/1password-credentials.json"
-  exit 1
-fi
-
-echo "  credentials file: $CREDENTIALS_FILE ✓"
+echo "  fetching credentials from 1Password..."
+CREDENTIALS_B64=$(op document get "homelab Credentials File" | base64)
+CONNECT_TOKEN=$(op item get "homelab auth" --fields password)
+echo "  credentials: ✓"
+echo "  connect token: ✓"
 echo ""
 
 # ── Helm repos ────────────────────────────────────────────────────────────────
@@ -65,22 +64,12 @@ helm upgrade --install onepassword-connect 1password/connect \
   --kube-context "$CONTEXT" \
   --namespace external-secrets \
   --wait \
-  --set connect.credentials_base64="$(base64 -i "$CREDENTIALS_FILE")"
+  --set connect.credentials_base64="$CREDENTIALS_B64"
 echo "  1Password Connect installed ✓"
 
 # ── Connect token secret ──────────────────────────────────────────────────────
 echo ""
 echo "→ Creating 1Password Connect token secret..."
-echo "  Fetching token from 1Password..."
-# Fetch the Connect token we stored during vault setup — or prompt
-CONNECT_TOKEN=$(op read "op://homelab/1password-connect-token/token" --account my.1password.eu 2>/dev/null || true)
-
-if [[ -z "$CONNECT_TOKEN" ]]; then
-  echo ""
-  read -rsp "  Paste your 1Password Connect access token: " CONNECT_TOKEN
-  echo ""
-fi
-
 kube create secret generic onepassword-connect-token \
   --namespace external-secrets \
   --from-literal=token="$CONNECT_TOKEN" \
