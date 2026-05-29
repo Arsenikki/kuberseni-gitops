@@ -15,7 +15,9 @@ spec:
   sources:
     - repoURL: https://helm.cilium.io
       chart: cilium
-      targetRevision: 1.19.4
+      # Rolled back from 1.19.4 — the upgrade broke cross-node routing on CP-01
+      # (different L2 bridge vmbr2 vs vmbr0). Investigate before re-upgrading.
+      targetRevision: 1.17.2
       helm:
         valueFiles:
           - $values/cluster/core/cilium/values.yaml
