@@ -5,6 +5,9 @@ cephClusterSpec:
   dashboard:
     enabled: true
     ssl: false
+  mon:
+    count: 2
+    allowMultiplePerNode: false
   storage:
     useAllDevices: false
     nodes:
