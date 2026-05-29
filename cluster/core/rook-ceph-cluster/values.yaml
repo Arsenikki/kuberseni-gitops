@@ -9,6 +9,7 @@ cephClusterSpec:
     count: 2
     allowMultiplePerNode: false
   storage:
+    useAllNodes: false
     useAllDevices: false
     nodes:
       - name: worker-01
