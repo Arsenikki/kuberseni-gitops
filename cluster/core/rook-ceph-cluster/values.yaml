@@ -9,13 +9,17 @@ cephClusterSpec:
     useAllDevices: false
     nodes:
       - name: worker-01
-        # Picks up the 500GB Ceph virtual disk (all unused disks on this node)
-        useAllDevices: true
+        # sdb is the 500GB Ceph virtual disk; sda is the Talos OS disk — be explicit
+        devices:
+          - name: sdb
         config:
           deviceClass: nvme
       # worker-02: uncomment after adding HDD passthrough disks in Proxmox
+      # Identify the HDD device names first with: talosctl get disks --nodes 192.168.1.45
       # - name: worker-02
-      #   useAllDevices: true
+      #   devices:
+      #     - name: sdb   # verify device name
+      #     - name: sdc   # verify device name
       #   config:
       #     deviceClass: hdd
 
