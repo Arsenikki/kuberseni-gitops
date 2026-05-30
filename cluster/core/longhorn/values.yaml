@@ -1,0 +1,20 @@
+defaultSettings:
+  # Use worker nodes for storage (they have the larger disks)
+  createDefaultDiskLabeledNodes: true
+  # Default replica count - 2 copies for redundancy across worker-01 and worker-02
+  defaultReplicaCount: 2
+  # Only schedule on nodes labeled for storage
+  replicaSoftAntiAffinity: true
+
+longhornUI:
+  replicas: 1
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
+  host: longhorn.arsenikki.casa
+  tls: true
+  tlsSecret: longhorn-tls

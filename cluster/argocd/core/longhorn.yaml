@@ -2,30 +2,31 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: rook-ceph-cluster
+  name: longhorn
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
   sources:
-    - repoURL: https://charts.rook.io/release
-      chart: rook-ceph-cluster
-      targetRevision: v1.15.7
+    - repoURL: https://charts.longhorn.io
+      chart: longhorn
+      targetRevision: 1.11.2
       helm:
         valueFiles:
-          - $values/cluster/core/rook-ceph-cluster/values.yaml
+          - $values/cluster/core/longhorn/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
       ref: values
   destination:
     server: https://kubernetes.default.svc
-    namespace: rook-ceph
+    namespace: longhorn-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
+      - CreateNamespace=true
       - ServerSideApply=true

@@ -12,6 +12,7 @@ spec:
     - https://github.com/Arsenikki/kuberseni-gitops
     - https://helm.cilium.io
     - https://charts.jetstack.io
+    - https://charts.longhorn.io
     - https://traefik.github.io/charts
     - https://kubernetes-sigs.github.io/node-feature-discovery/charts
     - https://intel.github.io/helm-charts
