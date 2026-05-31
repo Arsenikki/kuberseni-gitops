@@ -15,6 +15,13 @@ nodes:
     ipAddress: 192.168.1.41
     installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
     controlPlane: true
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0 # verify interface name in Talos maintenance mode
         dhcp: false
@@ -30,6 +37,13 @@ nodes:
     ipAddress: 192.168.1.42
     installDisk: /dev/sda
     controlPlane: true
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -45,6 +59,13 @@ nodes:
     ipAddress: 192.168.1.43
     installDisk: /dev/sda
     controlPlane: true
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -64,8 +85,11 @@ nodes:
       customization:
         systemExtensions:
           officialExtensions:
+            - siderolabs/qemu-guest-agent
             - siderolabs/i915
             - siderolabs/intel-ucode
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -81,6 +105,13 @@ nodes:
     ipAddress: 192.168.1.45
     installDisk: /dev/sda
     controlPlane: false
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
