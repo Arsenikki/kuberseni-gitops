@@ -12,7 +12,7 @@ variable "proxmox_api_token" {
 variable "talos_version" {
   description = "Talos Linux version to download"
   type        = string
-  default     = "v1.12.8"
+  default     = "v1.12.6"
 }
 
 variable "iso_datastore" {
