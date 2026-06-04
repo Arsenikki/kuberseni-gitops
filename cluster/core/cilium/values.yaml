@@ -2,8 +2,15 @@ kubeProxyReplacement: true
 k8sServiceHost: "192.168.1.40"
 k8sServicePort: 6443
 
-# Control planes have VIP (192.168.1.40) as secondary IP on eth0 which confuses
-# Cilium's auto-detection of the direct routing device. Must be explicit.
+ipam:
+  mode: kubernetes
+
+# Talos mounts cgroup at root; L7/transparent DNS proxy intercepts host-level
+# sockets at root cgroup and breaks egress from node network namespace.
+l7Proxy: false
+dnsProxy:
+  enableTransparentMode: false
+
 devices: "eth+"
 
 l2announcements:
@@ -34,6 +41,7 @@ hubble:
       - http
 
 operator:
+  replicas: 1
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
   tolerations:

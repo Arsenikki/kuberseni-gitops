@@ -2,7 +2,14 @@ machine:
   time:
     servers:
       - time.cloudflare.com
+  network:
+    nameservers:
+      - 1.1.1.1
+      - 8.8.8.8
   sysctls:
     fs.inotify.max_user_watches: "1048576"
     fs.inotify.max_user_instances: "8192"
-  kubelet: {}
+  kubelet:
+    nodeIP:
+      validSubnets:
+        - 192.168.1.0/24

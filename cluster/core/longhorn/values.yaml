@@ -1,3 +1,6 @@
+preUpgradeChecker:
+  jobEnabled: false
+
 defaultSettings:
   # Use worker nodes for storage (they have the larger disks)
   createDefaultDiskLabeledNodes: true
