@@ -3,7 +3,7 @@ controller:
 
 image:
   repository: ghcr.io/home-operations/qbittorrent
-  tag: 5.0.4
+  tag: 5.2.1
 
 env:
   TZ: "Europe/London"

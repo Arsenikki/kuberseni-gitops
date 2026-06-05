@@ -1,6 +1,6 @@
 image:
-  repository: ghcr.io/home-operations/readarr-develop
-  tag: 0.3.32
+  repository: ghcr.io/home-operations/readarr
+  tag: 0.4.18.2805
 
 env:
   TZ: "Europe/London"
