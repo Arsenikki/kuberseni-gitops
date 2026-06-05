@@ -56,7 +56,7 @@ ingress:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
     hosts:
-      - host: &host zigbee.arsenikki.casa
+      - host: &host zigbee.homelab.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix

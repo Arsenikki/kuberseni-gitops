@@ -10,10 +10,10 @@ ingress:
     kubernetes.io/tls-acme: "true"
     external-dns/is-public: "true"
   hosts:
-    - auth.arsenikki.casa
+    - auth.homelab.arsenikki.casa
   tls:
     - hosts:
-        - auth.arsenikki.casa
+        - auth.homelab.arsenikki.casa
 
 extraArgs:
   provider: github
@@ -21,8 +21,8 @@ extraArgs:
   skip-provider-button: "false"
   pass-authorization-header:
   email-domain: "*"
-  cookie-domain: ".arsenikki.casa"
-  whitelist-domain: ".arsenikki.casa"
+  cookie-domain: ".homelab.arsenikki.casa"
+  whitelist-domain: ".homelab.arsenikki.casa"
   github-user: "Arsenikki"
 
 resources:

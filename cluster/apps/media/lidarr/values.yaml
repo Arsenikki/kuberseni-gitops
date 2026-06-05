@@ -19,14 +19,14 @@ ingress:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
     hosts:
-      - host: lidarr.arsenikki.casa
+      - host: lidarr.homelab.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix
     tls:
       - secretName: lidarr-tls
         hosts:
-          - lidarr.arsenikki.casa
+          - lidarr.homelab.arsenikki.casa
 
 podSecurityContext:
   runAsUser: 568

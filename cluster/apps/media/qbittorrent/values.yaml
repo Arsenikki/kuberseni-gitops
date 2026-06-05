@@ -110,14 +110,14 @@ ingress:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
     hosts:
-      - host: qbittorrent.arsenikki.casa
+      - host: qbittorrent.homelab.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix
     tls:
       - secretName: qbittorrent-tls
         hosts:
-          - qbittorrent.arsenikki.casa
+          - qbittorrent.homelab.arsenikki.casa
 
 persistence:
   config:

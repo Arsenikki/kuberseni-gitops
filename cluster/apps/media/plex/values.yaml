@@ -22,14 +22,14 @@ ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
     hosts:
-      - host: plex.arsenikki.casa
+      - host: plex.homelab.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix
     tls:
       - secretName: plex-tls
         hosts:
-          - plex.arsenikki.casa
+          - plex.homelab.arsenikki.casa
 
 persistence:
   config:

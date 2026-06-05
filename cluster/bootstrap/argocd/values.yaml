@@ -1,5 +1,5 @@
 global:
-  domain: argocd.arsenikki.casa
+  domain: argocd.homelab.arsenikki.casa
 
 configs:
   params:
@@ -17,11 +17,11 @@ server:
       kubernetes.io/tls-acme: "true"
       external-dns/is-public: "true"
     hosts:
-      - argocd.arsenikki.casa
+      - argocd.homelab.arsenikki.casa
     tls:
       - secretName: argocd-tls
         hosts:
-          - argocd.arsenikki.casa
+          - argocd.homelab.arsenikki.casa
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
   tolerations:
