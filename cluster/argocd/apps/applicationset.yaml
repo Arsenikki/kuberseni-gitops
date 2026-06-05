@@ -124,9 +124,13 @@ spec:
             syncWave: "5"
 
           # singular apps
-          # external-dns intentionally excluded during old-cluster transition.
-          # Both clusters share Cloudflare DNS — enabling it here would overwrite
-          # old-cluster DNS records. Re-add after cutover with final LB IPs.
+          - name: external-dns
+            namespace: external-dns
+            repoURL: https://kubernetes-sigs.github.io/external-dns
+            chart: external-dns
+            targetRevision: 1.21.1
+            valuesPath: cluster/apps/external-dns/values.yaml
+            syncWave: "3"
           - name: oauth2-proxy
             namespace: oauth2-proxy
             repoURL: https://oauth2-proxy.github.io/manifests
