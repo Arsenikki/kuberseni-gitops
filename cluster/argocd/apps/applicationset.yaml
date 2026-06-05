@@ -126,7 +126,7 @@ spec:
           # singular apps
           - name: external-dns
             namespace: external-dns
-            repoURL: https://kubernetes-sigs.github.io/external-dns
+            repoURL: https://kubernetes-sigs.github.io/external-dns/
             chart: external-dns
             targetRevision: 1.21.1
             valuesPath: cluster/apps/external-dns/values.yaml
