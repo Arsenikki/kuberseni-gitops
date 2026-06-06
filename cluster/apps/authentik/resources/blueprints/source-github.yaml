@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+---
+version: 1
+metadata:
+  name: source-github
+entries:
+  - model: authentik_sources_oauth.oauthsource
+    identifiers:
+      slug: github
+    attrs:
+      name: GitHub
+      provider_type: github
+      consumer_key: !Env [GITHUB_OAUTH_CLIENT_ID]
+      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET]
+      authentication_flow: !Find [authentik_flows.flow, [slug, "default-source-authentication"]]
+      enrollment_flow: !Find [authentik_flows.flow, [slug, "default-source-enrollment"]]
+      enabled: true
+      user_matching_mode: identifier
