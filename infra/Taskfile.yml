@@ -185,10 +185,15 @@ tasks:
       NODE_IP:
         sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
     cmds:
-      - >-
-        talosctl apply-config --insecure
-        --nodes {{.NODE_IP}}
-        --file {{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-{{.HOSTNAME}}.yaml
+      - |
+        echo "Waiting for {{.HOSTNAME}} ({{.NODE_IP}}) to enter maintenance mode..."
+        until talosctl apply-config --insecure \
+          --nodes {{.NODE_IP}} \
+          --file {{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-{{.HOSTNAME}}.yaml \
+          2>/dev/null; do
+          sleep 5
+        done
+        echo "{{.HOSTNAME}}: config applied, Talos installing..."
 
   talos:bootstrap:
     desc: Bootstrap the Talos cluster (run once, after first apply)
@@ -196,7 +201,13 @@ tasks:
       CP1_IP:
         sh: yq '.nodes[] | select(.hostname == "control-plane-01") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
     cmds:
-      - talosctl --talosconfig {{.TALOSCONFIG}} bootstrap --nodes {{.CP1_IP}}
+      - |
+        echo "Waiting for control-plane-01 ({{.CP1_IP}}) to be ready for bootstrap..."
+        until talosctl --talosconfig {{.TALOSCONFIG}} -n {{.CP1_IP}} version >/dev/null 2>&1; do
+          sleep 5
+        done
+        echo "Bootstrapping etcd..."
+        talosctl --talosconfig {{.TALOSCONFIG}} bootstrap --nodes {{.CP1_IP}}
 
   talos:kubeconfig:
     desc: Fetch kubeconfig and merge into ~/.kube/config
