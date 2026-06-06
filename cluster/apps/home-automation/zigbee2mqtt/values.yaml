@@ -71,7 +71,11 @@ ingress:
 persistence:
   config:
     enabled: true
-    existingClaim: zigbee2mqtt
+    type: hostPath
+    hostPath: /var/lib/zigbee2mqtt
+    hostPathType: DirectoryOrCreate
+    globalMounts:
+      - path: /config
   usb:
     enabled: true
     type: hostPath
