@@ -1,15 +1,16 @@
 locals {
   controlplane_vms = {
-    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.41" }
-    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.42" }
-    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.43" }
+    # mac: fixed MAC address — used for OPNSense static DHCP so nodes get correct IP in maintenance mode
+    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.41", mac = "BC:24:11:75:55:EB" }
+    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.42", mac = "BC:24:11:E5:85:2F" }
+    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.43", mac = "BC:24:11:70:E7:4E" }
   }
 
   worker_vms = {
     # extra_disk_size: additional disk for Longhorn storage (0 = use main disk only)
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44" }
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D" }
     # worker-02: HDD passthrough disks (16TB + 10TB) added manually in Proxmox after VM creation
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 0,   ip = "192.168.1.45" }
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 0,   ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2" }
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
@@ -58,8 +59,8 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     dedicated = each.value.memory
   }
 
-  # Boot from ISO first (maintenance mode install), then from disk on subsequent boots
-  boot_order = ["ide2", "scsi0"]
+  # Boot from ISO on first install, from disk on all subsequent boots
+  boot_order = var.attach_iso ? ["ide2", "scsi0"] : ["scsi0"]
 
   # Blank disk — Talos installer writes here during initial boot
   disk {
@@ -70,14 +71,18 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     discard      = "on"
   }
 
-  # Talos metal ISO — detach after initial install by running: terraform apply -var boot_from_disk=true
-  cdrom {
-    interface = "ide2"
-    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+  # ISO only needed for first install — remove with: task terraform:remove-iso
+  dynamic "cdrom" {
+    for_each = var.attach_iso ? [1] : []
+    content {
+      interface = "ide2"
+      file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+    }
   }
 
   network_device {
-    bridge = each.value.network_bridge
+    bridge      = each.value.network_bridge
+    mac_address = each.value.mac
   }
 
   operating_system {
@@ -112,7 +117,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     dedicated = each.value.memory
   }
 
-  boot_order = ["ide2", "scsi0"]
+  boot_order = var.attach_iso ? ["ide2", "scsi0"] : ["scsi0"]
 
   disk {
     datastore_id = var.vm_datastore
@@ -133,13 +138,17 @@ resource "proxmox_virtual_environment_vm" "worker" {
     }
   }
 
-  cdrom {
-    interface = "ide2"
-    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+  dynamic "cdrom" {
+    for_each = var.attach_iso ? [1] : []
+    content {
+      interface = "ide2"
+      file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
+    }
   }
 
   network_device {
-    bridge = each.value.network_bridge
+    bridge      = each.value.network_bridge
+    mac_address = each.value.mac
   }
 
   operating_system {

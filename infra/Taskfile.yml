@@ -21,7 +21,14 @@ tasks:
   # ── Full lifecycle ────────────────────────────────────────────────────────
 
   up:
-    desc: Full cluster bootstrap (terraform → talos apply → bootstrap → kubeconfig)
+    desc: |
+      Full cluster bootstrap — metal install approach:
+        1. Provision VMs (boots from Talos ISO into maintenance mode)
+        2. Generate Talos machine configs
+        3. Apply configs (nodes install Talos to disk with A/B layout, reboot)
+        4. Bootstrap etcd + fetch kubeconfig
+        5. Remove ISO from VMs (boot from disk from now on)
+        6. Bootstrap ArgoCD + apps
     cmds:
       - task: terraform:apply
       - task: talos:generate
@@ -29,9 +36,12 @@ tasks:
       - task: talos:bootstrap
       - task: talos:apply-workers
       - task: talos:kubeconfig
+      - task: terraform:remove-iso
+      - task: argocd:bootstrap
 
   down:
-    desc: Destroy all Proxmox VMs
+    desc: Destroy all Proxmox VMs (data loss — use with care)
+    prompt: This destroys ALL cluster VMs. Are you sure?
     cmds:
       - task: terraform:destroy
 
@@ -125,18 +135,13 @@ tasks:
     cmds:
       - sops exec-file secrets.tfvars 'tofu destroy -var-file={}'
 
-  # ── OPNSense ──────────────────────────────────────────────────────────────
-
-  opnsense:update-dhcp:
-    desc: Update OPNSense DHCP static mappings from Terraform outputs
-    prompt: This will add/update DHCP reservations in OPNSense. Continue?
-    vars:
-      OPNSENSE_API_KEY:
-        sh: 'bash -c ''read -sp "OPNSense API Key: " key </dev/tty && echo "$key"'''
-      OPNSENSE_API_SECRET:
-        sh: 'bash -c ''read -sp "OPNSense API Secret: " secret </dev/tty && echo "$secret"'''
+  terraform:remove-iso:
+    desc: Remove Talos ISO from VMs after installation (sets boot_order to disk only)
+    dir: "{{.TF_DIR}}"
+    deps: [terraform:init]
     cmds:
-      - ./scripts/update-opnsense-dhcp.sh "{{.OPNSENSE_API_KEY}}" "{{.OPNSENSE_API_SECRET}}"
+      - sops exec-file secrets.tfvars 'tofu apply -var-file={} -var="attach_iso=false" -auto-approve'
+
 
   # ── Talos ─────────────────────────────────────────────────────────────────
 
@@ -204,34 +209,14 @@ tasks:
   # Control planes are upgraded sequentially to preserve etcd quorum;
   # workers run in parallel.
   talos:upgrade:
-    desc: Upgrade Talos on all nodes
+    desc: Upgrade Talos on all nodes (uses correct schematic from talconfig.yaml)
+    dir: "{{.TALOS_DIR}}"
     cmds:
-      - task: talos:_upgrade-node
-        vars: { HOSTNAME: control-plane-01 }
-      - task: talos:_upgrade-node
-        vars: { HOSTNAME: control-plane-02 }
-      - task: talos:_upgrade-node
-        vars: { HOSTNAME: control-plane-03 }
-      - task: talos:_upgrade-workers
+      # talhelper gencommand upgrade generates the correct image URL with schematic per node
+      - talhelper gencommand upgrade --talosconfig clusterconfig/talosconfig | bash
 
-  talos:_upgrade-workers:
-    internal: true
-    deps:
-      - task: talos:_upgrade-node
-        vars: { HOSTNAME: worker-01 }
-      - task: talos:_upgrade-node
-        vars: { HOSTNAME: worker-02 }
-
-  talos:_upgrade-node:
-    internal: true
-    vars:
-      NODE_IP:
-        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
-      TALOS_VERSION:
-        sh: yq '.talosVersion' {{.TALOS_DIR}}/talconfig.yaml
+  talos:upgrade:node:
+    desc: Upgrade Talos on a single node (HOSTNAME=control-plane-01)
+    dir: "{{.TALOS_DIR}}"
     cmds:
-      - >-
-        talosctl --talosconfig {{.TALOSCONFIG}}
-        upgrade --nodes {{.NODE_IP}}
-        --image ghcr.io/siderolabs/installer:{{.TALOS_VERSION}}
-        --wait
+      - talhelper gencommand upgrade --talosconfig clusterconfig/talosconfig | grep "{{.HOSTNAME}}" | bash
