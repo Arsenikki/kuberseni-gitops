@@ -24,7 +24,7 @@ spec:
       targetRevision: feat/talos
       path: cluster/apps/external-dns
       directory:
-        exclude: "{values.yaml,argocd-app.yaml}"
+        exclude: "values.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns

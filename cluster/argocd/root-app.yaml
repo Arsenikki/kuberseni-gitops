@@ -1,13 +1,14 @@
 ---
 # Root Application — discovers all Application objects from cluster/argocd/
-# Apply manually after bootstrap:
+# Apply manually once after bootstrapping ArgoCD:
+#   kubectl apply -f cluster/argocd/projects/kuberseni.yaml
 #   kubectl apply -f cluster/argocd/root-app.yaml
 #
-# Application definitions live in cluster/argocd/apps/ (flat list).
-# Config data (Helm values, manifests) lives in cluster/apps/ alongside
-# argocd-app.yaml which serves as human-readable co-located reference.
-# When adding a new app: update cluster/argocd/apps/<name>.yaml and
-# mirror the argocd-app.yaml in the app config directory.
+# IMPORTANT: prune is intentionally DISABLED on root-app.
+# Root-app manages Application objects. If prune were enabled, a source
+# glitch (bad glob, cache miss) could cascade-delete all infra Applications,
+# which then cascade-delete their k8s resources via resources-finalizer.
+# To remove an app: kubectl delete application <name> -n argocd (manual/intentional).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -28,7 +29,7 @@ spec:
     namespace: argocd
   syncPolicy:
     automated:
-      prune: true
+      prune: false
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
