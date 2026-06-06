@@ -18,7 +18,7 @@ spec:
     path: cluster/apps
     directory:
       recurse: true
-      include: "argocd-app.yaml"
+      include: "**/argocd-app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
