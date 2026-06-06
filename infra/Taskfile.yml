@@ -127,13 +127,13 @@ tasks:
     dir: "{{.TF_DIR}}"
     deps: [terraform:init]
     cmds:
-      - sops exec-file secrets.tfvars 'tofu apply -var-file={}'
+      - sops exec-file secrets.tfvars 'tofu apply -var-file={} -auto-approve'
 
   terraform:destroy:
     desc: Destroy Proxmox VMs
     dir: "{{.TF_DIR}}"
     cmds:
-      - sops exec-file secrets.tfvars 'tofu destroy -var-file={}'
+      - sops exec-file secrets.tfvars 'tofu destroy -var-file={} -auto-approve'
 
   terraform:remove-iso:
     desc: Remove Talos ISO from VMs after installation (sets boot_order to disk only)
