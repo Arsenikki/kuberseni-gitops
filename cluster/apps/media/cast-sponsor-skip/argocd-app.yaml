@@ -1,29 +1,33 @@
 ---
-# Root Application — watches cluster/ for all argocd-app.yaml files.
-# Apply this manually once after bootstrapping ArgoCD:
-#   kubectl apply -f cluster/argocd/root-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root
+  name: cast-sponsor-skip
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
   sources:
+    - repoURL: https://bjw-s-labs.github.io/helm-charts
+      chart: app-template
+      targetRevision: 2.5.0
+      helm:
+        valueFiles:
+          - $values/cluster/apps/media/cast-sponsor-skip/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
-      path: cluster/apps
+      ref: values
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: feat/talos
+      path: cluster/apps/media/cast-sponsor-skip
       directory:
-        recurse: true
-        include: "argocd-app.yaml"
-    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
-      path: cluster/argocd/projects
+        exclude: "{values.yaml,argocd-app.yaml}"
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: media
   syncPolicy:
     automated:
       prune: true

@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium-resources
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: feat/talos
+    path: cluster/apps/cilium/resources
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+    directory:
+      exclude: "argocd-app.yaml"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

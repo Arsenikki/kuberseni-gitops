@@ -209,7 +209,7 @@ data:
   source-github.yaml: "---\nversion: 1\nmetadata:\n  name: source-github\nentries:\n\
     \  - model: authentik_sources_oauth.oauthsource\n    identifiers:\n      slug:\
     \ github\n    attrs:\n      name: GitHub\n      provider_type: github\n      consumer_key:\
-    \ !Env [GITHUB_OAUTH_CLIENT_ID]\n      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET]\n\
-    \      authentication_flow: !Find [authentik_flows.flow, [slug, \"default-source-authentication\"\
+    \ !Env [GITHUB_OAUTH_CLIENT_ID, \"\"]\n      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET,\
+    \ \"\"]\n      authentication_flow: !Find [authentik_flows.flow, [slug, \"default-source-authentication\"\
     ]]\n      enrollment_flow: !Find [authentik_flows.flow, [slug, \"default-source-enrollment\"\
     ]]\n      enabled: true\n      user_matching_mode: identifier\n"

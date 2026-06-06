@@ -10,8 +10,8 @@ entries:
     attrs:
       name: GitHub
       provider_type: github
-      consumer_key: !Env [GITHUB_OAUTH_CLIENT_ID]
-      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET]
+      consumer_key: !Env [GITHUB_OAUTH_CLIENT_ID, ""]
+      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET, ""]
       authentication_flow: !Find [authentik_flows.flow, [slug, "default-source-authentication"]]
       enrollment_flow: !Find [authentik_flows.flow, [slug, "default-source-enrollment"]]
       enabled: true

@@ -1,29 +1,33 @@
 ---
-# Root Application — watches cluster/ for all argocd-app.yaml files.
-# Apply this manually once after bootstrapping ArgoCD:
-#   kubectl apply -f cluster/argocd/root-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root
+  name: external-dns
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
   sources:
+    - repoURL: https://kubernetes-sigs.github.io/external-dns/
+      chart: external-dns
+      targetRevision: 1.21.1
+      helm:
+        valueFiles:
+          - $values/cluster/apps/external-dns/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
-      path: cluster/apps
+      ref: values
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: feat/talos
+      path: cluster/apps/external-dns
       directory:
-        recurse: true
-        include: "argocd-app.yaml"
-    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
-      path: cluster/argocd/projects
+        exclude: "{values.yaml,argocd-app.yaml}"
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: external-dns
   syncPolicy:
     automated:
       prune: true
