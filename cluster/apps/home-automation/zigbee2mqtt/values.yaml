@@ -2,11 +2,12 @@ controllers:
   main:
     type: deployment
     pod:
-      # Update to correct Talos worker node that has the USB zigbee dongle
       nodeSelector:
-        kubernetes.io/hostname: "worker-01"
+        kubernetes.io/hostname: "control-plane-01"
       tolerations:
         - key: CriticalAddonsOnly
+          operator: "Exists"
+        - key: node-role.kubernetes.io/control-plane
           operator: "Exists"
     containers:
       main:
