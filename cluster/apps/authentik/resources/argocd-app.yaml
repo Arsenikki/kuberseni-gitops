@@ -14,11 +14,11 @@ spec:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
     path: cluster/apps/authentik/resources
+    directory:
+      exclude: "argocd-app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik
-    directory:
-      exclude: "argocd-app.yaml"
   syncPolicy:
     automated:
       prune: true

@@ -14,11 +14,11 @@ spec:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
     path: cluster/apps/longhorn/resources
+    directory:
+      exclude: "argocd-app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system
-    directory:
-      exclude: "argocd-app.yaml"
   syncPolicy:
     automated:
       prune: true
