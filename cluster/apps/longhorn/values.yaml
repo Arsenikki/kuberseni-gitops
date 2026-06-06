@@ -2,12 +2,12 @@ preUpgradeChecker:
   jobEnabled: false
 
 defaultSettings:
-  # Use worker nodes for storage (they have the larger disks)
   createDefaultDiskLabeledNodes: true
-  # Default replica count - 2 copies for redundancy across worker-01 and worker-02
   defaultReplicaCount: 2
-  # Only schedule on nodes labeled for storage
   replicaSoftAntiAffinity: true
+  # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
+  # can mount Longhorn volumes (data still lives on worker disks)
+  taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
 
 longhornUI:
   replicas: 1
