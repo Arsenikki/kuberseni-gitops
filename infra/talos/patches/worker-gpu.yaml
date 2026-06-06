@@ -8,3 +8,7 @@ machine:
   kubelet:
     extraArgs:
       node-labels: intel.feature.node.kubernetes.io/gpu=true
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/mnt/longhorn-data
