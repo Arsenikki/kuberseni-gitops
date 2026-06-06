@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
-    path: cluster/core/longhorn/resources
+    path: cluster/apps/longhorn/resources
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

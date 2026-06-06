@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
-    path: cluster/core/cert-manager/resources
+    path: cluster/apps/cert-manager/resources
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

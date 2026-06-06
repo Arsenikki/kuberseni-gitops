@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
-    path: cluster/core/cilium/resources
+    path: cluster/apps/cilium/resources
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

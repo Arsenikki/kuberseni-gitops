@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
-    path: cluster/core/authentik/resources
+    path: cluster/apps/authentik/resources
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik

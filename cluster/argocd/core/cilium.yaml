@@ -20,7 +20,7 @@ spec:
       targetRevision: 1.17.2
       helm:
         valueFiles:
-          - $values/cluster/core/cilium/values.yaml
+          - $values/cluster/apps/cilium/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
       ref: values

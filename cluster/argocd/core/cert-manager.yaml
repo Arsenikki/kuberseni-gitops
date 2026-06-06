@@ -16,7 +16,7 @@ spec:
       targetRevision: v1.20.2
       helm:
         valueFiles:
-          - $values/cluster/core/cert-manager/values.yaml
+          - $values/cluster/apps/cert-manager/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
       ref: values

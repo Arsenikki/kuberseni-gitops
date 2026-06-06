@@ -16,7 +16,7 @@ spec:
       targetRevision: 0.18.3
       helm:
         valueFiles:
-          - $values/cluster/core/node-feature-discovery/values.yaml
+          - $values/cluster/apps/node-feature-discovery/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: feat/talos
       ref: values
