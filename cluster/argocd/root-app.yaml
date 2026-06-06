@@ -1,6 +1,7 @@
 ---
-# Root Application — watches cluster/ for all argocd-app.yaml files.
+# Root Application — watches cluster/apps for all argocd-app.yaml files.
 # Apply this manually once after bootstrapping ArgoCD:
+#   kubectl apply -f cluster/argocd/projects/kuberseni.yaml
 #   kubectl apply -f cluster/argocd/root-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -11,16 +12,13 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
-  sources:
-    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
-      path: cluster/apps
-      directory:
-        recurse: true
-        include: "argocd-app.yaml"
-    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
-      path: cluster/argocd/projects
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: feat/talos
+    path: cluster/apps
+    directory:
+      recurse: true
+      include: "argocd-app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
