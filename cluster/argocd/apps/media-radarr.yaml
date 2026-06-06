@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: radarr
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://bjw-s-labs.github.io/helm-charts
+      chart: app-template
+      targetRevision: 1.5.1
+      helm:
+        valueFiles:
+          - $values/cluster/apps/media/radarr/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: feat/talos
+      ref: values
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: feat/talos
+      path: cluster/apps/media/radarr
+      directory:
+        exclude: "{values.yaml,argocd-app.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

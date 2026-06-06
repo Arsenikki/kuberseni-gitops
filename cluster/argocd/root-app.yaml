@@ -1,8 +1,13 @@
 ---
-# Root Application — watches cluster/apps for all argocd-app.yaml files.
-# Apply this manually once after bootstrapping ArgoCD:
-#   kubectl apply -f cluster/argocd/projects/kuberseni.yaml
+# Root Application — discovers all Application objects from cluster/argocd/
+# Apply manually after bootstrap:
 #   kubectl apply -f cluster/argocd/root-app.yaml
+#
+# Application definitions live in cluster/argocd/apps/ (flat list).
+# Config data (Helm values, manifests) lives in cluster/apps/ alongside
+# argocd-app.yaml which serves as human-readable co-located reference.
+# When adding a new app: update cluster/argocd/apps/<name>.yaml and
+# mirror the argocd-app.yaml in the app config directory.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -15,10 +20,9 @@ spec:
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: feat/talos
-    path: cluster/apps
+    path: cluster/argocd
     directory:
       recurse: true
-      include: "**/argocd-app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
