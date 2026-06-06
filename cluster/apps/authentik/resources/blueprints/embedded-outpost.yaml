@@ -4,11 +4,31 @@ version: 1
 metadata:
   name: update-embedded-outpost
 entries:
-  # Ensure dependencies are applied first
+  # Apply all app blueprints first
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
-        name: n8n
+        name: bazarr
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: home-assistant
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: lidarr
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: nodered
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: overseerr
       required: true
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
@@ -28,42 +48,38 @@ entries:
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
+        name: readarr
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
         name: sonarr
-      required: true
-  - model: authentik_blueprints.metaapplyblueprint
-    attrs:
-      identifiers:
-        name: whoami
-      required: true
-  - model: authentik_blueprints.metaapplyblueprint
-    attrs:
-      identifiers:
-        name: nodered
       required: true
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
         name: zigbee2mqtt
       required: true
-  # Patch default embedded outpost to include apps
+
+  # Configure the embedded outpost with all proxy providers
   - model: authentik_outposts.outpost
     state: present
     identifiers:
       name: "authentik Embedded Outpost"
     attrs:
       providers:
-        - !Find [authentik_providers_proxy.proxyprovider, [name, "n8n"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "bazarr"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "home-assistant"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "lidarr"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "nodered"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "overseerr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "prowlarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "qbittorrent"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "radarr"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "readarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
-        - !Find [authentik_providers_proxy.proxyprovider, [name, "whoami"]]
-        - !Find [authentik_providers_proxy.proxyprovider, [name, "nodered"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "zigbee2mqtt"]]
       config:
-        authentik_host: https://authentik.${SECRET_DOMAIN}
-        kubernetes_disabled_components:
-          - "traefik middleware"
+        authentik_host: https://authentik.homelab.arsenikki.casa
         kubernetes_ingress_annotations:
-          # Automatically generate TLS certificate
           kubernetes.io/tls-acme: "true"

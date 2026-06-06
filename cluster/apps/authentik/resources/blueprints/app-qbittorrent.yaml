@@ -26,7 +26,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://qbittorrent.media.svc.cluster.local:8080
-      external_host: https://qbittorrent.${SECRET_DOMAIN}
+      external_host: https://qbittorrent.homelab.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

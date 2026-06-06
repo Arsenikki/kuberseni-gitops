@@ -1,13 +1,10 @@
 authentik:
-  # Secrets come from ESO ExternalSecret → authentik-secrets k8s Secret
-  # see cluster/core/authentik/externalsecrets.yaml
-  existingSecret: authentik-secrets
-  existingSecretKey:
-    bootstrapToken: AUTHENTIK_BOOTSTRAP_TOKEN
-    bootstrapPassword: AUTHENTIK_BOOTSTRAP_PASSWORD
-    secretKey: AUTHENTIK_SECRET_KEY
-    postgresqlPassword: AUTHENTIK_POSTGRES_PASSWORD
-  log_level: debug
+  # All secret env vars injected from authentik-secrets k8s Secret (created by ExternalSecret).
+  # Secret must contain: AUTHENTIK_SECRET_KEY, AUTHENTIK_BOOTSTRAP_TOKEN,
+  # AUTHENTIK_BOOTSTRAP_PASSWORD, AUTHENTIK_POSTGRESQL__PASSWORD
+  existingSecret:
+    secretName: authentik-secrets
+  log_level: info
 
 blueprints:
   configMaps:

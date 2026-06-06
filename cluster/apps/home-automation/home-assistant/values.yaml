@@ -69,7 +69,7 @@ addons:
       enabled: true
       annotations:
         kubernetes.io/tls-acme: "true"
-        traefik.ingress.kubernetes.io/router.middlewares: "forward-auth@kubernetescrd"
+        traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
         external-dns/is-public: "true"
       hosts:
         - host: "code.homeassistant.homelab.arsenikki.casa"

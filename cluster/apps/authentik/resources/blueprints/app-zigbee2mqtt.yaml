@@ -26,7 +26,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://zigbee2mqtt.home-automation.svc.cluster.local:8080
-      external_host: https://zigbee.${SECRET_DOMAIN}
+      external_host: https://zigbee.homelab.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

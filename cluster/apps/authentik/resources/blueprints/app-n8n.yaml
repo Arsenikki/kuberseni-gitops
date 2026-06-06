@@ -26,7 +26,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://n8n.n8n.svc.cluster.local:5678
-      external_host: https://n8n.${SECRET_DOMAIN}
+      external_host: https://n8n.homelab.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

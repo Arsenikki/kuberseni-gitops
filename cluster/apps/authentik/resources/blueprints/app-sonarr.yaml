@@ -29,7 +29,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://sonarr.media.svc.cluster.local:8989
-      external_host: https://sonarr.${SECRET_DOMAIN}
+      external_host: https://sonarr.homelab.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

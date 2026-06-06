@@ -29,7 +29,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://radarr.media.svc.cluster.local:7878
-      external_host: https://radarr.${SECRET_DOMAIN}
+      external_host: https://radarr.homelab.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application
