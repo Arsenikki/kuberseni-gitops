@@ -41,9 +41,6 @@ postgresql:
     secretKeys:
       adminPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
       userPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
-  primary:
-    persistence:
-      size: 2Gi
 
 redis:
   enabled: true
