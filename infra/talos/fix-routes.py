@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Post-process talhelper generated configs to remove broken LinkConfig routes.
+"""Post-process talhelper configs: remove LinkConfig documents.
 
-talhelper v3.x generates LinkConfig.routes without a 'network/destination' field,
-which in Talos v1.12 overrides the correct machine.network.interfaces routes.
-We remove routes from LinkConfig entirely since machine.network.interfaces handles routing.
+In Talos v1.12, a LinkConfig document takes EXCLUSIVE control of the interface,
+overriding machine.network.interfaces entirely. Since talhelper generates LinkConfig
+without routes, the default route is lost.
+
+Fix: remove all LinkConfig documents. machine.network.interfaces already has the
+complete correct config (addresses + routes + VIP) in the old v1alpha1 format,
+which Talos v1.12 still supports and processes correctly.
 """
-import sys, os, glob
+import os, glob
 
 config_dir = os.path.join(os.path.dirname(__file__), 'clusterconfig')
 for config_file in glob.glob(os.path.join(config_dir, 'kuberseni-*.yaml')):
@@ -15,34 +19,14 @@ for config_file in glob.glob(os.path.join(config_dir, 'kuberseni-*.yaml')):
     if 'kind: LinkConfig' not in content:
         continue
     
-    # Split into documents, remove routes from LinkConfig docs
+    # Remove LinkConfig documents entirely
     docs = content.split('---')
-    fixed_docs = []
-    changed = False
-    for doc in docs:
-        if doc.strip() and 'kind: LinkConfig' in doc:
-            lines = doc.split('\n')
-            # Remove routes section from LinkConfig
-            result = []
-            skip = False
-            for line in lines:
-                if line.strip().startswith('routes:'):
-                    skip = True
-                    changed = True
-                    continue
-                if skip and (line.startswith('  ') or line.startswith('\t') or not line.strip()):
-                    if not line.strip():
-                        skip = False  # end of routes block on empty line
-                    continue
-                skip = False
-                result.append(line)
-            fixed_docs.append('\n'.join(result))
-        else:
-            fixed_docs.append(doc)
+    filtered = [d for d in docs if not (d.strip() and 'kind: LinkConfig' in d)]
     
-    if changed:
+    if len(filtered) < len(docs):
         with open(config_file, 'w') as f:
-            f.write('---'.join(fixed_docs))
-        print(f"Fixed: {os.path.basename(config_file)}")
+            f.write('---'.join(filtered))
+        removed = len(docs) - len(filtered)
+        print(f"Fixed {os.path.basename(config_file)}: removed {removed} LinkConfig doc(s)")
 
 print("Done")
