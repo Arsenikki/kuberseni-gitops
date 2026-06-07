@@ -160,6 +160,10 @@ tasks:
     deps: [talos:gensecret]
     cmds:
       - talhelper genconfig
+      # talhelper v3.x generates LinkConfig.routes without destination field which
+      # overrides machine.network.interfaces routes in Talos v1.12, breaking internet.
+      # Remove routes from LinkConfig so only machine.network.interfaces handles routing.
+      - python3 fix-routes.py
 
   talos:apply-controlplane:
     desc: Apply Talos config to all control plane nodes (parallel)
