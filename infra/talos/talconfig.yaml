@@ -98,11 +98,9 @@ controlPlane:
     - "@./patches/all.yaml"
     - "@./patches/controlplane.yaml"
     - "@./patches/install-image-override.yaml"
-    - "@./patches/network-routes-fix.yaml"
 
 worker:
   patches:
     - "@./patches/all.yaml"
     - "@./patches/worker-common.yaml"
     - "@./patches/install-image-override.yaml"
-    - "@./patches/network-routes-fix.yaml"
