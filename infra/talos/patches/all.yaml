@@ -2,9 +2,6 @@ machine:
   time:
     servers:
       - time.cloudflare.com
-  kernel:
-    cmdline:
-      - console=ttyS0
   network:
     nameservers:
       - 1.1.1.1

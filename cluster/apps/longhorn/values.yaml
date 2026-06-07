@@ -1,6 +1,9 @@
 preUpgradeChecker:
   jobEnabled: false
 
+persistence:
+  defaultClassReplicaCount: 2
+
 defaultSettings:
   createDefaultDiskLabeledNodes: true
   defaultReplicaCount: 2

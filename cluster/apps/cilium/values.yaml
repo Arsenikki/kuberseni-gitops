@@ -11,7 +11,8 @@ l7Proxy: false
 dnsProxy:
   enableTransparentMode: false
 
-devices: "eth+"
+devices: "ens+"
+directRoutingDevice: "ens18"
 
 l2announcements:
   enabled: true
@@ -48,6 +49,10 @@ operator:
     - key: node-role.kubernetes.io/control-plane
       operator: "Exists"
     - key: CriticalAddonsOnly
+      operator: "Exists"
+    - key: node.kubernetes.io/not-ready
+      operator: "Exists"
+    - key: node.cilium.io/agent-not-ready
       operator: "Exists"
 
 # Talos-specific: cgroup v2 mounted at /sys/fs/cgroup, no auto-mount

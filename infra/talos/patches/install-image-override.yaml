@@ -6,5 +6,5 @@ machine:
   install:
     # Use the same factory schematic as the boot ISO — image is already cached locally,
     # no download needed. ghcr.io standard installer caused download failures.
-    image: factory.talos.dev/metal-installer/53513e54bb39202f35694412577a6bc53d484744d35a126e5d42ef34785c0d83:v1.12.6
+    image: factory.talos.dev/metal-installer/53513e54bb39202f35694412577a6bc53d484744d35a126e5d42ef34785c0d83:v1.13.2
     wipe: true

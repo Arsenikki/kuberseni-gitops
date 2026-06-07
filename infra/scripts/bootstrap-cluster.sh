@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap the Talos cluster with ArgoCD, ESO, and 1Password Connect.
+# Bootstrap the Talos cluster with Cilium, ArgoCD, ESO, and 1Password Connect.
 # Run from the repo root: bash infra/scripts/bootstrap-cluster.sh
 #
 # Prerequisites:
@@ -7,7 +7,7 @@
 #   - op CLI signed in to my.1password.eu (eval $(op signin --account my.1password.eu))
 #   Credentials are read directly from 1Password (Private vault):
 #     - "homelab Credentials File" (Document) — the Connect server JSON
-#     - "homelab auth" (password field)        — the Connect access token
+#     - "homelab Access Token: homelab" (password field) — the Connect access token
 
 set -euo pipefail
 
@@ -31,11 +31,34 @@ echo ""
 
 # ── Helm repos ────────────────────────────────────────────────────────────────
 echo "→ Adding Helm repos..."
+helm repo add cilium https://helm.cilium.io 2>/dev/null || true
 helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
 helm repo add external-secrets https://charts.external-secrets.io 2>/dev/null || true
 helm repo add 1password https://1password.github.io/connect-helm-charts 2>/dev/null || true
 helm repo update > /dev/null
 echo "  done"
+
+# ── Cilium (CNI — must be installed before ArgoCD so nodes become Ready) ──────
+# Version is sourced from the ArgoCD Application definition to avoid duplication.
+CILIUM_VERSION=$(yq '.spec.sources[] | select(.chart == "cilium") | .targetRevision' \
+  "$REPO_ROOT/cluster/argocd/apps/cilium.yaml")
+echo ""
+echo "→ Installing Cilium $CILIUM_VERSION (from cluster/argocd/apps/cilium.yaml)..."
+helm upgrade --install cilium cilium/cilium \
+  --version "$CILIUM_VERSION" \
+  --kube-context "$CONTEXT" \
+  --namespace kube-system \
+  -f "$REPO_ROOT/cluster/apps/cilium/values.yaml"
+echo "  Cilium chart applied ✓"
+
+echo "  waiting for Cilium DaemonSet pods to be ready..."
+kube rollout status daemonset/cilium -n kube-system --timeout=5m
+echo "  Cilium DaemonSet ready ✓"
+
+echo ""
+echo "→ Waiting for nodes to become Ready..."
+kube wait --for=condition=Ready nodes --all --timeout=5m
+echo "  all nodes Ready ✓"
 
 # ── ArgoCD ────────────────────────────────────────────────────────────────────
 echo ""
@@ -84,11 +107,12 @@ echo "→ Applying ClusterSecretStore..."
 kube apply -f "$REPO_ROOT/cluster/bootstrap/eso/secretstore.yaml"
 echo "  ClusterSecretStore applied ✓"
 
-# ── Root Application ──────────────────────────────────────────────────────────
+# ── ArgoCD Project + Root Application ────────────────────────────────────────
 echo ""
-echo "→ Applying ArgoCD root Application..."
+echo "→ Applying ArgoCD Project and root Application..."
+kube apply -f "$REPO_ROOT/cluster/argocd/projects/kuberseni.yaml"
 kube apply -f "$REPO_ROOT/cluster/argocd/root-app.yaml"
-echo "  Root app applied ✓"
+echo "  Project + root app applied ✓"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""

@@ -1,6 +1,6 @@
 clusterName: kuberseni
 # renovate: datasource=github-releases depName=siderolabs/talos
-talosVersion: v1.12.6
+talosVersion: v1.13.2
 # renovate: datasource=github-releases depName=siderolabs/kubernetes
 kubernetesVersion: v1.35.2
 
@@ -20,7 +20,7 @@ nodes:
     installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
     controlPlane: true
     networkInterfaces:
-      - interface: eth0 # verify interface name in Talos maintenance mode
+      - interface: ens18 # verify interface name in Talos maintenance mode
         dhcp: false
         addresses:
           - 192.168.1.41/24
@@ -35,7 +35,7 @@ nodes:
     installDisk: /dev/sda
     controlPlane: true
     networkInterfaces:
-      - interface: eth0
+      - interface: ens18
         dhcp: false
         addresses:
           - 192.168.1.42/24
@@ -50,7 +50,7 @@ nodes:
     installDisk: /dev/sda
     controlPlane: true
     networkInterfaces:
-      - interface: eth0
+      - interface: ens18
         dhcp: false
         addresses:
           - 192.168.1.43/24
@@ -68,7 +68,7 @@ nodes:
       size: "<= 60GB"
     controlPlane: false
     networkInterfaces:
-      - interface: eth0
+      - interface: ens18
         dhcp: false
         addresses:
           - 192.168.1.44/24
@@ -83,7 +83,7 @@ nodes:
     installDisk: /dev/sda
     controlPlane: false
     networkInterfaces:
-      - interface: eth0
+      - interface: ens18
         dhcp: false
         addresses:
           - 192.168.1.45/24
