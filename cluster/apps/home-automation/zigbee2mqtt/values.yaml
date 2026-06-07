@@ -67,6 +67,7 @@ ingress:
     tls:
       - hosts:
           - *host
+        secretName: zigbee2mqtt-tls
 
 persistence:
   config:
