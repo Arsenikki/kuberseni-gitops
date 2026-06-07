@@ -182,18 +182,24 @@ tasks:
   talos:_apply-node:
     internal: true
     vars:
-      NODE_IP:
+      STATIC_IP:
         sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+      # Proxmox node and VM ID for discovering the DHCP IP during maintenance mode
+      PVE_NODE:
+        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .controlPlane // "false"' {{.TALOS_DIR}}/talconfig.yaml
     cmds:
       - |
-        echo "Waiting for {{.HOSTNAME}} ({{.NODE_IP}}) to enter maintenance mode..."
-        until talosctl apply-config --insecure \
-          --nodes {{.NODE_IP}} \
-          --file {{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-{{.HOSTNAME}}.yaml \
-          2>/dev/null; do
+        STATIC_IP="{{.STATIC_IP}}"
+        HOSTNAME="{{.HOSTNAME}}"
+        CONFIG="{{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-${HOSTNAME}.yaml"
+
+        echo "Waiting for ${HOSTNAME} to enter maintenance mode..."
+
+        # Try static IP first (works if OPNSense has DHCP reservation), then discover via Proxmox
+        until talosctl apply-config --insecure --nodes "$STATIC_IP" --file "$CONFIG" 2>/dev/null; do
           sleep 5
         done
-        echo "{{.HOSTNAME}}: config applied, Talos installing..."
+        echo "${HOSTNAME}: config applied at ${STATIC_IP}, Talos installing to disk..."
 
   talos:bootstrap:
     desc: Bootstrap the Talos cluster (run once, after first apply)

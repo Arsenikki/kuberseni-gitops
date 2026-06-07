@@ -39,6 +39,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   node_name       = each.value.proxmox_node
   vm_id           = each.value.vm_id
   stop_on_destroy = true
+  bios            = "ovmf"  # UEFI — required per Talos Proxmox guide
 
   agent {
     enabled = true
@@ -49,6 +50,9 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     file_format  = "raw"
     type         = "4m"
   }
+
+  # Serial console for install debugging (talosctl console / serial terminal)
+  serial_device {}
 
   cpu {
     cores = each.value.cores
@@ -97,6 +101,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   node_name       = each.value.proxmox_node
   vm_id           = each.value.vm_id
   stop_on_destroy = true
+  bios            = "ovmf"
 
   agent {
     enabled = true
@@ -107,6 +112,8 @@ resource "proxmox_virtual_environment_vm" "worker" {
     file_format  = "raw"
     type         = "4m"
   }
+
+  serial_device {}
 
   cpu {
     cores = each.value.cores
