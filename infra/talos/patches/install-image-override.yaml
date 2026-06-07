@@ -1,0 +1,10 @@
+# Overrides the default factory.talos.dev installer with the standard ghcr.io image.
+# This enables fast initial installation from the metal ISO since ghcr.io is a fast CDN.
+# After cluster is up, run: task talos:upgrade
+# That adds iscsi-tools/util-linux-tools via A/B upgrade without this override.
+machine:
+  install:
+    # Use the same factory schematic as the boot ISO — image is already cached locally,
+    # no download needed. ghcr.io standard installer caused download failures.
+    image: factory.talos.dev/metal-installer/53513e54bb39202f35694412577a6bc53d484744d35a126e5d42ef34785c0d83:v1.12.6
+    wipe: true

@@ -1,0 +1,10 @@
+# talhelper 3.1.7 generates LinkConfig without route destination, which only creates
+# a host route to the gateway instead of a default route (0.0.0.0/0).
+# This patch uses the old interfaces format to explicitly add the default route.
+machine:
+  network:
+    interfaces:
+      - interface: eth0
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1

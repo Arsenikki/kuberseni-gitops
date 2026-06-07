@@ -4,6 +4,10 @@ talosVersion: v1.12.6
 # renovate: datasource=github-releases depName=siderolabs/kubernetes
 kubernetesVersion: v1.35.2
 
+# Use standard installer (ghcr.io) for fast initial install from ISO.
+# Extensions are added via A/B upgrade after cluster is up: task talos:upgrade
+talosImageURL: ghcr.io/siderolabs/installer
+
 # VIP shared across all control plane nodes
 endpoint: https://192.168.1.40:6443
 
@@ -15,13 +19,6 @@ nodes:
     ipAddress: 192.168.1.41
     installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
     controlPlane: true
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/qemu-guest-agent
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0 # verify interface name in Talos maintenance mode
         dhcp: false
@@ -37,13 +34,6 @@ nodes:
     ipAddress: 192.168.1.42
     installDisk: /dev/sda
     controlPlane: true
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/qemu-guest-agent
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -59,13 +49,6 @@ nodes:
     ipAddress: 192.168.1.43
     installDisk: /dev/sda
     controlPlane: true
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/qemu-guest-agent
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -79,17 +62,11 @@ nodes:
 
   - hostname: worker-01
     ipAddress: 192.168.1.44
-    installDisk: /dev/sda
+    # Use diskSelector instead of installDisk to avoid /dev/sdX ordering issues.
+    # worker-01 has 50GB OS disk + 500GB Longhorn data disk.
+    installDiskSelector:
+      size: "<= 60GB"
     controlPlane: false
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/qemu-guest-agent
-            - siderolabs/i915
-            - siderolabs/intel-ucode
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -105,13 +82,6 @@ nodes:
     ipAddress: 192.168.1.45
     installDisk: /dev/sda
     controlPlane: false
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/qemu-guest-agent
-            - siderolabs/iscsi-tools
-            - siderolabs/util-linux-tools
     networkInterfaces:
       - interface: eth0
         dhcp: false
@@ -127,8 +97,12 @@ controlPlane:
   patches:
     - "@./patches/all.yaml"
     - "@./patches/controlplane.yaml"
+    - "@./patches/install-image-override.yaml"
+    - "@./patches/network-routes-fix.yaml"
 
 worker:
   patches:
     - "@./patches/all.yaml"
     - "@./patches/worker-common.yaml"
+    - "@./patches/install-image-override.yaml"
+    - "@./patches/network-routes-fix.yaml"
