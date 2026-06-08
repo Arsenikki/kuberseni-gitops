@@ -45,6 +45,13 @@ persistence:
     mountPath: /config/configuration.yaml
     subPath: configuration.yaml
     readOnly: true
+  adaptive-lighting-config:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/adaptive_lighting_config.yaml
+    subPath: adaptive_lighting_config.yaml
+    readOnly: true
 
 resources:
   requests:

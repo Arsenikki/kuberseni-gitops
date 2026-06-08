@@ -103,3 +103,76 @@ data:
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
+
+  adaptive_lighting_config.yaml: |
+    - name: "Low"
+      lights: &lights [
+        light.kitchen_led_strip_01,
+        light.kitchen_led_strip_02,
+        light.living_room_corner_light_01,
+        light.living_room_corner_light_02,
+        light.lobby_candle_light_01,
+        light.lobby_candle_light_02,
+        light.lobby_candle_light_03
+      ]
+      prefer_rgb_color: false
+      transition: 45
+      initial_transition: 1
+      interval: 90
+      min_brightness: 1
+      max_brightness: 10
+      min_color_temp: 2500
+      max_color_temp: 3000
+      sleep_brightness: 1
+      sleep_color_temp: 1000
+      take_over_control: false
+      detect_non_ha_changes: true
+      adapt_only_on_bare_turn_on: true
+    
+    - name: "Medium"
+      lights: *lights
+      prefer_rgb_color: false
+      transition: 45
+      initial_transition: 1
+      interval: 90
+      min_brightness: 5
+      max_brightness: 40
+      min_color_temp: 2500
+      max_color_temp: 4000
+      sleep_brightness: 1
+      sleep_color_temp: 1000
+      take_over_control: false
+      detect_non_ha_changes: true
+      adapt_only_on_bare_turn_on: true
+    
+    - name: "High"
+      lights: *lights
+      prefer_rgb_color: false
+      transition: 45
+      initial_transition: 1
+      interval: 90
+      min_brightness: 10
+      max_brightness: 80
+      min_color_temp: 2500
+      max_color_temp: 5000
+      sleep_brightness: 1
+      sleep_color_temp: 1000
+      take_over_control: false
+      detect_non_ha_changes: true
+      adapt_only_on_bare_turn_on: true
+    
+    - name: "Maximum"
+      lights: *lights
+      prefer_rgb_color: false
+      transition: 45
+      initial_transition: 1
+      interval: 90
+      min_brightness: 20
+      max_brightness: 100
+      min_color_temp: 2500
+      max_color_temp: 5000
+      sleep_brightness: 1
+      sleep_color_temp: 1000
+      take_over_control: false
+      detect_non_ha_changes: true
+      adapt_only_on_bare_turn_on: true
