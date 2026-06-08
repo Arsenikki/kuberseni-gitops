@@ -15,6 +15,13 @@ defaultSettings:
   # can mount Longhorn volumes (data still lives on worker disks)
   taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
 
+longhornManager:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+    - key: CriticalAddonsOnly
+      operator: Exists
+
 longhornUI:
   replicas: 1
 
