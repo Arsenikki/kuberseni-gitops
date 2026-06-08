@@ -3,8 +3,10 @@ image:
   tag: 3.1.2.4902
 
 env:
-  TZ: "Europe/London"
-
+  TZ: Europe/London
+  LIDARR__AUTH__METHOD: External
+  LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  LIDARR__LOG__LEVEL: info
 service:
   main:
     ports:

@@ -3,8 +3,10 @@ image:
   tag: 0.4.18.2805
 
 env:
-  TZ: "Europe/London"
-
+  TZ: Europe/London
+  READARR__AUTH__METHOD: External
+  READARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  READARR__LOG__LEVEL: info
 service:
   main:
     ports:
