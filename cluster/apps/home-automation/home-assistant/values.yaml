@@ -52,6 +52,27 @@ persistence:
     mountPath: /config/adaptive_lighting_config.yaml
     subPath: adaptive_lighting_config.yaml
     readOnly: true
+  automations-yaml:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/automations.yaml
+    subPath: automations.yaml
+    readOnly: true
+  scenes-yaml:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/scenes.yaml
+    subPath: scenes.yaml
+    readOnly: true
+  scripts-yaml:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/scripts.yaml
+    subPath: scripts.yaml
+    readOnly: true
 
 resources:
   requests:

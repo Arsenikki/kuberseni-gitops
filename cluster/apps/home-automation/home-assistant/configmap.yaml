@@ -104,6 +104,10 @@ data:
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
+  automations.yaml: "[]"
+  scenes.yaml: "[]"
+  scripts.yaml: "{}"
+
   adaptive_lighting_config.yaml: |
     - name: "Low"
       lights: &lights [
