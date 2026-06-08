@@ -8,6 +8,8 @@ configs:
     admin.enabled: true
     # Allow ArgoCD to manage itself (app-of-apps)
     application.resourceTrackingMethod: annotation
+    # Poll git every 60 seconds (default is 3 minutes)
+    timeout.reconciliation: 60s
 
 server:
   ingress:
