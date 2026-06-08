@@ -38,6 +38,13 @@ persistence:
     enabled: true
     type: pvc
     existingClaim: home-assistant-config
+  configuration-yaml:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/configuration.yaml
+    subPath: configuration.yaml
+    readOnly: true
 
 resources:
   requests:

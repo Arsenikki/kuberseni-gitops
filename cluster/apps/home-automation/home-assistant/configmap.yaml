@@ -1,0 +1,105 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-config-yaml
+  namespace: home-automation
+data:
+  configuration.yaml: |
+    # Loads default set of integrations. Do not remove.
+    default_config:
+
+    # Enable rest api for Temporal.io usage
+    api:
+
+    # Enable WoL integration
+    wake_on_lan:
+
+    # Configure reverse proxy
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.244.0.0/16
+        - 10.96.0.0/12
+        - 192.168.1.0/24
+
+    # Enable homekit integration
+    homekit:
+      - name: virtual_bridge
+        filter:
+          include_domains:
+            - light
+            - switch
+          exclude_entity_globs:
+            - switch.adaptive_lighting_adapt_*
+            - switch.*_do_not_disturb
+      - name: virtual_accessories
+        port: 21065
+        filter:
+          include_domains:
+            - media_player
+        entity_config:
+          media_player.living_room_tv:
+            feature_list:
+              - feature: on_off
+              - feature: play_pause
+              - feature: play_stop
+              - feature: toggle_mute
+
+    light:
+    # Configure specified switches to report as lights
+      - platform: switch
+        name: kitchen_countertop_lights
+        entity_id: switch.kitchen_countertop_lights
+      - platform: switch
+        name: living_room_christmas_lights
+        entity_id: switch.living_room_christmas_lights
+
+    # Group lights into single entities
+      - platform: group
+        name: "kitchen_all_lights"
+        entities:
+          - light.kitchen_countertop_lights
+          - light.kitchen_led_strip_01
+          - light.kitchen_led_strip_02
+      - platform: group
+        name: "living_room_all_lights"
+        entities:
+          - light.living_room_christmas_lights
+          - light.living_room_corner_light_01
+          - light.living_room_corner_light_02
+      - platform: group
+        name: "lobby_all_lights"
+        entities:
+          - light.lobby_candle_light_01
+          - light.lobby_candle_light_02
+          - light.lobby_candle_light_03
+
+    # Configure selectors
+    input_select:
+      adaptive_lighting_level:
+        options:
+          - low
+          - medium
+          - high
+          - maximum
+        initial: medium
+      scene:
+        options:
+          - normal
+          - away
+          - cleaning
+          - spinning
+        initial: normal
+      bathroom_mood_light_mode:
+        options:
+          - cold
+          - warm
+          - hot
+          - violet
+
+    # Import other configs
+    adaptive_lighting: !include adaptive_lighting_config.yaml
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
