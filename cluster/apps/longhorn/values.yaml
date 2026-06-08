@@ -6,6 +6,9 @@ persistence:
 
 defaultSettings:
   createDefaultDiskLabeledNodes: true
+  # Use the dedicated data disk mount point, not the OS disk.
+  # Both workers mount their data disk at /var/mnt/longhorn-data via Talos machine config.
+  defaultDataPath: /var/mnt/longhorn-data
   defaultReplicaCount: 2
   replicaSoftAntiAffinity: true
   # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there

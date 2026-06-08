@@ -11,8 +11,8 @@ locals {
   worker_vms = {
     # extra_disk_size: additional disk for Longhorn storage (0 = use main disk only)
     worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D" }
-    # worker-02: HDD passthrough disks (16TB + 10TB) added manually in Proxmox after VM creation
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 0,   ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2" }
+    # worker-02: 100GB Longhorn data disk on local-lvm (NAS has 106GB free)
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2" }
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
