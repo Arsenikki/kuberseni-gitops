@@ -72,7 +72,6 @@ ingress:
 persistence:
   config:
     enabled: true
-    type: pvc
     existingClaim: zigbee2mqtt
     globalMounts:
       - path: /config
