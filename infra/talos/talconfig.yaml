@@ -20,7 +20,8 @@ nodes:
     installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
     controlPlane: true
     networkInterfaces:
-      - interface: ens18 # verify interface name in Talos maintenance mode
+      - deviceSelector:
+          driver: virtio_net  # machine-type agnostic: works on i440fx (ens18) and q35 (enp*)
         dhcp: false
         addresses:
           - 192.168.1.41/24
