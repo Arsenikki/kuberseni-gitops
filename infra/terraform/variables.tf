@@ -39,8 +39,3 @@ variable "attach_iso" {
   default     = true
 }
 
-variable "attach_scale_iso" {
-  description = "Attach TrueNAS Scale ISO. Set to false after OS is installed."
-  type        = bool
-  default     = true
-}

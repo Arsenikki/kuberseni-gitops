@@ -58,16 +58,13 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
     discard      = "on"
   }
 
-  # ISO for initial installation — remove after install by setting attach_scale_iso = false
-  dynamic "cdrom" {
-    for_each = var.attach_scale_iso ? [1] : []
-    content {
-      interface = "ide2"
-      file_id   = proxmox_virtual_environment_download_file.truenas_scale_iso.id
-    }
+  cdrom {
+    interface = "ide2"
+    file_id   = proxmox_virtual_environment_download_file.truenas_scale_iso.id
   }
 
-  boot_order = var.attach_scale_iso ? ["ide2", "scsi0"] : ["scsi0"]
+  # Disk first — once TrueNAS is installed, it boots from disk regardless of ISO presence
+  boot_order = ["scsi0", "ide2"]
 
   network_device {
     bridge      = "vmbr0"
