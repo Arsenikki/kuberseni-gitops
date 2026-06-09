@@ -30,8 +30,10 @@ resource "proxmox_virtual_environment_download_file" "truenas_scale_iso" {
 resource "proxmox_virtual_environment_vm" "truenas_scale" {
   name            = "TrueNAS-Scale"
   node_name       = "nas"
-  vm_id           = 201
+  vm_id           = 202
   stop_on_destroy = true
+  started         = false  # Start manually via Proxmox console to run installer
+  on_boot         = false
   bios            = "seabios"
 
   agent {
