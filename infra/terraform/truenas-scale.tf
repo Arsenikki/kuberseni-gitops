@@ -35,6 +35,8 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
   started         = false  # Start manually via Proxmox console to run installer
   on_boot         = false
   bios            = "seabios"
+  machine         = "q35"  # PCIe bus required for HDD passthrough; SeaBIOS avoids OVMF/passthrough boot issues
+  scsi_hardware   = "virtio-scsi-single"  # One I/O thread per disk via iothread=true
 
   agent {
     enabled = false
@@ -42,7 +44,7 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
 
   cpu {
     cores = 4
-    type  = "host"
+    type  = "host"  # Exposes AES-NI to ZFS; avoids SMB CPU spikes with kvm64
   }
 
   memory {
@@ -50,12 +52,14 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
   }
 
   # Boot disk — stores SCALE OS only, not data
+  # virtio-scsi-single + iothread gives each disk its own I/O thread (~40% faster than shared controller)
   disk {
     datastore_id = "local-lvm"
     interface    = "scsi0"
     size         = 32
     file_format  = "raw"
     discard      = "on"
+    iothread     = true
   }
 
   cdrom {
