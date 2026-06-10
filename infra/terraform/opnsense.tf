@@ -1,76 +1,53 @@
 # OPNSense network configuration
 # Provider: browningluke/opnsense v0.22
 # Credentials: opnsense_api_key + opnsense_api_secret in secrets.tfvars (sops-encrypted)
-#
-# After applying this file, complete the Kea migration in OPNSense UI:
-#   Services → Kea DHCP → Enable, then
-#   Services → ISC DHCP → Disable
 
 # ── Kea DHCP — LAN subnet ─────────────────────────────────────────────────────
-# DHCP range: 192.168.1.100–199 (static reservations below are outside this range)
 
 resource "opnsense_kea_dhcpv4_subnet" "lan" {
   subnet      = "192.168.1.0/24"
   description = "LAN"
 
-  pools = ["192.168.1.100-192.168.1.199"]
-
+  pools       = ["192.168.1.100-192.168.1.199"]
   routers     = ["192.168.1.1"]
   dns_servers = ["1.1.1.1", "8.8.8.8"]
 }
 
-# ── DHCP Reservations ─────────────────────────────────────────────────────────
+# ── Cluster VM reservations — derived from vms.tf locals ──────────────────────
+# MAC, IP and hostname come from the same place as the VM config.
+# Adding/removing a VM automatically adds/removes its DHCP reservation.
 
-# Kubernetes cluster nodes
-resource "opnsense_kea_dhcpv4_reservation" "control_plane_01" {
+resource "opnsense_kea_dhcpv4_reservation" "controlplane" {
+  for_each = local.controlplane_vms
+
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:75:55:eb"
-  ip_address  = "192.168.1.41"
-  hostname    = "control-plane-01"
-  description = "Talos CP-01 (router/minipc)"
+  mac_address = lower(each.value.mac)
+  ip_address  = each.value.ip
+  hostname    = each.key
+  description = "Talos ${each.key} (${each.value.proxmox_node})"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "control_plane_02" {
+resource "opnsense_kea_dhcpv4_reservation" "worker" {
+  for_each = local.worker_vms
+
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:e5:85:2f"
-  ip_address  = "192.168.1.42"
-  hostname    = "control-plane-02"
-  description = "Talos CP-02 (minipc)"
+  mac_address = lower(each.value.mac)
+  ip_address  = each.value.ip
+  hostname    = each.key
+  description = "Talos ${each.key} (${each.value.proxmox_node})"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "control_plane_03" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:70:e7:4e"
-  ip_address  = "192.168.1.43"
-  hostname    = "control-plane-03"
-  description = "Talos CP-03 (nas)"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "worker_01" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:0f:1d:1d"
-  ip_address  = "192.168.1.44"
-  hostname    = "worker-01"
-  description = "Talos worker-01 (minipc, Intel Arc GPU)"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "worker_02" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:ee:72:f2"
-  ip_address  = "192.168.1.45"
-  hostname    = "worker-02"
-  description = "Talos worker-02 (nas)"
-}
-
+# TrueNAS Scale — MAC from the VM resource, IP is temporary (.3 pre-cutover)
 resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:5c:a1:e0"
+  mac_address = lower(proxmox_virtual_environment_vm.truenas_scale.network_device[0].mac_address)
   ip_address  = "192.168.1.3"
   hostname    = "truenas-scale"
   description = "TrueNAS Scale (temp, pre-cutover from Core at .2)"
 }
 
-# Personal/home devices
+# ── Personal/home devices ──────────────────────────────────────────────────────
+
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "2c:f0:5d:7c:93:6c"
@@ -111,8 +88,30 @@ resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
   description = ""
 }
 
+# ── State migration — rename old individual resources to for_each ──────────────
+
+moved {
+  from = opnsense_kea_dhcpv4_reservation.control_plane_01
+  to   = opnsense_kea_dhcpv4_reservation.controlplane["control-plane-01"]
+}
+moved {
+  from = opnsense_kea_dhcpv4_reservation.control_plane_02
+  to   = opnsense_kea_dhcpv4_reservation.controlplane["control-plane-02"]
+}
+moved {
+  from = opnsense_kea_dhcpv4_reservation.control_plane_03
+  to   = opnsense_kea_dhcpv4_reservation.controlplane["control-plane-03"]
+}
+moved {
+  from = opnsense_kea_dhcpv4_reservation.worker_01
+  to   = opnsense_kea_dhcpv4_reservation.worker["worker-01"]
+}
+moved {
+  from = opnsense_kea_dhcpv4_reservation.worker_02
+  to   = opnsense_kea_dhcpv4_reservation.worker["worker-02"]
+}
+
 # ── DNS overrides (add as needed) ─────────────────────────────────────────────
-# Example:
 # resource "opnsense_unbound_host_override" "truenas_core" {
 #   host        = "nas"
 #   domain      = "home.arsenikki.casa"
