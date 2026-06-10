@@ -57,6 +57,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   stop_on_destroy = true
   bios            = "ovmf"  # UEFI — required per Talos Proxmox guide
   machine         = each.value.machine_type != "" ? each.value.machine_type : null
+  scsi_hardware   = "virtio-scsi-single"  # required for iothread per disk
 
   agent {
     enabled = true
@@ -81,7 +82,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   }
 
   # Boot from ISO on first install, from disk on all subsequent boots
-  boot_order = var.attach_iso ? ["ide2", "scsi0"] : ["scsi0"]
+  boot_order = ["scsi0", "ide2"]  # disk-first: empty disk falls through to ISO on fresh install, installed disk always boots directly
 
   # Blank disk — Talos installer writes here during initial boot
   disk {
@@ -93,13 +94,9 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
     iothread     = true  # dedicated I/O thread per disk (~40% better throughput)
   }
 
-  # ISO only needed for first install — remove with: task terraform:remove-iso
-  dynamic "cdrom" {
-    for_each = var.attach_iso ? [1] : []
-    content {
-      interface = "ide2"
-      file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
-    }
+  cdrom {
+    interface = "ide2"
+    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
   }
 
   network_device {
@@ -129,6 +126,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   stop_on_destroy = true
   bios            = "ovmf"
   machine         = each.value.machine_type != "" ? each.value.machine_type : null
+  scsi_hardware   = "virtio-scsi-single"
 
   agent {
     enabled = true
@@ -151,7 +149,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     dedicated = each.value.memory
   }
 
-  boot_order = var.attach_iso ? ["ide2", "scsi0"] : ["scsi0"]
+  boot_order = ["scsi0", "ide2"]  # disk-first: empty disk falls through to ISO on fresh install, installed disk always boots directly
 
   disk {
     datastore_id = var.vm_datastore
@@ -173,12 +171,9 @@ resource "proxmox_virtual_environment_vm" "worker" {
     }
   }
 
-  dynamic "cdrom" {
-    for_each = var.attach_iso ? [1] : []
-    content {
-      interface = "ide2"
-      file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
-    }
+  cdrom {
+    interface = "ide2"
+    file_id   = proxmox_virtual_environment_download_file.talos_iso[each.value.proxmox_node].id
   }
 
   network_device {

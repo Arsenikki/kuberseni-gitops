@@ -36,7 +36,6 @@ tasks:
       - task: talos:bootstrap
       - task: talos:apply-workers
       - task: talos:kubeconfig
-      - task: terraform:remove-iso
       - task: argocd:bootstrap
 
   down:
@@ -135,12 +134,6 @@ tasks:
     cmds:
       - sops exec-file secrets.tfvars 'tofu destroy -var-file={} -auto-approve'
 
-  terraform:remove-iso:
-    desc: Remove Talos ISO from VMs after installation (sets boot_order to disk only)
-    dir: "{{.TF_DIR}}"
-    deps: [terraform:init]
-    cmds:
-      - sops exec-file secrets.tfvars 'tofu apply -var-file={} -var="attach_iso=false" -auto-approve'
 
 
   # ── Talos ─────────────────────────────────────────────────────────────────

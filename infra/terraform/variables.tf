@@ -33,9 +33,4 @@ variable "network_gateway" {
   default     = "192.168.1.1"
 }
 
-variable "attach_iso" {
-  description = "Attach Talos metal ISO for initial installation. Set to false after first boot to boot from disk."
-  type        = bool
-  default     = true
-}
 
