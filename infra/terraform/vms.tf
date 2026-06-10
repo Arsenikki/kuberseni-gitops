@@ -5,15 +5,15 @@ locals {
     # control-plane-01: SONOFF Zigbee 3.0 USB Dongle Plus V2 (1a86:55d4) plugged into router
     # machine_type: "q35" for PCIe (GPU passthrough), "" for default i440fx
     control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.41", mac = "BC:24:11:75:55:EB", usb_zigbee = "1a86:55d4", machine_type = "q35" }
-    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.42", mac = "BC:24:11:E5:85:2F", usb_zigbee = null,          machine_type = "" }
-    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.43", mac = "BC:24:11:70:E7:4E", usb_zigbee = null,          machine_type = "" }
+    control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.42", mac = "BC:24:11:E5:85:2F", usb_zigbee = null,          machine_type = "q35" }
+    control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.43", mac = "BC:24:11:70:E7:4E", usb_zigbee = null,          machine_type = "q35" }
   }
 
   worker_vms = {
     # extra_disk_size: additional disk for Longhorn storage (0 = use main disk only)
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D" }
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35" }
     # worker-02: 100GB Longhorn data disk on local-lvm (NAS has 106GB free)
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2" }
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35" }
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
@@ -128,6 +128,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   vm_id           = each.value.vm_id
   stop_on_destroy = true
   bios            = "ovmf"
+  machine         = each.value.machine_type != "" ? each.value.machine_type : null
 
   agent {
     enabled = true
@@ -158,6 +159,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
     size         = each.value.disk_size
     file_format  = "raw"
     discard      = "on"
+    iothread     = true
   }
 
   dynamic "disk" {
