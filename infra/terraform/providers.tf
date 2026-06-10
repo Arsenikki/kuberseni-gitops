@@ -6,6 +6,10 @@ terraform {
       source  = "bpg/proxmox"
       version = "~> 0.99"
     }
+    opnsense = {
+      source  = "browningluke/opnsense"
+      version = "~> 0.22"
+    }
   }
 
   # Uncomment to use remote state (e.g. an S3-compatible store on TrueNAS)
@@ -22,6 +26,13 @@ terraform {
   #   skip_region_validation      = true
   #   force_path_style            = true
   # }
+}
+
+provider "opnsense" {
+  uri            = "https://192.168.1.1"
+  api_key        = var.opnsense_api_key
+  api_secret     = var.opnsense_api_secret
+  allow_insecure = true  # OPNSense uses self-signed cert
 }
 
 provider "proxmox" {

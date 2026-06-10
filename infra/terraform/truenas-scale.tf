@@ -39,7 +39,7 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
   scsi_hardware   = "virtio-scsi-single"  # One I/O thread per disk via iothread=true
 
   agent {
-    enabled = false
+    enabled = true
   }
 
   cpu {
@@ -72,7 +72,7 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
 
   network_device {
     bridge      = "vmbr0"
-    mac_address = "BC:24:11:AA:BB:CC"
+    mac_address = "BC:24:11:5C:A1:E0"  # fixed MAC — reserve 192.168.1.3 in OPNSense
   }
 
   operating_system {

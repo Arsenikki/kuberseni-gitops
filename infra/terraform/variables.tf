@@ -33,4 +33,16 @@ variable "network_gateway" {
   default     = "192.168.1.1"
 }
 
+variable "opnsense_api_key" {
+  description = "OPNSense API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "opnsense_api_secret" {
+  description = "OPNSense API secret"
+  type        = string
+  sensitive   = true
+}
+
 
