@@ -1,7 +1,10 @@
-# Applied to worker-01 (Minisforum NBP5 — Intel i5-13500H with Intel Arc iGPU)
-# Extensions: siderolabs/i915 (GPU drivers/firmware), siderolabs/intel-ucode (CPU microcode)
-# Defined in talconfig.yaml schematic per-node
+# Applied to worker-01 (Minisforum NBP5 — Intel i5-13500H with Intel Iris Xe iGPU,
+# full PCIe passthrough from minipc Proxmox host).
+# Installer image overrides the global one to add siderolabs/i915 (GPU firmware)
+# and siderolabs/intel-ucode on top of the base extensions.
 machine:
+  install:
+    image: factory.talos.dev/metal-installer/a7eb3dff560d77cbe1181c6ee980cc2f6cd9d45f50bf6e6b590a2d0e0fa2f713:v1.13.2
   kernel:
     modules:
       - name: i915

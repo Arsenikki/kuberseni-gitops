@@ -11,9 +11,10 @@ locals {
 
   worker_vms = {
     # extra_disk_size: additional disk for Longhorn storage (0 = use main disk only)
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35" }
+    # gpu_mapping: PCI hardware mapping name for iGPU passthrough (null = no GPU)
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
     # worker-02: 100GB Longhorn data disk on local-lvm (NAS has 106GB free)
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35" }
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 24576, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
@@ -29,6 +30,22 @@ resource "proxmox_virtual_environment_hardware_mapping_usb" "zigbee_dongle" {
     {
       id   = "1a86:55d4"
       node = "router"
+    }
+  ]
+}
+
+# PCI resource mapping for worker-01's Intel Iris Xe iGPU (full passthrough).
+# Same setup as the old k3s cluster: host runs with nomodeset, VM owns the GPU.
+resource "proxmox_virtual_environment_hardware_mapping_pci" "minipc_igpu" {
+  name    = "minipc-igpu"
+  comment = "Intel Raptor Lake-P Iris Xe (minipc) for worker-01 / Plex transcoding"
+  map = [
+    {
+      id           = "8086:a7a0"
+      node         = "minipc"
+      path         = "0000:00:02.0"
+      iommu_group  = 0
+      subsystem_id = "8086:2212"
     }
   ]
 }
@@ -179,6 +196,16 @@ resource "proxmox_virtual_environment_vm" "worker" {
   network_device {
     bridge      = each.value.network_bridge
     mac_address = each.value.mac
+  }
+
+  dynamic "hostpci" {
+    for_each = each.value.gpu_mapping != null ? [each.value.gpu_mapping] : []
+    content {
+      device  = "hostpci0"
+      mapping = hostpci.value
+      pcie    = true
+      rombar  = true
+    }
   }
 
   operating_system {

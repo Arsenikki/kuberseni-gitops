@@ -58,3 +58,6 @@ resources:
     memory: 1024Mi
   limits:
     memory: 4096Mi
+    # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.
+    # Also pins Plex to worker-01 via resource availability.
+    gpu.intel.com/i915: 1
