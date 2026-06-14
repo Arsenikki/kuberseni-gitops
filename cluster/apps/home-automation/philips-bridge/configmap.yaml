@@ -2,8 +2,9 @@
 # CoAP <-> MQTT bridge for the Philips AC3220 air purifier.
 # Runs on control-plane-01 (the only node that reliably receives the purifier's
 # fragmented CoAP status stream — see memory project_philips_coap_fragmentation).
-# Publishes HA MQTT-discovery so a fan entity (+ PM2.5/filter sensors) appears in
-# Home Assistant with live status, and accepts preset/power commands -> CoAP SET.
+# Publishes HA MQTT discovery so HA auto-creates entities (fan + display-light
+# select + PM2.5 + 2 filter sensors) with live status, and turns commands into
+# CoAP SET. Node-RED automates fan.set_preset_mode on the Octopus schedule.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,50 +26,87 @@ data:
     POLL = int(os.environ.get("POLL_SECONDS", "30"))
 
     UID = "philips_ac3220"
-    T_AVAIL = "philips_purifier/availability"
-    T_STATE = "philips_purifier/state"
-    T_PRESET_SET = "philips_purifier/preset/set"
-    T_POWER_SET = "philips_purifier/power/set"
+    BASE = "philips_purifier"
+    T_AVAIL = f"{BASE}/availability"
+    T_STATE = f"{BASE}/state"
+    T_PRESET_SET = f"{BASE}/preset/set"
+    T_POWER_SET = f"{BASE}/power/set"
+    T_LIGHT_SET = f"{BASE}/light/set"
 
-    DP_POWER, DP_MODE, DP_PM25 = "D03102", "D0310C", "D03221"
-    DP_FILTER, DP_FILTER_TOTAL = "D0540E", "D05408"
+    # datapoints
+    DP_POWER, DP_MODE, DP_AUTOPLUS = "D03102", "D0310C", "D03180"
+    DP_PM25, DP_LIGHT = "D03221", "D03105"
+    DP_PREFILTER, DP_PREFILTER_TOTAL = "D0520D", "D05207"   # washable pre-filter (clean)
+    DP_FILTER, DP_FILTER_TOTAL = "D0540E", "D05408"         # NanoProtect (replace)
 
-    PRESET_TO_MODE = {"auto": 0, "sleep": 17, "medium": 19, "turbo": 18,
-                      "speed 1": 1, "speed 2": 2, "speed 3": 3, "speed 4": 4, "speed 5": 5}
-    MODE_TO_PRESET = {v: k for k, v in PRESET_TO_MODE.items()}
-    PRESET_MODES = list(PRESET_TO_MODE.keys())
+    PRESET_MODES = ["Auto+", "Medium", "Turbo"]
+
+    def preset_to_data(p):
+        if p == "Auto+":  return {DP_AUTOPLUS: 1, DP_MODE: 0}
+        if p == "Medium": return {DP_AUTOPLUS: 0, DP_MODE: 19}
+        if p == "Turbo":  return {DP_AUTOPLUS: 0, DP_MODE: 18}
+        return None
+
+    def cur_preset(st):
+        if st.get(DP_AUTOPLUS) == 1:
+            return "Auto+"
+        m = st.get(DP_MODE)
+        if m == 18: return "Turbo"
+        if m == 19: return "Medium"
+        return "Auto+"  # plain auto / AI-selected speeds present as Auto+
+
+    LIGHT_OPTIONS = {"Off": 0, "Auto": 101, "Medium": 115, "Bright": 123}
+    LIGHT_REV = {v: k for k, v in LIGHT_OPTIONS.items()}
 
     DEVICE = {"identifiers": [UID], "name": "Philips Air Purifier",
               "model": "AC3220/10", "manufacturer": "Philips"}
+
+    def disc(component, slug, cfg):
+        cfg = {**cfg, "availability_topic": T_AVAIL, "device": DEVICE}
+        return (f"{DISCO}/{component}/{UID}_{slug}/config", cfg)
+
     DISCOVERY = [
-        (f"{DISCO}/fan/{UID}/config", {
-            "name": None, "unique_id": f"{UID}_fan", "availability_topic": T_AVAIL,
+        disc("fan", "fan", {
+            "name": None, "unique_id": f"{UID}_fan",
             "state_topic": T_STATE, "state_value_template": "{{ value_json.power }}",
             "payload_on": "ON", "payload_off": "OFF", "command_topic": T_POWER_SET,
             "preset_mode_state_topic": T_STATE,
             "preset_mode_value_template": "{{ value_json.preset }}",
-            "preset_mode_command_topic": T_PRESET_SET, "preset_modes": PRESET_MODES,
-            "device": DEVICE}),
-        (f"{DISCO}/sensor/{UID}_pm25/config", {
-            "name": "PM2.5", "unique_id": f"{UID}_pm25", "availability_topic": T_AVAIL,
+            "preset_mode_command_topic": T_PRESET_SET, "preset_modes": PRESET_MODES}),
+        disc("select", "light", {
+            "name": "Display light", "unique_id": f"{UID}_light",
+            "entity_category": "config", "icon": "mdi:brightness-6",
+            "state_topic": T_STATE, "value_template": "{{ value_json.light }}",
+            "command_topic": T_LIGHT_SET, "options": list(LIGHT_OPTIONS.keys())}),
+        disc("sensor", "pm25", {
+            "name": "PM2.5", "unique_id": f"{UID}_pm25",
             "state_topic": T_STATE, "value_template": "{{ value_json.pm25 }}",
             "device_class": "pm25", "unit_of_measurement": "µg/m³",
-            "state_class": "measurement", "device": DEVICE}),
-        (f"{DISCO}/sensor/{UID}_filter/config", {
-            "name": "Filter remaining", "unique_id": f"{UID}_filter",
-            "availability_topic": T_AVAIL, "state_topic": T_STATE,
-            "value_template": "{{ value_json.filter }}", "unit_of_measurement": "%",
-            "icon": "mdi:air-filter", "device": DEVICE}),
+            "state_class": "measurement"}),
+        disc("sensor", "prefilter", {
+            "name": "Pre-filter (clean)", "unique_id": f"{UID}_prefilter",
+            "state_topic": T_STATE, "value_template": "{{ value_json.prefilter }}",
+            "unit_of_measurement": "%", "icon": "mdi:air-filter",
+            "state_class": "measurement"}),
+        disc("sensor", "filter", {
+            "name": "NanoProtect filter (replace)", "unique_id": f"{UID}_filter",
+            "state_topic": T_STATE, "value_template": "{{ value_json.filter }}",
+            "unit_of_measurement": "%", "icon": "mdi:air-filter",
+            "state_class": "measurement"}),
     ]
 
+    def pct(cur, tot):
+        return round(100 * cur / tot) if cur is not None and tot else None
+
     def to_state(st):
-        out = {"power": "ON" if st.get(DP_POWER) == 1 else "OFF",
-               "preset": MODE_TO_PRESET.get(st.get(DP_MODE), "auto"),
-               "pm25": st.get(DP_PM25)}
-        tot = st.get(DP_FILTER_TOTAL) or 0
-        if tot:
-            out["filter"] = round(100 * st.get(DP_FILTER, 0) / tot)
-        return out
+        return {
+            "power": "ON" if st.get(DP_POWER) == 1 else "OFF",
+            "preset": cur_preset(st),
+            "pm25": st.get(DP_PM25),
+            "prefilter": pct(st.get(DP_PREFILTER), st.get(DP_PREFILTER_TOTAL)),
+            "filter": pct(st.get(DP_FILTER), st.get(DP_FILTER_TOTAL)),
+            "light": LIGHT_REV.get(st.get(DP_LIGHT), "Auto"),
+        }
 
     coap = None
     coap_lock = None
@@ -103,18 +141,22 @@ data:
         for topic, payload in DISCOVERY:
             client.publish(topic, json.dumps(payload), retain=True)
         client.publish(T_AVAIL, "online", retain=True)
-        client.subscribe([(T_PRESET_SET, 0), (T_POWER_SET, 0)])
+        client.subscribe([(T_PRESET_SET, 0), (T_POWER_SET, 0), (T_LIGHT_SET, 0)])
 
     def on_message(client, userdata, msg):
         payload = msg.payload.decode(errors="ignore").strip()
         log.info("CMD %s = %s", msg.topic, payload)
         if msg.topic == T_PRESET_SET:
-            mode = PRESET_TO_MODE.get(payload.lower())
-            if mode is not None:
-                asyncio.run_coroutine_threadsafe(do_set({DP_POWER: 1, DP_MODE: mode}), mainloop)
+            data = preset_to_data(payload)
+            if data:
+                asyncio.run_coroutine_threadsafe(do_set(data), mainloop)
         elif msg.topic == T_POWER_SET:
             asyncio.run_coroutine_threadsafe(
                 do_set({DP_POWER: 1 if payload.upper() == "ON" else 0}), mainloop)
+        elif msg.topic == T_LIGHT_SET:
+            if payload in LIGHT_OPTIONS:
+                asyncio.run_coroutine_threadsafe(
+                    do_set({DP_LIGHT: LIGHT_OPTIONS[payload]}), mainloop)
 
     async def poll_once():
         # status read = large fragmented response, intermittently lost even on
@@ -143,8 +185,6 @@ data:
             else:
                 fails += 1
                 log.error("poll failed (%d consecutive)", fails)
-                # only mark unavailable after sustained failure; control (SET)
-                # still works via small packets regardless of status reads.
                 if fails >= 5:
                     mqttc.publish(T_AVAIL, "offline", retain=True)
             await asyncio.sleep(POLL)
