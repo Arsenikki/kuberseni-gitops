@@ -24,14 +24,14 @@ ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
     hosts:
-      - host: homeassistant.homelab.arsenikki.casa
+      - host: homeassistant.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix
     tls:
       - secretName: home-assistant-tls
         hosts:
-          - homeassistant.homelab.arsenikki.casa
+          - homeassistant.arsenikki.casa
 
 persistence:
   config:
@@ -107,11 +107,11 @@ addons:
         traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
         external-dns/is-public: "true"
       hosts:
-        - host: "code.homeassistant.homelab.arsenikki.casa"
+        - host: "code.homeassistant.arsenikki.casa"
           paths:
             - path: /
               pathType: Prefix
       tls:
         - secretName: home-assistant-vscode-tls
           hosts:
-            - "code.homeassistant.homelab.arsenikki.casa"
+            - "code.homeassistant.arsenikki.casa"

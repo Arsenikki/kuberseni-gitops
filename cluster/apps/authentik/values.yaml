@@ -25,14 +25,14 @@ server:
   ingress:
     enabled: true
     hosts:
-      - authentik.homelab.arsenikki.casa
+      - authentik.arsenikki.casa
     annotations:
       kubernetes.io/tls-acme: "true"
       external-dns/is-public: "true"
     tls:
       - secretName: authentik-tls
         hosts:
-          - authentik.homelab.arsenikki.casa
+          - authentik.arsenikki.casa
 
 postgresql:
   enabled: true

@@ -1,5 +1,5 @@
 domainFilters:
-  - "homelab.arsenikki.casa"
+  - "arsenikki.casa"
 
 env:
   - name: CF_API_TOKEN

@@ -26,7 +26,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://node-red.home-automation.svc.cluster.local:1880
-      external_host: https://nodered.homelab.arsenikki.casa
+      external_host: https://nodered.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

@@ -26,7 +26,7 @@ entries:
         ]
       mode: proxy
       internal_host: http://prowlarr.media.svc.cluster.local:9696
-      external_host: https://prowlarr.homelab.arsenikki.casa
+      external_host: https://prowlarr.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

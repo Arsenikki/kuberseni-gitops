@@ -30,7 +30,7 @@ ingress:
       kubernetes.io/tls-acme: "true"
       external-dns/is-public: "true"
     hosts:
-      - host: &host home.homelab.arsenikki.casa
+      - host: &host home.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix

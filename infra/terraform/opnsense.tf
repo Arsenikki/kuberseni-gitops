@@ -37,13 +37,16 @@ resource "opnsense_kea_dhcpv4_reservation" "worker" {
   description = "Talos ${each.key} (${each.value.proxmox_node})"
 }
 
-# TrueNAS Scale — MAC from the VM resource, IP is temporary (.3 pre-cutover)
+# TrueNAS Scale — primary NAS at .2 (took over from Core 2026-06-14).
+# Note: Scale is configured with a STATIC 192.168.1.2 inside TrueNAS, so it does not
+# actually DHCP. This reservation reserves .2 for its MAC as documentation / to keep
+# anything else from being handed the address.
 resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = lower(proxmox_virtual_environment_vm.truenas_scale.network_device[0].mac_address)
-  ip_address  = "192.168.1.3"
+  ip_address  = "192.168.1.2"
   hostname    = "truenas-scale"
-  description = "TrueNAS Scale (temp, pre-cutover from Core at .2)"
+  description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
 # ── Personal/home devices ──────────────────────────────────────────────────────
@@ -111,10 +114,7 @@ moved {
   to   = opnsense_kea_dhcpv4_reservation.worker["worker-02"]
 }
 
-# ── DNS overrides (add as needed) ─────────────────────────────────────────────
-# resource "opnsense_unbound_host_override" "truenas_core" {
-#   host        = "nas"
-#   domain      = "home.arsenikki.casa"
-#   server      = "192.168.1.2"
-#   description = "TrueNAS Core"
-# }
+# ── DNS ───────────────────────────────────────────────────────────────────────
+# DNS for both cluster apps and bare-metal infra hosts (proxmox/opnsense/truenas)
+# is managed in Cloudflare via external-dns, not OPNSense Unbound.
+# See cluster/apps/external-dns/infra-hosts.yaml

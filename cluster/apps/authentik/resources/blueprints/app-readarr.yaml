@@ -17,7 +17,7 @@ entries:
         !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
       mode: proxy
       internal_host: http://readarr.media.svc.cluster.local:8787
-      external_host: https://readarr.homelab.arsenikki.casa
+      external_host: https://readarr.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

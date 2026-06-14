@@ -18,14 +18,14 @@ ingress:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
     hosts:
-      - host: prowlarr.homelab.arsenikki.casa
+      - host: prowlarr.arsenikki.casa
         paths:
           - path: /
             pathType: Prefix
     tls:
       - secretName: prowlarr-tls
         hosts:
-          - prowlarr.homelab.arsenikki.casa
+          - prowlarr.arsenikki.casa
 
 podSecurityContext:
   runAsUser: 568

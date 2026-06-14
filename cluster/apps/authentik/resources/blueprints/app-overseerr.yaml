@@ -17,7 +17,7 @@ entries:
         !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
       mode: proxy
       internal_host: http://overseerr.media.svc.cluster.local:5055
-      external_host: https://overseerr.homelab.arsenikki.casa
+      external_host: https://overseerr.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

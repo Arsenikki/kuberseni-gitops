@@ -17,7 +17,7 @@ entries:
         !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
       mode: proxy
       internal_host: http://lidarr.media.svc.cluster.local:8686
-      external_host: https://lidarr.homelab.arsenikki.casa
+      external_host: https://lidarr.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application

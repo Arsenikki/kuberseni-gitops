@@ -31,6 +31,6 @@ ingress:
   annotations:
     kubernetes.io/tls-acme: "true"
     traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
-  host: longhorn.homelab.arsenikki.casa
+  host: longhorn.arsenikki.casa
   tls: true
   tlsSecret: longhorn-tls
