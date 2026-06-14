@@ -116,20 +116,37 @@ data:
             asyncio.run_coroutine_threadsafe(
                 do_set({DP_POWER: 1 if payload.upper() == "ON" else 0}), mainloop)
 
+    async def poll_once():
+        # status read = large fragmented response, intermittently lost even on
+        # control-plane-01; retry a few times before giving up this cycle.
+        for attempt in range(3):
+            try:
+                c = await ensure_coap()
+                st = await asyncio.wait_for(c.get_status(), timeout=10)
+                if isinstance(st, tuple):
+                    st = st[0]
+                mqttc.publish(T_STATE, json.dumps(to_state(st)), retain=True)
+                return True
+            except Exception as e:
+                log.warning("get_status attempt %d: %r", attempt + 1, e)
+                await reset_coap()
+        return False
+
     async def poll_loop():
+        fails = 0
         while True:
             async with coap_lock:
-                try:
-                    c = await ensure_coap()
-                    st = await asyncio.wait_for(c.get_status(), timeout=15)
-                    if isinstance(st, tuple):
-                        st = st[0]
-                    mqttc.publish(T_STATE, json.dumps(to_state(st)), retain=True)
-                    mqttc.publish(T_AVAIL, "online", retain=True)
-                except Exception as e:
-                    log.error("poll failed: %s", e)
+                ok = await poll_once()
+            if ok:
+                fails = 0
+                mqttc.publish(T_AVAIL, "online", retain=True)
+            else:
+                fails += 1
+                log.error("poll failed (%d consecutive)", fails)
+                # only mark unavailable after sustained failure; control (SET)
+                # still works via small packets regardless of status reads.
+                if fails >= 5:
                     mqttc.publish(T_AVAIL, "offline", retain=True)
-                    await reset_coap()
             await asyncio.sleep(POLL)
 
     async def main():
