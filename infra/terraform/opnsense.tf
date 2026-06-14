@@ -11,6 +11,10 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   pools       = ["192.168.1.100-192.168.1.199"]
   routers     = ["192.168.1.1"]
   dns_servers = ["1.1.1.1", "8.8.8.8"]
+
+  # Pin to OPNSense's actual value — the provider defaults this to true but the
+  # write doesn't round-trip, causing a perpetual diff. false matches reality.
+  match_client_id = false
 }
 
 # ── Cluster VM reservations — derived from vms.tf locals ──────────────────────
