@@ -1,12 +1,12 @@
 {
-  "id": "octopus_purifier_tab",
+  "id": "08c9061c9f25ce0d",
   "label": "Octopus → Air Purifier",
   "nodes": [
     {
       "id": "oct_inj_hr",
       "type": "inject",
-      "z": "octopus_purifier_tab",
-      "name": "refresh rates (hourly + boot)",
+      "z": "08c9061c9f25ce0d",
+      "name": "refresh (hourly + boot)",
       "props": [
         {
           "p": "payload"
@@ -23,60 +23,16 @@
       "y": 80,
       "wires": [
         [
-          "oct_build_url"
-        ]
-      ]
-    },
-    {
-      "id": "oct_build_url",
-      "type": "function",
-      "z": "octopus_purifier_tab",
-      "name": "build Octopus URL (today, region C)",
-      "func": "const now = new Date();\nconst start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);\nconst end = new Date(start.getTime() + 24*3600*1000);\nconst P='AGILE-24-10-01', T='E-1R-AGILE-24-10-01-C';\nmsg.method='GET';\nmsg.url=`https://api.octopus.energy/v1/products/${P}/electricity-tariffs/${T}/standard-unit-rates/`+`?period_from=${start.toISOString()}&period_to=${end.toISOString()}&page_size=100`;\nreturn msg;",
-      "outputs": 1,
-      "timeout": 0,
-      "noerr": 0,
-      "initialize": "",
-      "finalize": "",
-      "libs": [],
-      "x": 470,
-      "y": 80,
-      "wires": [
-        [
-          "oct_http"
-        ]
-      ]
-    },
-    {
-      "id": "oct_http",
-      "type": "http request",
-      "z": "octopus_purifier_tab",
-      "name": "GET Agile rates",
-      "method": "GET",
-      "ret": "obj",
-      "paytoqs": "ignore",
-      "url": "",
-      "tls": "",
-      "persist": false,
-      "proxy": "",
-      "insecureHTTPParser": false,
-      "authType": "",
-      "senderr": false,
-      "headers": [],
-      "x": 760,
-      "y": 80,
-      "wires": [
-        [
-          "oct_pick"
+          "oct_getrates"
         ]
       ]
     },
     {
       "id": "oct_pick",
       "type": "function",
-      "z": "octopus_purifier_tab",
+      "z": "08c9061c9f25ce0d",
       "name": "pick 6 cheapest slots",
-      "func": "const rates = (msg.payload && msg.payload.results) || [];\nif (!rates.length) { node.warn('Octopus: no rates returned'); node.status({fill:'red',shape:'ring',text:'no rates'}); return null; }\nconst N = 6;\nconst byPrice = [...rates].sort((a,b)=> a.value_inc_vat - b.value_inc_vat);\nconst cheapest = byPrice.slice(0,N).map(r=>({from:r.valid_from, to:r.valid_to, price:r.value_inc_vat}));\nflow.set('cheapestSlots', cheapest);\nconst ordered = [...cheapest].sort((a,b)=>Date.parse(a.from)-Date.parse(b.from));\nconst fmt = s => new Date(s.from).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});\nnode.status({fill:'green',shape:'dot',text:`${N} slots, ${ordered.map(fmt).join(',')}`});\nnode.warn('Octopus cheapest '+N+' slots: '+ordered.map(s=>fmt(s)+'='+s.price.toFixed(2)+'p').join(', '));\nreturn null;",
+      "func": "const rates = (msg.data && msg.data.attributes && msg.data.attributes.rates) || [];\nif (!rates.length) { node.warn('Octopus: no rates'); node.status({fill:'red',shape:'ring',text:'no rates'}); return null; }\nconst N = 6;\nconst cheapest = [...rates].sort((a,b)=>a.value_inc_vat-b.value_inc_vat).slice(0,N)\n  .map(r=>({from:r.start, to:r.end, price:r.value_inc_vat}));\nflow.set('cheapestSlots', cheapest);\nconst ordered=[...cheapest].sort((a,b)=>Date.parse(a.from)-Date.parse(b.from));\nconst fmt=s=>new Date(s.from).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});\nnode.status({fill:'green',shape:'dot',text:`${N} slots: ${ordered.map(fmt).join(',')}`});\nnode.warn('Octopus cheapest '+N+': '+ordered.map(s=>fmt(s)+'='+(s.price*100).toFixed(2)+'p').join(', '));\nreturn null;",
       "outputs": 1,
       "timeout": 0,
       "noerr": 0,
@@ -92,7 +48,7 @@
     {
       "id": "oct_inj_tick",
       "type": "inject",
-      "z": "octopus_purifier_tab",
+      "z": "08c9061c9f25ce0d",
       "name": "every 1 min",
       "props": [
         {
@@ -117,7 +73,7 @@
     {
       "id": "oct_decide",
       "type": "function",
-      "z": "octopus_purifier_tab",
+      "z": "08c9061c9f25ce0d",
       "name": "decide turbo/auto (on change)",
       "func": "const slots = flow.get('cheapestSlots') || [];\nconst now = Date.now();\nconst inCheap = slots.some(s => now >= Date.parse(s.from) && now < Date.parse(s.to));\nconst desired = inCheap ? 'Turbo' : 'Auto+';\nif (desired === flow.get('lastMode')) { return null; }\nflow.set('lastMode', desired);\nnode.status({fill: inCheap?'green':'blue', shape:'dot', text: desired+' @ '+new Date().toLocaleTimeString('en-GB')});\nmsg.payload = { preset_mode: desired };\nreturn msg;",
       "outputs": 1,
@@ -137,7 +93,7 @@
     {
       "id": "oct_call",
       "type": "api-call-service",
-      "z": "octopus_purifier_tab",
+      "z": "08c9061c9f25ce0d",
       "name": "set purifier preset",
       "server": "d73dacbb60c44ca0",
       "version": 5,
@@ -160,7 +116,44 @@
       "wires": [
         []
       ]
+    },
+    {
+      "id": "oct_getrates",
+      "type": "api-current-state",
+      "z": "08c9061c9f25ce0d",
+      "name": "get today's Octopus rates",
+      "server": "d73dacbb60c44ca0",
+      "version": 3,
+      "outputs": 1,
+      "halt_if": "",
+      "halt_if_type": "str",
+      "halt_if_compare": "is",
+      "entity_id": "event.octopus_energy_electricity_25l3278767_1200050996819_current_day_rates",
+      "state_type": "str",
+      "blockInputOverrides": false,
+      "outputProperties": [
+        {
+          "property": "data",
+          "propertyType": "msg",
+          "value": "",
+          "valueType": "entity"
+        }
+      ],
+      "for": "0",
+      "forType": "num",
+      "forUnits": "minutes",
+      "override_topic": false,
+      "state_location": "payload",
+      "override_payload": "msg",
+      "entity_location": "data",
+      "override_data": "msg",
+      "x": 470,
+      "y": 80,
+      "wires": [
+        [
+          "oct_pick"
+        ]
+      ]
     }
-  ],
-  "configs": []
+  ]
 }
