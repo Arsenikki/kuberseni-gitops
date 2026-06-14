@@ -1,0 +1,148 @@
+---
+# CoAP <-> MQTT bridge for the Philips AC3220 air purifier.
+# Runs on control-plane-01 (the only node that reliably receives the purifier's
+# fragmented CoAP status stream — see memory project_philips_coap_fragmentation).
+# Publishes HA MQTT-discovery so a fan entity (+ PM2.5/filter sensors) appears in
+# Home Assistant with live status, and accepts preset/power commands -> CoAP SET.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: philips-bridge-script
+  namespace: home-automation
+data:
+  bridge.py: |
+    import asyncio, contextlib, json, logging, os
+    import aioairctrl
+    import paho.mqtt.client as mqtt
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    log = logging.getLogger("philips-bridge")
+
+    PURIFIER = os.environ.get("PURIFIER_HOST", "192.168.1.150")
+    MQTT_HOST = os.environ.get("MQTT_HOST", "mosquitto.home-automation.svc.cluster.local")
+    MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+    DISCO = os.environ.get("DISCOVERY_PREFIX", "homeassistant")
+    POLL = int(os.environ.get("POLL_SECONDS", "30"))
+
+    UID = "philips_ac3220"
+    T_AVAIL = "philips_purifier/availability"
+    T_STATE = "philips_purifier/state"
+    T_PRESET_SET = "philips_purifier/preset/set"
+    T_POWER_SET = "philips_purifier/power/set"
+
+    DP_POWER, DP_MODE, DP_PM25 = "D03102", "D0310C", "D03221"
+    DP_FILTER, DP_FILTER_TOTAL = "D0540E", "D05408"
+
+    PRESET_TO_MODE = {"auto": 0, "sleep": 17, "medium": 19, "turbo": 18,
+                      "speed 1": 1, "speed 2": 2, "speed 3": 3, "speed 4": 4, "speed 5": 5}
+    MODE_TO_PRESET = {v: k for k, v in PRESET_TO_MODE.items()}
+    PRESET_MODES = list(PRESET_TO_MODE.keys())
+
+    DEVICE = {"identifiers": [UID], "name": "Philips Air Purifier",
+              "model": "AC3220/10", "manufacturer": "Philips"}
+    DISCOVERY = [
+        (f"{DISCO}/fan/{UID}/config", {
+            "name": None, "unique_id": f"{UID}_fan", "availability_topic": T_AVAIL,
+            "state_topic": T_STATE, "state_value_template": "{{ value_json.power }}",
+            "payload_on": "ON", "payload_off": "OFF", "command_topic": T_POWER_SET,
+            "preset_mode_state_topic": T_STATE,
+            "preset_mode_value_template": "{{ value_json.preset }}",
+            "preset_mode_command_topic": T_PRESET_SET, "preset_modes": PRESET_MODES,
+            "device": DEVICE}),
+        (f"{DISCO}/sensor/{UID}_pm25/config", {
+            "name": "PM2.5", "unique_id": f"{UID}_pm25", "availability_topic": T_AVAIL,
+            "state_topic": T_STATE, "value_template": "{{ value_json.pm25 }}",
+            "device_class": "pm25", "unit_of_measurement": "µg/m³",
+            "state_class": "measurement", "device": DEVICE}),
+        (f"{DISCO}/sensor/{UID}_filter/config", {
+            "name": "Filter remaining", "unique_id": f"{UID}_filter",
+            "availability_topic": T_AVAIL, "state_topic": T_STATE,
+            "value_template": "{{ value_json.filter }}", "unit_of_measurement": "%",
+            "icon": "mdi:air-filter", "device": DEVICE}),
+    ]
+
+    def to_state(st):
+        out = {"power": "ON" if st.get(DP_POWER) == 1 else "OFF",
+               "preset": MODE_TO_PRESET.get(st.get(DP_MODE), "auto"),
+               "pm25": st.get(DP_PM25)}
+        tot = st.get(DP_FILTER_TOTAL) or 0
+        if tot:
+            out["filter"] = round(100 * st.get(DP_FILTER, 0) / tot)
+        return out
+
+    coap = None
+    coap_lock = None
+    mainloop = None
+    mqttc = None
+
+    async def ensure_coap():
+        global coap
+        if coap is None:
+            coap = await asyncio.wait_for(aioairctrl.CoAPClient.create(PURIFIER), timeout=20)
+        return coap
+
+    async def reset_coap():
+        global coap
+        with contextlib.suppress(Exception):
+            if coap:
+                await coap.shutdown()
+        coap = None
+
+    async def do_set(data):
+        async with coap_lock:
+            try:
+                c = await ensure_coap()
+                await asyncio.wait_for(c.set_control_values(data=data), timeout=15)
+                log.info("SET %s ok", data)
+            except Exception as e:
+                log.error("SET %s failed: %s", data, e)
+                await reset_coap()
+
+    def on_connect(client, userdata, flags, rc):
+        log.info("MQTT connected rc=%s", rc)
+        for topic, payload in DISCOVERY:
+            client.publish(topic, json.dumps(payload), retain=True)
+        client.publish(T_AVAIL, "online", retain=True)
+        client.subscribe([(T_PRESET_SET, 0), (T_POWER_SET, 0)])
+
+    def on_message(client, userdata, msg):
+        payload = msg.payload.decode(errors="ignore").strip()
+        log.info("CMD %s = %s", msg.topic, payload)
+        if msg.topic == T_PRESET_SET:
+            mode = PRESET_TO_MODE.get(payload.lower())
+            if mode is not None:
+                asyncio.run_coroutine_threadsafe(do_set({DP_POWER: 1, DP_MODE: mode}), mainloop)
+        elif msg.topic == T_POWER_SET:
+            asyncio.run_coroutine_threadsafe(
+                do_set({DP_POWER: 1 if payload.upper() == "ON" else 0}), mainloop)
+
+    async def poll_loop():
+        while True:
+            async with coap_lock:
+                try:
+                    c = await ensure_coap()
+                    st = await asyncio.wait_for(c.get_status(), timeout=15)
+                    if isinstance(st, tuple):
+                        st = st[0]
+                    mqttc.publish(T_STATE, json.dumps(to_state(st)), retain=True)
+                    mqttc.publish(T_AVAIL, "online", retain=True)
+                except Exception as e:
+                    log.error("poll failed: %s", e)
+                    mqttc.publish(T_AVAIL, "offline", retain=True)
+                    await reset_coap()
+            await asyncio.sleep(POLL)
+
+    async def main():
+        global coap_lock, mainloop, mqttc
+        mainloop = asyncio.get_running_loop()
+        coap_lock = asyncio.Lock()
+        mqttc = mqtt.Client(client_id="philips-bridge")
+        mqttc.will_set(T_AVAIL, "offline", retain=True)
+        mqttc.on_connect = on_connect
+        mqttc.on_message = on_message
+        mqttc.connect(MQTT_HOST, MQTT_PORT, 60)
+        mqttc.loop_start()
+        log.info("bridge up: purifier=%s mqtt=%s:%s", PURIFIER, MQTT_HOST, MQTT_PORT)
+        await poll_loop()
+
+    asyncio.run(main())
