@@ -91,6 +91,29 @@ resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
   description = ""
 }
 
+# ── IoT / home-automation devices ──────────────────────────────────────────────
+# Addressing scheme (flat 192.168.1.0/24 today; blocks chosen to map cleanly onto
+# future VLANs — keep the last octet when a block migrates to its own subnet):
+#   .1            gateway (OPNSense)
+#   .2-.9         storage / network infra   ─┐
+#   .10-.19       Proxmox hosts              ├─ MGMT  (VLAN 1,  192.168.1.0/24)
+#   .40-.49       k8s nodes + API VIP        │
+#   .220-.229     k8s LoadBalancer (Cilium) ─┘
+#   .50-.99       trusted static  ─┐
+#   .100-.149     trusted dynamic  ┴─ TRUSTED (→ VLAN 10, 192.168.10.0/24)
+#   .150-.179     IoT static     ─┐
+#   .180-.199     IoT dynamic     ┴─ IoT     (→ VLAN 20, 192.168.20.0/24)
+# When IoT moves to its own VLAN: HA (k8s/MGMT) → IoT needs a firewall allow rule
+# (e.g. udp/5683 CoAP to the purifier); enable an mDNS reflector for autodiscovery.
+
+resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "88:a6:8d:16:6e:ba"
+  ip_address  = "192.168.1.150"
+  hostname    = "philips-purifier"
+  description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
+}
+
 # ── State migration — rename old individual resources to for_each ──────────────
 
 moved {
