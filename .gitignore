@@ -22,6 +22,7 @@ kubeconfig**.yaml
 # editor/terraform backup files
 *.bak*
 
-# Local-only — kept out of the public repo
-CLAUDE.md          # internal topology / 1Password account details; local working doc
-logs/              # local MCP usage telemetry (logs/mcp_usage.jsonl)
+# Local-only — kept out of the public repo (internal topology / 1Password details)
+CLAUDE.md
+# local MCP usage telemetry (logs/mcp_usage.jsonl) — no secrets
+logs/
