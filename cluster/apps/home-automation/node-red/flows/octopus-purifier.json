@@ -119,7 +119,7 @@
       "type": "function",
       "z": "octopus_purifier_tab",
       "name": "decide turbo/auto (on change)",
-      "func": "const slots = flow.get('cheapestSlots') || [];\nconst now = Date.now();\nconst inCheap = slots.some(s => now >= Date.parse(s.from) && now < Date.parse(s.to));\nconst desired = inCheap ? 'turbo' : 'auto';\nif (desired === flow.get('lastMode')) { return null; }\nflow.set('lastMode', desired);\nnode.status({fill: inCheap?'green':'blue', shape:'dot', text: desired+' @ '+new Date().toLocaleTimeString('en-GB')});\nmsg.payload = { preset_mode: desired };\nreturn msg;",
+      "func": "const slots = flow.get('cheapestSlots') || [];\nconst now = Date.now();\nconst inCheap = slots.some(s => now >= Date.parse(s.from) && now < Date.parse(s.to));\nconst desired = inCheap ? 'Turbo' : 'Auto+';\nif (desired === flow.get('lastMode')) { return null; }\nflow.set('lastMode', desired);\nnode.status({fill: inCheap?'green':'blue', shape:'dot', text: desired+' @ '+new Date().toLocaleTimeString('en-GB')});\nmsg.payload = { preset_mode: desired };\nreturn msg;",
       "outputs": 1,
       "timeout": 0,
       "noerr": 0,
