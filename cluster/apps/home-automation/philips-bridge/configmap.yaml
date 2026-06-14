@@ -160,19 +160,21 @@ data:
 
     async def poll_once():
         # status read = large fragmented response, intermittently lost even on
-        # control-plane-01; retry a few times before giving up this cycle.
-        for attempt in range(3):
-            try:
-                c = await ensure_coap()
-                st = await asyncio.wait_for(c.get_status(), timeout=10)
-                if isinstance(st, tuple):
-                    st = st[0]
-                mqttc.publish(T_STATE, json.dumps(to_state(st)), retain=True)
-                return True
-            except Exception as e:
-                log.warning("get_status attempt %d: %r", attempt + 1, e)
-                await reset_coap()
-        return False
+        # control-plane-01. Use a SINGLE gentle attempt per cycle: a failed
+        # observe leaves a stale registration on the device, so retrying fast
+        # saturates it. One attempt per POLL interval lets the device recover;
+        # the retained last-good state persists between successful reads.
+        try:
+            c = await ensure_coap()
+            st = await asyncio.wait_for(c.get_status(), timeout=12)
+            if isinstance(st, tuple):
+                st = st[0]
+            mqttc.publish(T_STATE, json.dumps(to_state(st)), retain=True)
+            return True
+        except Exception as e:
+            log.warning("get_status failed: %r", e)
+            await reset_coap()
+            return False
 
     async def poll_loop():
         fails = 0
