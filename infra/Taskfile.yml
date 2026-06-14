@@ -111,6 +111,12 @@ tasks:
   terraform:init:
     desc: Initialise Terraform providers
     dir: "{{.TF_DIR}}"
+    # State is encrypted (OpenTofu native encryption). The PBKDF2 passphrase
+    # comes from encryption.sops.yaml (age-encrypted) and is injected via
+    # TF_ENCRYPTION so it never lands in a committed .tf file.
+    env: &tf_encryption
+      TF_ENCRYPTION:
+        sh: printf 'key_provider "pbkdf2" "state" { passphrase = "%s" }' "$(sops -d --extract '["tf_state_passphrase"]' {{.TF_DIR}}/encryption.sops.yaml)"
     cmds:
       - tofu init
 
@@ -118,6 +124,7 @@ tasks:
     desc: Plan Proxmox VM changes
     dir: "{{.TF_DIR}}"
     deps: [terraform:init]
+    env: *tf_encryption
     cmds:
       - sops exec-file secrets.tfvars 'tofu plan -var-file={}'
 
@@ -125,12 +132,14 @@ tasks:
     desc: Provision Proxmox VMs
     dir: "{{.TF_DIR}}"
     deps: [terraform:init]
+    env: *tf_encryption
     cmds:
       - sops exec-file secrets.tfvars 'tofu apply -var-file={} -auto-approve'
 
   terraform:destroy:
     desc: Destroy Proxmox VMs
     dir: "{{.TF_DIR}}"
+    env: *tf_encryption
     cmds:
       - sops exec-file secrets.tfvars 'tofu destroy -var-file={} -auto-approve'
 

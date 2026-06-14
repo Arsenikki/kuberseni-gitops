@@ -1,10 +1,13 @@
 # Terraform
 terraform/.terraform/
 terraform/.terraform.lock.hcl
-terraform/terraform.tfstate
 terraform/terraform.tfstate.*
 terraform/terraform.tfvars
 !terraform/secrets.tfvars
+# terraform.tfstate IS committed — encrypted at rest via OpenTofu native
+# state encryption (see terraform/encryption.tf). Backups stay ignored as
+# they may be plaintext.
+!terraform/terraform.tfstate
 
 # Talos — generated configs
 talos/_out/
