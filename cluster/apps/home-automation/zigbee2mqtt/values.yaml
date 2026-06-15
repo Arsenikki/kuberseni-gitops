@@ -56,9 +56,9 @@ controllers:
             memory: 500Mi
         securityContext:
           allowPrivilegeEscalation: false
-          runAsUser: 0
-          runAsGroup: 20
           capabilities:
+            drop:
+              - ALL
             add:
               - SYS_TTY_CONFIG
 
