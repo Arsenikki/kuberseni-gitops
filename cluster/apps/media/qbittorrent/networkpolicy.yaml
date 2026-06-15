@@ -106,26 +106,28 @@ spec:
     - toEntities:
         - world
 
+    # yamllint disable rule:comments-indentation
     # NOTE: we intentionally do NOT add toEntities: [cluster] or any
     # cross-namespace egress allow. That is the whole point — qbittorrent
     # cannot initiate connections to other workloads. (Same-namespace and
     # Traefik-initiated flows are handled by the ingress rules above; replies
     # to those are allowed automatically by Cilium conntrack.)
-  # ======================================================================
-  # CAVEATS — VERIFY THESE ON THE LIVE CLUSTER:
-  #   1. Pod labels:
-  #        kubectl -n media get pod -l app.kubernetes.io/name=qbittorrent \
-  #          -o jsonpath='{.items[0].metadata.labels}'
-  #      Confirm both name AND instance match the endpointSelector above.
-  #   2. Traefik namespace + labels:
-  #        kubectl -n traefik get pods --show-labels
-  #      Confirm namespace is "traefik" and the app.kubernetes.io/name label
-  #      is "traefik" (official chart). If Traefik were in kube-system, change
-  #      the namespace label in the ingress rule accordingly.
-  #   3. kube-dns label:
-  #        kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
-  #      Talos/Cilium clusters use CoreDNS but it normally still carries the
-  #      k8s-app=kube-dns label. Verify; if absent, adjust the matchLabels.
-  #   4. Watch for drops while testing:
-  #        hubble observe -n media --pod qbittorrent --verdict DROPPED -f
-  # ======================================================================
+    # ======================================================================
+    # CAVEATS — VERIFY THESE ON THE LIVE CLUSTER:
+    #   1. Pod labels:
+    #        kubectl -n media get pod -l app.kubernetes.io/name=qbittorrent \
+    #          -o jsonpath='{.items[0].metadata.labels}'
+    #      Confirm both name AND instance match the endpointSelector above.
+    #   2. Traefik namespace + labels:
+    #        kubectl -n traefik get pods --show-labels
+    #      Confirm namespace is "traefik" and the app.kubernetes.io/name label
+    #      is "traefik" (official chart). If Traefik were in kube-system, change
+    #      the namespace label in the ingress rule accordingly.
+    #   3. kube-dns label:
+    #        kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
+    #      Talos/Cilium clusters use CoreDNS but it normally still carries the
+    #      k8s-app=kube-dns label. Verify; if absent, adjust the matchLabels.
+    #   4. Watch for drops while testing:
+    #        hubble observe -n media --pod qbittorrent --verdict DROPPED -f
+    # ======================================================================
+    # yamllint enable rule:comments-indentation
