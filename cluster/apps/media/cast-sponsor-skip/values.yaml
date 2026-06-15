@@ -5,7 +5,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/gabe565/castsponsorskip
-          tag: 0.8.0
+          tag: 0.8.3
         env:
           TZ: "Europe/London"
           # YouTube API key injected from ESO → cast-sponsor-skip-secret
