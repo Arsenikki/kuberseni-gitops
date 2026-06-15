@@ -39,6 +39,16 @@ spec:
             - { name: MQTT_PORT, value: "1883" }
             - { name: POLL_SECONDS, value: "30" }
             - { name: TZ, value: "Europe/London" }
+            - name: MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-credentials
+                  key: philips_username
+            - name: MQTT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: mosquitto-credentials
+                  key: philips_password
           volumeMounts:
             - name: script
               mountPath: /app
