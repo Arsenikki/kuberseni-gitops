@@ -22,11 +22,42 @@ configMaps:
     data:
       mosquitto.conf: |
         listener 1883
+        # PHASE 1: anonymous access is still permitted so existing clients keep
+        # working while they are migrated to credentials. The password_file is
+        # also active, so authenticated clients are accepted in parallel.
+        # PHASE 2 (separate PR): flip allow_anonymous to false once every client
+        # is confirmed authenticated.
         allow_anonymous true
+        password_file /mosquitto/auth/passwd
         persistence true
         persistence_location /data
         connection_messages false
         autosave_interval 1800
+
+# initContainer builds the hashed mosquitto password_file from the plaintext
+# credentials synced by ESO (Secret: mosquitto-credentials). The file is written
+# to the shared "auth" emptyDir which the main container mounts at /mosquitto/auth.
+initContainers:
+  gen-passwd:
+    image: eclipse-mosquitto:2.0.18
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        PASSWD=/mosquitto/auth/passwd
+        # -c creates/overwrites the file for the first user, then append the rest.
+        mosquitto_passwd -b -c "$PASSWD" "$HOMEASSISTANT_USERNAME" "$HOMEASSISTANT_PASSWORD"
+        mosquitto_passwd -b    "$PASSWD" "$ZIGBEE2MQTT_USERNAME"   "$ZIGBEE2MQTT_PASSWORD"
+        mosquitto_passwd -b    "$PASSWD" "$NODERED_USERNAME"       "$NODERED_PASSWORD"
+        mosquitto_passwd -b    "$PASSWD" "$PHILIPS_USERNAME"       "$PHILIPS_PASSWORD"
+        chmod 0600 "$PASSWD"
+    envFrom:
+      - secretRef:
+          name: mosquitto-credentials
+    volumeMounts:
+      - name: auth
+        mountPath: /mosquitto/auth
 
 persistence:
   data:
@@ -38,6 +69,12 @@ persistence:
     name: mosquitto-config
     mountPath: /mosquitto/config/mosquitto.conf
     subPath: mosquitto.conf
+  # Shared emptyDir holding the generated password_file. Auto-mounted into the
+  # main container at /mosquitto/auth; the initContainer mounts it explicitly.
+  auth:
+    enabled: true
+    type: emptyDir
+    mountPath: /mosquitto/auth
 
 podSecurityContext:
   runAsUser: 568
