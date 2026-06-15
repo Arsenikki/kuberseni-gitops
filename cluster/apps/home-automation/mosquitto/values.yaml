@@ -22,7 +22,7 @@ configMaps:
     data:
       mosquitto.conf: |
         listener 1883
-        allow_anonymous true
+        allow_anonymous false
         password_file /mosquitto/auth/passwd
         persistence true
         persistence_location /data
