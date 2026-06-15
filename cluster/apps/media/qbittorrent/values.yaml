@@ -90,24 +90,20 @@ addons:
         value: "1200s"
     securityContext:
       # NET_ADMIN: required for wg0 interface + iptables rules.
-      # NET_ADMIN:   WireGuard netlink config + iptables rule management.
-      # CHOWN:       v3.39.1 chowns /etc/unbound at startup even with DOT=off.
-      # SYS_MODULE:  gluetun v3.39.1 detects kernel WireGuard availability via
-      #              modprobe (not netlink). Without SYS_MODULE, modprobe fails
-      #              and gluetun falls back to TUN-based WireGuard — which also
-      #              fails here because /dev/net/tun cannot be opened in an
-      #              unprivileged container on Talos. ip link add wg0 type
-      #              wireguard works fine with just NET_ADMIN, but gluetun never
-      #              tries that path when the modprobe check fails first.
-      #              TODO: revisit when gluetun detects kernelspace via netlink
-      #              so SYS_MODULE can be dropped.
-      #              privileged: false is the key security win over the original.
+      # NET_ADMIN: WireGuard netlink config + iptables rule management.
+      # CHOWN:     v3.39.1 chowns /etc/unbound at startup even with DOT=off.
+      # MKNOD:     v3.39.1 tries to create /dev/net/tun before selecting the
+      #            WireGuard implementation. Talos nodes have no /dev/net/tun
+      #            (hostPath unavailable). MKNOD lets gluetun create the device
+      #            node; v3.39.1 then detects /sys/module/wireguard and uses
+      #            kernelspace WireGuard (TUN node created but never opened for
+      #            data flow). SYS_MODULE and privileged are blocked/absent.
       allowPrivilegeEscalation: false
       capabilities:
         add:
           - NET_ADMIN
           - CHOWN
-          - SYS_MODULE
+          - MKNOD
         drop:
           - ALL
 
