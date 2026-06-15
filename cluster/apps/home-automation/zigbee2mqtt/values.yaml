@@ -55,12 +55,7 @@ controllers:
           limits:
             memory: 500Mi
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-            add:
-              - SYS_TTY_CONFIG
+          privileged: true
 
 service:
   main:
