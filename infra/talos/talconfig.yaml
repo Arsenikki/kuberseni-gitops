@@ -19,6 +19,8 @@ nodes:
     ipAddress: 192.168.1.41
     installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
     controlPlane: true
+    patches:
+      - "@./patches/cp01-zigbee-udev.yaml"
     networkInterfaces:
       - deviceSelector:
           driver: virtio_net  # machine-type agnostic: works on i440fx (ens18) and q35 (enp*)
