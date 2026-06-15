@@ -18,7 +18,7 @@ spec:
         valueFiles:
           - $values/cluster/apps/node-feature-discovery/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
+      targetRevision: main
       ref: values
   destination:
     server: https://kubernetes.default.svc
