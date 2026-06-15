@@ -14,7 +14,7 @@ env:
   QBT_BitTorrent__Session__InterfaceName: wg0
   QBT_Preferences__WebUI__AuthSubnetWhitelistEnabled: true
   # Network ranges allowed to bypass WebUI auth
-  QBT_Preferences__WebUI__AuthSubnetWhitelist: "192.168.1.0/24, 10.42.0.0/16, 10.43.0.0/16"
+  QBT_Preferences__WebUI__AuthSubnetWhitelist: "192.168.1.0/24, 10.244.0.0/16, 10.96.0.0/12"
   QBT_Preferences__WebUI__LocalHostAuth: false
   QBT_BitTorrent__Session__DefaultSavePath: "/data/downloads"
 
@@ -44,7 +44,7 @@ addons:
     gluetun:
       image:
         repository: ghcr.io/qdm12/gluetun
-        tag: v3.39.1
+        tag: v3.41.1
     env:
       - name: VPN_SERVICE_PROVIDER
         value: airvpn
@@ -57,7 +57,7 @@ addons:
       - name: FIREWALL_VPN_INPUT_PORTS
         value: 21188
       - name: FIREWALL_OUTBOUND_SUBNETS
-        value: "10.42.0.0/16,10.43.0.0/16"
+        value: "10.244.0.0/16,10.96.0.0/12"
       - name: DOT
         value: "off"
       - name: SERVER_COUNTRIES
