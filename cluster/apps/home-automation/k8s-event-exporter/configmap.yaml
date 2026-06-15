@@ -13,15 +13,7 @@ data:
       routes:
         - match:
             - type: Warning
-              reason:
-                - BackOff
-                - OOMKilling
-                - Failed
-                - FailedMount
-                - FailedScheduling
-                - Evicted
-                - NodeNotReady
-                - Killing
+              reason: "BackOff|OOMKilling|Failed|FailedMount|FailedScheduling|Evicted|NodeNotReady|Killing"
           drop:
             - namespace: kube-system
             - namespace: kube-node-lease
