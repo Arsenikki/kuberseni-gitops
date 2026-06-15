@@ -43,13 +43,21 @@ run() {
 PROXMOX_TOKEN=$(cd "$(dirname "$0")/../terraform" && \
   sops exec-file secrets.tfvars 'grep proxmox_api_token {} | cut -d= -f2 | tr -d " \""')
 
+# Emit the auth header as a curl config snippet (consumed via `curl -K -` on
+# stdin) so the API token is never passed on the command line / visible in `ps`.
+auth_config() {
+  printf 'header = "Authorization: PVEAPIToken=%s"\n' "$PROXMOX_TOKEN"
+}
+
+# Note: -k/--insecure disables TLS cert verification (Proxmox uses a self-signed
+# LAN cert); functionality is intentionally preserved here.
 pve() {
-  curl -sk -H "Authorization: PVEAPIToken=$PROXMOX_TOKEN" "$PROXMOX_HOST/api2/json/$@"
+  auth_config | curl -sk -K - "$PROXMOX_HOST/api2/json/$@"
 }
 
 pve_post() {
   local path="$1"; shift
-  curl -sk -X POST -H "Authorization: PVEAPIToken=$PROXMOX_TOKEN" \
+  auth_config | curl -sk -K - -X POST \
     -H "Content-Type: application/json" \
     -d "$@" "$PROXMOX_HOST/api2/json/$path"
 }
