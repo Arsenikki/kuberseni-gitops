@@ -91,11 +91,12 @@ addons:
     securityContext:
       # NET_ADMIN is required for gluetun to create/configure the wg0 WireGuard
       # interface and manage routing/firewall rules inside the pod netns.
-      # privileged + SYS_MODULE removed: the wireguard kernel module is built
-      # into the Talos kernel, so no module loading is needed; SYS_MODULE would
-      # allow loading arbitrary host kernel modules (full host compromise).
-      # gluetun creates /dev/net/tun itself given NET_ADMIN, so no device mount
-      # or privileged mode is required for the tunnel to come up.
+      # privileged + SYS_MODULE removed: WireGuard is compiled into the Talos
+      # kernel (verified: /sys/module/wireguard present, absent from
+      # /proc/modules => built-in), so gluetun uses the kernelspace
+      # implementation and needs only NET_ADMIN — no module loading, no
+      # /dev/net/tun device, no privileged mode. SYS_MODULE would allow loading
+      # arbitrary host kernel modules (full host compromise).
       allowPrivilegeEscalation: false
       capabilities:
         add:
