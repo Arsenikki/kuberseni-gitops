@@ -18,10 +18,10 @@ spec:
         valueFiles:
           - $values/cluster/apps/media/qbittorrent/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
+      targetRevision: main
       ref: values
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
-      targetRevision: feat/talos
+      targetRevision: main
       path: cluster/apps/media/qbittorrent
       directory:
         exclude: "values.yaml"
