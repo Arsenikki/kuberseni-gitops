@@ -1,7 +1,7 @@
 ---
 image:
   repository: eclipse-mosquitto
-  tag: 2.0.18
+  tag: 2.0.22
 
 service:
   main:
@@ -34,7 +34,7 @@ configMaps:
 # to the shared "auth" emptyDir which the main container mounts at /mosquitto/auth.
 initContainers:
   gen-passwd:
-    image: eclipse-mosquitto:2.0.18
+    image: eclipse-mosquitto:2.0.22
     command:
       - /bin/sh
       - -c
