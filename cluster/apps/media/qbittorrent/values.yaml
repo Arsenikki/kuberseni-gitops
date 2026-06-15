@@ -90,20 +90,24 @@ addons:
         value: "1200s"
     securityContext:
       # NET_ADMIN: required for wg0 interface + iptables rules.
-      # NET_ADMIN: WireGuard netlink config + iptables rule management.
-      # CHOWN:     v3.39.1 chowns /etc/unbound at startup even with DOT=off.
-      # MKNOD:     v3.39.1 tries to create /dev/net/tun before selecting the
-      #            WireGuard implementation. Talos nodes have no /dev/net/tun
-      #            (hostPath unavailable). MKNOD lets gluetun create the device
-      #            node; v3.39.1 then detects /sys/module/wireguard and uses
-      #            kernelspace WireGuard (TUN node created but never opened for
-      #            data flow). SYS_MODULE and privileged are blocked/absent.
+      # runAsUser: 0 — gluetun creates /dev/net/tun via mknod before kernel WG
+      # detection. /dev/ is root-owned mode 755; only root can mkdir+mknod there.
+      # When UID 1000 does the mknod (with CAP_MKNOD), the created char device is
+      # root-owned (kernel sets owner to effective UID of the process which is the
+      # container-start UID from the Dockerfile USER = 0 at container init time).
+      # UID 1000 then can't open it O_RDWR. Running as root throughout avoids this:
+      # root creates, root opens, TUN fd acquired → kernel WG detected → kernelspace
+      # used (TUN fd kept for the lifetime but carries no traffic). privileged: false
+      # and allowPrivilegeEscalation: false are preserved; only the UID is root.
+      # NET_ADMIN:  WireGuard netlink + iptables.
+      # CHOWN:      unbound init (v3.39.1 chowns /etc/unbound even with DOT=off).
       allowPrivilegeEscalation: false
+      runAsUser: 0
+      runAsGroup: 0
       capabilities:
         add:
           - NET_ADMIN
           - CHOWN
-          - MKNOD
         drop:
           - ALL
 
