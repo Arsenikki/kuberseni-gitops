@@ -43,12 +43,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: mosquitto-credentials
-                  key: philips_username
+                  key: PHILIPS_USERNAME
             - name: MQTT_PASS
               valueFrom:
                 secretKeyRef:
                   name: mosquitto-credentials
-                  key: philips_password
+                  key: PHILIPS_PASSWORD
           volumeMounts:
             - name: script
               mountPath: /app
