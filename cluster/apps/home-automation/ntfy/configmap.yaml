@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntfy-config
+  namespace: home-automation
+data:
+  server.yml: |
+    base-url: https://ntfy.arsenikki.casa
+    cache-file: /var/lib/ntfy/cache.db
+    cache-duration: 12h
+    # Allow all reads and writes without authentication.
+    # ntfy is LAN/VPN-only; no Authentik on the ingress so mobile apps
+    # can subscribe directly.
+    auth-default-access: read-write
+    behind-proxy: true
+    log-level: warn
