@@ -89,19 +89,25 @@ addons:
         value: "600s"
       - name: HEALTH_SUCCESS_WAIT_DURATION
         value: "1200s"
+    # generic-device-plugin DaemonSet (deployed separately) exposes
+    # /dev/net/tun as devic.es/tun. Requesting it pre-creates the device
+    # node with 0666 permissions so gluetun (UID 1000) can open it without
+    # privileged mode. gluetun then detects /sys/module/wireguard and uses
+    # kernelspace WireGuard (TUN fd opened but carries no traffic).
+    resources:
+      limits:
+        devic.es/tun: "1"
     securityContext:
-      # gluetun v3.39.1 detects kernel WireGuard via modprobe (not netlink).
-      # modprobe requires SYS_MODULE. Without it, gluetun falls back to TUN-based
-      # WireGuard, which also fails (UID 1000 can't mkdir /dev/net and SYS_MODULE
-      # is blocked at Talos containerd level with runAsUser:0). privileged:true
-      # was the original config; this restores it while keeping the image at
-      # v3.39.1 and adding the correct Talos/Cilium CIDRs. Future work: upgrade
-      # to a gluetun version that detects kernelspace via netlink (no SYS_MODULE).
-      privileged: true
+      allowPrivilegeEscalation: false
       capabilities:
         add:
           - NET_ADMIN
-          - SYS_MODULE
+          # CHOWN: v3.39.1 chowns /etc/unbound at startup even with DOT=off.
+          - CHOWN
+          # NET_RAW: ip6tables-nft needs it for table init in pod netns.
+          - NET_RAW
+        drop:
+          - ALL
 
 probes:
   liveness:
