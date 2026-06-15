@@ -1,0 +1,50 @@
+name: ArgoCD Diff Preview
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    branches:
+      - main
+      - feat/talos
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  diff:
+    name: Render ArgoCD diff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          path: pull-request
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      # Renders every ArgoCD Application from both branches in an ephemeral
+      # in-CI ArgoCD (no access to the live cluster) and writes the diff to
+      # output/diff.md. Repo + all Helm charts are public, so no repo creds
+      # are mounted. REPO maps this repo's own multi-source Applications
+      # (targetRevision feat/talos) to the checked-out base/PR branches.
+      - name: Generate diff
+        run: |
+          docker run \
+            --network=host \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$(pwd)/base:/base-branch" \
+            -v "$(pwd)/pull-request:/target-branch" \
+            -v "$(pwd)/output:/output" \
+            -e TARGET_BRANCH="refs/pull/${{ github.event.number }}/merge" \
+            -e REPO="${{ github.repository }}" \
+            dagandersen/argocd-diff-preview:v0.2.10@sha256:47d105677d377d29c0a23a1e72bf6efd68e81e4ea73b9d4f16ecae1b09b26460
+
+      - name: Post diff as PR comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.number }}" --repo "${{ github.repository }}" \
+            --body-file output/diff.md --edit-last \
+          || gh pr comment "${{ github.event.number }}" --repo "${{ github.repository }}" \
+            --body-file output/diff.md
