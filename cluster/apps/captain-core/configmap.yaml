@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: captain-core-config
+  namespace: captain-core
+data:
+  LOCATION_ID: "a2T4J000001JJdrUAG"
+  CLASS_NAME: "Reformer Pilates - Dynamic,Reformer Pilates - Signature"
+  DAYS_AHEAD: "8"
+  APIM_KEY: "882ee8ab406042dd9da8045dc58874a3"
+  BOOK_TIME: "07:00"

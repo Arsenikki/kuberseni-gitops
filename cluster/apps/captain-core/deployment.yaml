@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: captain-core-bot
+  namespace: captain-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: captain-core-bot
+  template:
+    metadata:
+      labels:
+        app: captain-core-bot
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: bot
+          image: ghcr.io/arsenikki/captain-core:v0.4.0
+          imagePullPolicy: IfNotPresent
+          command: [".venv/bin/python", "bot.py"]
+          env:
+            - name: NUFFIELD_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: email
+            - name: NUFFIELD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: password
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: telegram-bot-token
+            - name: TELEGRAM_CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: telegram-chat-id
+            - name: LOCATION_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: LOCATION_ID
+            - name: CLASS_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: CLASS_NAME
+            - name: DAYS_AHEAD
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: DAYS_AHEAD
+            - name: BOOK_TIME
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: BOOK_TIME
+                  optional: true
+            - name: APIM_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: APIM_KEY
+            - name: GCAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: gcal-client-id
+                  optional: true
+            - name: GCAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: gcal-client-secret
+                  optional: true
+            - name: GCAL_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: captain-core-credentials
+                  key: gcal-refresh-token
+                  optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi
