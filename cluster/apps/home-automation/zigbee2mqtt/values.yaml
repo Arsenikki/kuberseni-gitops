@@ -41,7 +41,13 @@ controllers:
           limits:
             memory: 500Mi
         securityContext:
-          privileged: true
+          # privileged removed: full privilege was only used to reach the USB
+          # serial dongle. The hostPath CharDevice mount (persistence.usb below)
+          # exposes the device node directly, so no privileged mode is needed.
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
 
 service:
   main:
