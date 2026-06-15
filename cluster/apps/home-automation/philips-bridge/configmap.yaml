@@ -196,6 +196,10 @@ data:
         mainloop = asyncio.get_running_loop()
         coap_lock = asyncio.Lock()
         mqttc = mqtt.Client(client_id="philips-bridge")
+        mqtt_user = os.environ.get("MQTT_USER")
+        mqtt_pass = os.environ.get("MQTT_PASS")
+        if mqtt_user:
+            mqttc.username_pw_set(mqtt_user, mqtt_pass)
         mqttc.will_set(T_AVAIL, "offline", retain=True)
         mqttc.on_connect = on_connect
         mqttc.on_message = on_message
