@@ -61,11 +61,15 @@ kube wait --for=condition=Ready nodes --all --timeout=5m
 echo "  all nodes Ready ✓"
 
 # ── ArgoCD ────────────────────────────────────────────────────────────────────
+# Version is sourced from the ArgoCD Application definition to avoid duplication.
+ARGOCD_VERSION=$(yq '.spec.sources[] | select(.chart == "argo-cd") | .targetRevision' \
+  "$REPO_ROOT/cluster/argocd/apps/argocd.yaml")
 echo ""
-echo "→ Installing ArgoCD..."
+echo "→ Installing ArgoCD $ARGOCD_VERSION (from cluster/argocd/apps/argocd.yaml)..."
 helm upgrade --install argocd argo/argo-cd \
   --kube-context "$CONTEXT" \
   --namespace argocd --create-namespace \
+  --version "$ARGOCD_VERSION" \
   --wait \
   -f "$REPO_ROOT/cluster/bootstrap/argocd/values.yaml"
 echo "  ArgoCD installed ✓"

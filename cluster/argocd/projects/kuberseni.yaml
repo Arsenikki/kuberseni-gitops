@@ -20,6 +20,7 @@ spec:
     - https://charts.goauthentik.io
     - https://charts.rook.io/release
     - https://democratic-csi.github.io/charts
+    - https://argoproj.github.io/argo-helm
     - https://bjw-s-labs.github.io/helm-charts
     - https://charts.external-secrets.io
     - https://kubernetes-sigs.github.io/external-dns/

@@ -1,0 +1,53 @@
+---
+image:
+  repository: binwiederhier/ntfy
+  tag: v2.11.0
+
+args:
+  - serve
+  - --config
+  - /etc/ntfy/server.yml
+
+env:
+  TZ: Europe/London
+
+service:
+  main:
+    ports:
+      http:
+        port: 80
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      # Intentionally no Authentik — ntfy mobile app needs direct API access
+    hosts:
+      - host: ntfy.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ntfy-tls
+        hosts:
+          - ntfy.arsenikki.casa
+
+persistence:
+  data:
+    enabled: true
+    mountPath: /var/lib/ntfy
+    existingClaim: ntfy-data
+  config:
+    enabled: true
+    type: configMap
+    name: ntfy-config
+    mountPath: /etc/ntfy
+    readOnly: true
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
