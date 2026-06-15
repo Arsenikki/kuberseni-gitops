@@ -1,0 +1,54 @@
+---
+image:
+  repository: eclipse-mosquitto
+  tag: 2.0.18
+
+service:
+  main:
+    type: LoadBalancer
+    externalTrafficPolicy: Cluster
+    annotations:
+      # Pin to the IP Cilium LB-IPAM already assigned this service.
+      # (Was mis-indented as a sibling of annotations:, so the request was
+      # ignored and Cilium auto-assigned .221 — now made explicit.)
+      io.cilium/lb-ipam-ips: "192.168.1.221"
+    ports:
+      http:
+        port: 1883
+
+configMaps:
+  config:
+    enabled: true
+    data:
+      mosquitto.conf: |
+        listener 1883
+        allow_anonymous true
+        persistence true
+        persistence_location /data
+        connection_messages false
+        autosave_interval 1800
+
+persistence:
+  data:
+    enabled: true
+    existingClaim: mosquitto-data
+  config-file:
+    enabled: true
+    type: configMap
+    name: mosquitto-config
+    mountPath: /mosquitto/config/mosquitto.conf
+    subPath: mosquitto.conf
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: OnRootMismatch
+
+resources:
+  requests:
+    cpu: 15m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 124Mi

@@ -1,6 +1,0 @@
----
-- name: Install longhorn dependencies
-  hosts: workers
-  become: true
-  roles:
-    - longhorn

@@ -1,0 +1,54 @@
+---
+image:
+  repository: ghcr.io/home-operations/sonarr
+  tag: 4.0.17.2967
+
+env:
+  TZ: Europe/London
+  SONARR__AUTH__METHOD: External
+  SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  SONARR__LOG__LEVEL: info
+service:
+  main:
+    ports:
+      http:
+        port: 8989
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: sonarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: sonarr-tls
+        hosts:
+          - sonarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: sonarr-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256M
+  limits:
+    memory: 1024M

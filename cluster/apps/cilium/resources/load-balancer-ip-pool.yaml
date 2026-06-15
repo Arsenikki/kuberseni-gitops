@@ -1,0 +1,12 @@
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: pool
+spec:
+  blocks:
+    # Transition range: .220-.229 avoids old cluster's .200 (Traefik), .201 (Plex), .210 (Mosquitto)
+    # At cutover: expand to 192.168.1.200/29 (covers .200-.207) and update service annotations
+    - start: "192.168.1.220"
+      stop: "192.168.1.229"
+  disabled: false

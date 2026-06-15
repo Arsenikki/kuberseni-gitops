@@ -1,0 +1,47 @@
+---
+global:
+  # Non-secret PostgreSQL connection params must be set explicitly when using existingSecret
+  # (chart skips auto-configuring them in that mode)
+  env:
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      value: "authentik-postgresql"
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik"
+    - name: AUTHENTIK_POSTGRESQL__USER
+      value: "authentik"
+
+authentik:
+  # All secret env vars injected from authentik-secrets k8s Secret (created by ExternalSecret).
+  # Secret must contain: AUTHENTIK_SECRET_KEY, AUTHENTIK_BOOTSTRAP_TOKEN,
+  # AUTHENTIK_BOOTSTRAP_PASSWORD, AUTHENTIK_POSTGRESQL__PASSWORD
+  existingSecret:
+    secretName: authentik-secrets
+  log_level: info
+
+blueprints:
+  configMaps:
+    - authentik-blueprints
+
+server:
+  ingress:
+    enabled: true
+    hosts:
+      - authentik.arsenikki.casa
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      external-dns/is-public: "true"
+    tls:
+      - secretName: authentik-tls
+        hosts:
+          - authentik.arsenikki.casa
+
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: authentik-secrets
+    secretKeys:
+      adminPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
+      userPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
+
+redis:
+  enabled: true

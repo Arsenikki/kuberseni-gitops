@@ -1,0 +1,48 @@
+---
+image:
+  repository: ghcr.io/home-operations/prowlarr
+  tag: 2.1.5.5216
+
+env:
+  TZ: "Europe/London"
+
+service:
+  main:
+    ports:
+      http:
+        port: 9696
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: prowlarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: prowlarr-tls
+        hosts:
+          - prowlarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: prowlarr-config
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128M
+  limits:
+    memory: 1024M

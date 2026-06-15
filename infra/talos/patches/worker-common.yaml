@@ -1,0 +1,7 @@
+# Applied to all worker nodes
+# rbd module required on any node that mounts Ceph RBD block volumes
+
+machine:
+  kernel:
+    modules:
+      - name: rbd

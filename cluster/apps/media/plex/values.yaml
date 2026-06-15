@@ -1,0 +1,67 @@
+---
+image:
+  repository: ghcr.io/home-operations/plex
+  tag: 1.43.2.10687
+
+env:
+  TZ: "Europe/London"
+
+service:
+  main:
+    type: LoadBalancer
+    annotations:
+      # Pin to the IP Cilium LB-IPAM already assigned this service.
+      # (Was mis-indented as a sibling of annotations:, so the requested .221
+      # was ignored and Cilium auto-assigned .220 — now made explicit. Also
+      # avoids colliding with mosquitto, which holds .221.)
+      io.cilium/lb-ipam-ips: "192.168.1.220"
+    externalTrafficPolicy: Cluster
+    ports:
+      http:
+        port: 32400
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: plex.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: plex-tls
+        hosts:
+          - plex.arsenikki.casa
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: plex-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+  transcode:
+    enabled: true
+    type: emptyDir
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: OnRootMismatch
+  supplementalGroups:
+    - 44
+    - 110
+
+resources:
+  requests:
+    cpu: 2
+    memory: 1024Mi
+  limits:
+    memory: 4096Mi
+    # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.
+    # Also pins Plex to worker-01 via resource availability.
+    gpu.intel.com/i915: 1

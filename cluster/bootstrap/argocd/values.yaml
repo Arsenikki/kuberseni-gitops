@@ -1,0 +1,54 @@
+---
+global:
+  domain: argocd.arsenikki.casa
+
+configs:
+  params:
+    server.insecure: false
+  cm:
+    admin.enabled: true
+    # Allow ArgoCD to manage itself (app-of-apps)
+    application.resourceTrackingMethod: annotation
+    # Poll git every 60 seconds (default is 3 minutes)
+    timeout.reconciliation: 60s
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      external-dns/is-public: "true"
+    hosts:
+      - argocd.arsenikki.casa
+    tls:
+      - secretName: argocd-tls
+        hosts:
+          - argocd.arsenikki.casa
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+
+# Run ArgoCD components on control-plane nodes
+controller:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+
+repoServer:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+
+redis:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists

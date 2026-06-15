@@ -1,0 +1,36 @@
+---
+domainFilters:
+  - "arsenikki.casa"
+
+env:
+  - name: CF_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: token
+
+logLevel: debug
+
+extraArgs:
+  - --cloudflare-dns-records-per-page=1000
+  - --zone-id-filter=7df358b698302620e051a2aa2c9724cb
+  - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+  - --crd-source-kind=DNSEndpoint
+  - --ignore-ingress-tls-spec
+
+fullnameOverride: external-dns
+policy: sync
+
+provider:
+  name: cloudflare
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 100Mi
+  limits:
+    memory: 250Mi
+
+sources: ["crd", "ingress"]
+txtOwnerId: main
+txtPrefix: "k8s."

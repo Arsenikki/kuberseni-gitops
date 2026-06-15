@@ -1,0 +1,35 @@
+---
+# Root Application — discovers all Application objects from cluster/argocd/
+# Apply manually once after bootstrapping ArgoCD:
+#   kubectl apply -f cluster/argocd/projects/kuberseni.yaml
+#   kubectl apply -f cluster/argocd/root-app.yaml
+#
+# IMPORTANT: prune is intentionally DISABLED on root-app.
+# Root-app manages Application objects. If prune were enabled, a source
+# glitch (bad glob, cache miss) could cascade-delete all infra Applications,
+# which then cascade-delete their k8s resources via resources-finalizer.
+# To remove an app: kubectl delete application <name> -n argocd (manual/intentional).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: feat/talos
+    path: cluster/argocd
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -13,37 +13,20 @@
   "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],
   "rebaseWhen": "conflicted",
   "schedule": ["on saturday"],
-  "flux": {
+  // ArgoCD Application manifests reference Helm charts (chart + targetRevision)
+  "argocd": {
     "fileMatch": [
-      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
-      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
+      "(^|/)cluster/argocd/apps/.+\\.ya?ml$"
     ]
   },
   "helm-values": {
     "fileMatch": [
-      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
       "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
     ]
   },
   "kubernetes": {
     "fileMatch": [
-      "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
       "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
-    ]
-  },
-  "kustomize": {
-    "fileMatch": [
-      "(^|/)kustomization\\.ya?ml(\\.j2)?$"
-    ]
-  },
-  "pip_requirements": {
-    "fileMatch": [
-      "(^|/)[\\w-]*requirements(-\\w+)?\\.(txt|pip)(\\.j2)?$"
-    ]
-  },
-  "ansible-galaxy": {
-    "fileMatch": [
-      "(^|/)(galaxy|requirements)(\\.ansible)?\\.ya?ml(\\.j2)?$"
     ]
   },
   // commit message topics
@@ -60,25 +43,6 @@
       "automergeType": "pr",
       "ignoreTests": true,
       "matchUpdateTypes": ["minor", "patch"]
-    },
-    // groups
-    {
-      "description": ["Flux Group"],
-      "groupName": "Flux",
-      "matchPackagePatterns": ["flux"],
-      "matchDatasources": ["docker", "github-tags"],
-      "versioning": "semver",
-      "group": {
-        "commitMessageTopic": "{{{groupName}}} group"
-      },
-      "separateMinorPatch": true
-    },
-    // custom versioning
-    {
-      "description": ["Use custom versioning for k3s"],
-      "matchDatasources": ["github-releases"],
-      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<compatibility>\\+k.s)\\.?(?<build>\\d+)$",
-      "matchPackagePatterns": ["k3s"]
     },
     // commit message topics
     {
@@ -221,12 +185,12 @@
       "customType": "regex",
       "description": ["Process custom dependencies"],
       "fileMatch": [
-        "(^|/)bootstrapping/.+\\.ya?ml(\\.j2)?$",
-        "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
+        "(^|/)cluster/.+\\.ya?ml(\\.j2)?$",
+        "(^|/)infra/.+\\.ya?ml(\\.j2)?$"
       ],
       "matchStrings": [
-        // # renovate: datasource=github-releases depName=k3s-io/k3s
-        // k3s_release_version: v1.29.0+k3s1
+        // # renovate: datasource=github-releases depName=siderolabs/talos
+        // talosVersion: v1.13.2
         "(?m:# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( repository=(?<registryUrl>\\S+))?\\n.+?: \"?(?<currentValue>\\S+?)\"?$)",
         // # renovate: datasource=github-releases depName=rancher/system-upgrade-controller
         // https://github.com/rancher/system-upgrade-controller/releases/download/v0.13.2/crd.yaml

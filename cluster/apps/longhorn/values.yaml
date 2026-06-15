@@ -1,0 +1,37 @@
+---
+preUpgradeChecker:
+  jobEnabled: false
+
+persistence:
+  defaultClassReplicaCount: 2
+
+defaultSettings:
+  createDefaultDiskLabeledNodes: true
+  # Use the dedicated data disk mount point, not the OS disk.
+  # Both workers mount their data disk at /var/mnt/longhorn-data via Talos machine config.
+  defaultDataPath: /var/mnt/longhorn-data
+  defaultReplicaCount: 2
+  replicaSoftAntiAffinity: true
+  # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
+  # can mount Longhorn volumes (data still lives on worker disks)
+  taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
+
+longhornManager:
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+    - key: CriticalAddonsOnly
+      operator: Exists
+
+longhornUI:
+  replicas: 1
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+  host: longhorn.arsenikki.casa
+  tls: true
+  tlsSecret: longhorn-tls
