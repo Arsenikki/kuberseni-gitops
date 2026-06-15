@@ -1,3 +1,4 @@
+---
 # External Secrets Operator Helm values
 installCRDs: true
 
