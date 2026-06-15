@@ -89,6 +89,14 @@ addons:
         value: "600s"
       - name: HEALTH_SUCCESS_WAIT_DURATION
         value: "1200s"
+    # generic-device-plugin DaemonSet (deployed separately) exposes
+    # /dev/net/tun as devic.es/tun. Requesting it pre-creates the device
+    # node with 0666 permissions so gluetun (UID 1000) can open it without
+    # privileged mode. gluetun then detects /sys/module/wireguard and uses
+    # kernelspace WireGuard (TUN fd opened but carries no traffic).
+    resources:
+      limits:
+        devic.es/tun: "1"
     securityContext:
       # NET_ADMIN:     WireGuard netlink + iptables rule management.
       # MKNOD:         gluetun creates /dev/net/tun during startup (before
