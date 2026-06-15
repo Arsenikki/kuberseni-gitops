@@ -3,7 +3,6 @@ on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
       - main
-      - feat/talos
 permissions:
   contents: read
   pull-requests: write
@@ -27,7 +26,7 @@ jobs:
       # in-CI ArgoCD (no access to the live cluster) and writes the diff to
       # output/diff.md. Repo + all Helm charts are public, so no repo creds
       # are mounted. REPO maps this repo's own multi-source Applications
-      # (targetRevision feat/talos) to the checked-out base/PR branches.
+      # (targetRevision main) to the checked-out base/PR branches.
       - name: Generate diff
         run: |
           docker run \

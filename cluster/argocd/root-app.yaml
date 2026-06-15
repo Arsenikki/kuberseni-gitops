@@ -20,7 +20,7 @@ spec:
   project: kuberseni
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
-    targetRevision: feat/talos
+    targetRevision: main
     path: cluster/argocd
     directory:
       recurse: true
