@@ -45,7 +45,7 @@ addons:
     gluetun:
       image:
         repository: ghcr.io/qdm12/gluetun
-        tag: v3.39.1
+        tag: v3.41.1
     env:
       - name: VPN_SERVICE_PROVIDER
         value: airvpn
