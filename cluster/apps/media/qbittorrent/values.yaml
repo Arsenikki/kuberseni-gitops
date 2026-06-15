@@ -110,6 +110,7 @@ addons:
           - NET_ADMIN
           - CHOWN
           - NET_RAW
+          - MKNOD
         drop:
           - ALL
 
