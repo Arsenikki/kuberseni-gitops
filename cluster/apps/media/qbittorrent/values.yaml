@@ -90,29 +90,18 @@ addons:
       - name: HEALTH_SUCCESS_WAIT_DURATION
         value: "1200s"
     securityContext:
-      # NET_ADMIN: required for wg0 interface + iptables rules.
-      # runAsUser: 0 — gluetun creates /dev/net/tun via mknod before kernel WG
-      # detection. /dev/ is root-owned mode 755; only root can mkdir+mknod there.
-      # When UID 1000 does the mknod (with CAP_MKNOD), the created char device is
-      # root-owned (kernel sets owner to effective UID of the process which is the
-      # container-start UID from the Dockerfile USER = 0 at container init time).
-      # UID 1000 then can't open it O_RDWR. Running as root throughout avoids this:
-      # root creates, root opens, TUN fd acquired → kernel WG detected → kernelspace
-      # used (TUN fd kept for the lifetime but carries no traffic). privileged: false
-      # and allowPrivilegeEscalation: false are preserved; only the UID is root.
-      # NET_ADMIN:  WireGuard netlink + iptables.
-      # CHOWN:      unbound init (v3.39.1 chowns /etc/unbound even with DOT=off).
-      allowPrivilegeEscalation: false
-      runAsUser: 0
-      runAsGroup: 0
+      # gluetun v3.39.1 detects kernel WireGuard via modprobe (not netlink).
+      # modprobe requires SYS_MODULE. Without it, gluetun falls back to TUN-based
+      # WireGuard, which also fails (UID 1000 can't mkdir /dev/net and SYS_MODULE
+      # is blocked at Talos containerd level with runAsUser:0). privileged:true
+      # was the original config; this restores it while keeping the image at
+      # v3.39.1 and adding the correct Talos/Cilium CIDRs. Future work: upgrade
+      # to a gluetun version that detects kernelspace via netlink (no SYS_MODULE).
+      privileged: true
       capabilities:
         add:
           - NET_ADMIN
-          - CHOWN
-          - NET_RAW
-          - MKNOD
-        drop:
-          - ALL
+          - SYS_MODULE
 
 probes:
   liveness:
