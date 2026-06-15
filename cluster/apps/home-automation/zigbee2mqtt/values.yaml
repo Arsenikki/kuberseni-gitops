@@ -58,6 +58,9 @@ controllers:
           allowPrivilegeEscalation: false
           runAsUser: 0
           runAsGroup: 20
+          capabilities:
+            add:
+              - SYS_TTY_CONFIG
 
 service:
   main:
