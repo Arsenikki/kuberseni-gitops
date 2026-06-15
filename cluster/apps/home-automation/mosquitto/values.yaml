@@ -22,11 +22,6 @@ configMaps:
     data:
       mosquitto.conf: |
         listener 1883
-        # PHASE 1: anonymous access is still permitted so existing clients keep
-        # working while they are migrated to credentials. The password_file is
-        # also active, so authenticated clients are accepted in parallel.
-        # PHASE 2 (separate PR): flip allow_anonymous to false once every client
-        # is confirmed authenticated.
         allow_anonymous true
         password_file /mosquitto/auth/passwd
         persistence true
