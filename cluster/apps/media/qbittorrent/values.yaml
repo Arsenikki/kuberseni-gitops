@@ -89,11 +89,20 @@ addons:
       - name: HEALTH_SUCCESS_WAIT_DURATION
         value: "1200s"
     securityContext:
-      privileged: true
+      # NET_ADMIN is required for gluetun to create/configure the wg0 WireGuard
+      # interface and manage routing/firewall rules inside the pod netns.
+      # privileged + SYS_MODULE removed: WireGuard is compiled into the Talos
+      # kernel (verified: /sys/module/wireguard present, absent from
+      # /proc/modules => built-in), so gluetun uses the kernelspace
+      # implementation and needs only NET_ADMIN — no module loading, no
+      # /dev/net/tun device, no privileged mode. SYS_MODULE would allow loading
+      # arbitrary host kernel modules (full host compromise).
+      allowPrivilegeEscalation: false
       capabilities:
         add:
           - NET_ADMIN
-          - SYS_MODULE
+        drop:
+          - ALL
 
 probes:
   liveness:

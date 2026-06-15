@@ -1,0 +1,131 @@
+---
+# ==========================================================================
+# CiliumNetworkPolicy: qbittorrent east-west isolation (STARTING BASELINE)
+# ==========================================================================
+#
+# WHAT THIS DOES
+#   qbittorrent runs privileged-ish (NET_ADMIN, WireGuard/gluetun VPN sidecar)
+#   and is the highest-risk workload in the cluster. This policy LIMITS LATERAL
+#   MOVEMENT (east-west, cross-namespace) to/from the qbittorrent pod while
+#   deliberately leaving its INTERNET egress wide open (the VPN sidecar needs
+#   unrestricted outbound to reach the WireGuard endpoint and to torrent).
+#
+# IMPORTANT SEMANTICS
+#   In Cilium, as soon as ANY policy selects an endpoint, that endpoint
+#   switches to DEFAULT-DENY *for the directions present in the policy*.
+#   This policy specifies BOTH ingress and egress, so qbittorrent becomes
+#   default-deny in both directions and ONLY the rules below are permitted.
+#
+# !! VALIDATE AGAINST THE LIVE CLUSTER BEFORE RELYING ON THIS !!
+#   A wrong label silently drops traffic. Before trusting this policy, confirm
+#   the live labels (see the CAVEATS block at the bottom of this file), and
+#   ideally watch `hubble observe --namespace media --pod qbittorrent --verdict DROPPED`
+#   while exercising the web UI and a torrent download.
+#
+# Chart context: bjw-s app-template 1.5.1, Helm release name "qbittorrent".
+# In app-template v1 the workload pods get:
+#   app.kubernetes.io/name: qbittorrent
+#   app.kubernetes.io/instance: qbittorrent
+# ==========================================================================
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: qbittorrent-isolation
+  namespace: media
+spec:
+  # ---- Target: the qbittorrent pod (statefulset) -------------------------
+  # Uses the app-template v1 selector labels. The VPN sidecar shares the
+  # pod network namespace, so this single endpoint covers both containers.
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbittorrent
+      app.kubernetes.io/instance: qbittorrent
+
+  # ======================================================================
+  # INGRESS  (default-deny; only the rules below are allowed)
+  # ======================================================================
+  ingress:
+    # 1) Web UI reached ONLY via the Traefik ingress controller.
+    #    Traefik runs in the "traefik" namespace (official traefik chart,
+    #    release "traefik"). Match its pods by namespace + app label.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik
+            app.kubernetes.io/name: traefik
+      toPorts:
+        - ports:
+            - port: "8080"   # QBITTORRENT__PORT (WebUI http)
+              protocol: TCP
+
+    # 2) Same-namespace ingress within "media".
+    #    Kept narrow but allowed because other *arr apps in this namespace
+    #    legitimately talk to qbittorrent (e.g. Sonarr/Radarr -> WebUI API,
+    #    and the bittorrent ClusterIP service). Restricts to the two known
+    #    ports rather than opening all ports.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+      toPorts:
+        - ports:
+            - port: "8080"    # WebUI / API
+              protocol: TCP
+            - port: "21188"   # bittorrent
+              protocol: TCP
+
+  # ======================================================================
+  # EGRESS  (default-deny; only the rules below are allowed)
+  # ======================================================================
+  egress:
+    # 1) DNS to CoreDNS / kube-dns in kube-system. Required so the VPN
+    #    sidecar can resolve the WireGuard endpoint and torrent trackers,
+    #    and so the app can resolve in-cluster peers it IS allowed to reach.
+    #    toFQDNs-based policy would need this DNS rule as its visibility hook;
+    #    we keep DNS open broadly (no FQDN allowlist) on purpose so VPN +
+    #    torrent name resolution is never the thing that breaks.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # 2) INTERNET / outside-cluster egress.
+    #    "world" is the Cilium reserved entity for everything OUTSIDE the
+    #    cluster (any IP not known to be a cluster pod/node/service). This is
+    #    the clean way to say "you may reach the internet (VPN, trackers,
+    #    peers) but you may NOT reach other pods/namespaces in the cluster".
+    #    No toPorts -> all ports/protocols to the outside world (WireGuard
+    #    UDP, HTTPS, arbitrary bittorrent peer ports, etc.).
+    - toEntities:
+        - world
+
+    # NOTE: we intentionally do NOT add toEntities: [cluster] or any
+    # cross-namespace egress allow. That is the whole point — qbittorrent
+    # cannot initiate connections to other workloads. (Same-namespace and
+    # Traefik-initiated flows are handled by the ingress rules above; replies
+    # to those are allowed automatically by Cilium conntrack.)
+  # ======================================================================
+  # CAVEATS — VERIFY THESE ON THE LIVE CLUSTER:
+  #   1. Pod labels:
+  #        kubectl -n media get pod -l app.kubernetes.io/name=qbittorrent \
+  #          -o jsonpath='{.items[0].metadata.labels}'
+  #      Confirm both name AND instance match the endpointSelector above.
+  #   2. Traefik namespace + labels:
+  #        kubectl -n traefik get pods --show-labels
+  #      Confirm namespace is "traefik" and the app.kubernetes.io/name label
+  #      is "traefik" (official chart). If Traefik were in kube-system, change
+  #      the namespace label in the ingress rule accordingly.
+  #   3. kube-dns label:
+  #        kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
+  #      Talos/Cilium clusters use CoreDNS but it normally still carries the
+  #      k8s-app=kube-dns label. Verify; if absent, adjust the matchLabels.
+  #   4. Watch for drops while testing:
+  #        hubble observe -n media --pod qbittorrent --verdict DROPPED -f
+  # ======================================================================
