@@ -32,6 +32,19 @@ controllers:
           ZIGBEE2MQTT_CONFIG_MQTT_KEEPALIVE: 60
           ZIGBEE2MQTT_CONFIG_MQTT_REJECT_UNAUTHORIZED: "true"
           ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://mosquitto.home-automation.svc.cluster.local
+          # MQTT credentials from the shared mosquitto-credentials Secret (ESO).
+          # Safe during PHASE 1: the broker still allows anonymous, and once the
+          # password_file exists these creds authenticate the zigbee2mqtt user.
+          ZIGBEE2MQTT_CONFIG_MQTT_USER:
+            valueFrom:
+              secretKeyRef:
+                name: mosquitto-credentials
+                key: ZIGBEE2MQTT_USERNAME
+          ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: mosquitto-credentials
+                key: ZIGBEE2MQTT_PASSWORD
           ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE: 115200
           ZIGBEE2MQTT_CONFIG_SERIAL_PORT: &usbdevice /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
         resources:
