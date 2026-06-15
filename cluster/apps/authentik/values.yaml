@@ -1,3 +1,4 @@
+---
 global:
   # Non-secret PostgreSQL connection params must be set explicitly when using existingSecret
   # (chart skips auto-configuring them in that mode)
