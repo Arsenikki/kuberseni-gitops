@@ -90,17 +90,18 @@ addons:
         value: "1200s"
     securityContext:
       # NET_ADMIN: required for wg0 interface + iptables rules.
-      # CHOWN: v3.39.1 calls chown /etc/unbound at startup (even with DOT=off);
-      # drop: ALL removes it so we must add it back. v3.40+ changed the TUN
-      # detection order (TUN-first), which breaks on Talos where the tun kernel
-      # module is absent; v3.39.1 checks /sys/module/wireguard first and uses
-      # kernelspace — no TUN device needed at all. SYS_MODULE and privileged
-      # are intentionally absent.
+      # NET_ADMIN: WireGuard netlink + iptables rule management.
+      # CHOWN: v3.39.1 chowns /etc/unbound at startup even with DOT=off.
+      # NET_RAW: required by ip6tables-nft in a fresh pod network namespace
+      # (xtables-compat needs raw socket init); without it ip6tables add+delete
+      # cycles silently misfire ("Bad rule") causing a fatal startup failure.
+      # Privileged and SYS_MODULE are intentionally absent.
       allowPrivilegeEscalation: false
       capabilities:
         add:
           - NET_ADMIN
           - CHOWN
+          - NET_RAW
         drop:
           - ALL
 
