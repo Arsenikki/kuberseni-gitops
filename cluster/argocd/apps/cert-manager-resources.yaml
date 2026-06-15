@@ -12,7 +12,7 @@ spec:
   project: kuberseni
   source:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
-    targetRevision: feat/talos
+    targetRevision: main
     path: cluster/apps/cert-manager/resources
     directory:
       exclude: "values.yaml"
