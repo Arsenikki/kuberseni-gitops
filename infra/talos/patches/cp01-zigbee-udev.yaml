@@ -1,0 +1,4 @@
+machine:
+  udev:
+    rules:
+      - SUBSYSTEM=="tty", KERNEL=="ttyACM*", MODE="0660", GROUP="20"
