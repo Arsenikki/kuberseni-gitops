@@ -15,6 +15,15 @@ backend = "aqua:opentofu/opentofu"
 "platforms.macos-x64" = { checksum = "sha256:f514761be893f49b6ca12c2df672c010fad6c88f92588dcfc95db750211c2594", url = "https://github.com/opentofu/opentofu/releases/download/v1.11.5/tofu_1.11.5_darwin_amd64.tar.gz"}
 "platforms.windows-x64" = { checksum = "sha256:69be358054afcc6a84c0ffb917056d21afc3ec5a0e0f66ffd4f498a1763a0fb8", url = "https://github.com/opentofu/opentofu/releases/download/v1.11.5/tofu_1.11.5_windows_amd64.tar.gz"}
 
+[[tools.pre-commit]]
+version = "4.2.0"
+backend = "aqua:pre-commit/pre-commit"
+"platforms.linux-arm64" = { checksum = "sha256:0d4d80fd598dd1f7c268569de49e7c7a692a3de6f7a97cf14ad4e6cce993bbdf", url = "https://github.com/pre-commit/pre-commit/releases/download/v4.2.0/pre-commit-4.2.0.pyz"}
+"platforms.linux-x64" = { checksum = "sha256:0d4d80fd598dd1f7c268569de49e7c7a692a3de6f7a97cf14ad4e6cce993bbdf", url = "https://github.com/pre-commit/pre-commit/releases/download/v4.2.0/pre-commit-4.2.0.pyz"}
+"platforms.macos-arm64" = { checksum = "sha256:0d4d80fd598dd1f7c268569de49e7c7a692a3de6f7a97cf14ad4e6cce993bbdf", url = "https://github.com/pre-commit/pre-commit/releases/download/v4.2.0/pre-commit-4.2.0.pyz"}
+"platforms.macos-x64" = { checksum = "sha256:0d4d80fd598dd1f7c268569de49e7c7a692a3de6f7a97cf14ad4e6cce993bbdf", url = "https://github.com/pre-commit/pre-commit/releases/download/v4.2.0/pre-commit-4.2.0.pyz"}
+"platforms.windows-x64" = { checksum = "sha256:0d4d80fd598dd1f7c268569de49e7c7a692a3de6f7a97cf14ad4e6cce993bbdf", url = "https://github.com/pre-commit/pre-commit/releases/download/v4.2.0/pre-commit-4.2.0.pyz"}
+
 [[tools.prek]]
 version = "0.3.8"
 backend = "aqua:j178/prek"
@@ -25,13 +34,8 @@ backend = "aqua:j178/prek"
 "platforms.windows-x64" = { checksum = "sha256:1da2735c31548dacd2751f90c15b5f643aa72f3053f366636f95153ee2c7186e", url = "https://github.com/j178/prek/releases/download/v0.3.8/prek-x86_64-pc-windows-msvc.zip"}
 
 [[tools.sops]]
-version = "3.12.2"
+version = "3.13.1"
 backend = "aqua:getsops/sops"
-"platforms.linux-arm64" = { checksum = "sha256:f66de6f528dca946e910d74fa36a62a7714c11d0db16bd3c9bd8acf73b66704b", url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.arm64"}
-"platforms.linux-x64" = { checksum = "sha256:14e2e1ba3bef31e74b70cf0b674f6443c80f6c5f3df15d05ffc57c34851b4998", url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.amd64"}
-"platforms.macos-arm64" = { checksum = "sha256:284edc64acf91ca249f227ffa2b444632656e4e1ac02baa26bed7051a7d51ce5", url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.darwin.arm64"}
-"platforms.macos-x64" = { checksum = "sha256:767c0dcb42e052fd6f2ac17d4473eca6f5fc4910e2b70127f1308d86c606c022", url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.darwin.amd64"}
-"platforms.windows-x64" = { checksum = "sha256:5e777b1854ab2a6271d8f66375970e1fe3eea838251c309de151d16a2bdf13a2", url = "https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.amd64.exe"}
 
 [[tools.talhelper]]
 version = "3.1.10"
@@ -43,22 +47,12 @@ backend = "aqua:budimanjojo/talhelper"
 "platforms.windows-x64" = { checksum = "sha256:092e12cd232929b6d589d67a6eb0e4217ab421c5dcb9fd22595cb0f3be04a826", url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.10/talhelper_windows_amd64.tar.gz"}
 
 [[tools.talosctl]]
-version = "1.12.4"
+version = "1.13.4"
 backend = "aqua:siderolabs/talos"
-"platforms.linux-arm64" = { checksum = "sha256:5d6f37684d337a9b689216a4e7cc07b58996bad34afbd9d032ab1bd058cfe282", url = "https://github.com/siderolabs/talos/releases/download/v1.12.4/talosctl-linux-arm64"}
-"platforms.linux-x64" = { checksum = "sha256:6b85f633721e02d31c8a28a633c9cd8ebfb7e41677ff29e94236a082d4cd6cd9", url = "https://github.com/siderolabs/talos/releases/download/v1.12.4/talosctl-linux-amd64"}
-"platforms.macos-arm64" = { checksum = "sha256:f4c94d4832e9d41f67cc63cd362cc0bfd44d8c675e9ff04541411be40916096c", url = "https://github.com/siderolabs/talos/releases/download/v1.12.4/talosctl-darwin-arm64"}
-"platforms.macos-x64" = { checksum = "sha256:c0b7283352ea0ce7d6435c663727a2cfef7f504c9b404f982b2f960501f3d9c8", url = "https://github.com/siderolabs/talos/releases/download/v1.12.4/talosctl-darwin-amd64"}
-"platforms.windows-x64" = { checksum = "sha256:04254eb23357e4e18c8aba9409d5541bba5d309db56c77ca3daaa86ed914d406", url = "https://github.com/siderolabs/talos/releases/download/v1.12.4/talosctl-windows-amd64.exe"}
 
 [[tools.task]]
-version = "3.49.1"
+version = "3.51.1"
 backend = "aqua:go-task/task"
-"platforms.linux-arm64" = { checksum = "sha256:aa6732c9c66397c5380ec2b60c070fd599075b2a8538dba03f3a21edc99ab0cb", url = "https://github.com/go-task/task/releases/download/v3.49.1/task_linux_arm64.tar.gz"}
-"platforms.linux-x64" = { checksum = "sha256:4e7d24f1bf38218aec8f244eb7ba671f898830f9f87b3c9b30ff1c09e3135576", url = "https://github.com/go-task/task/releases/download/v3.49.1/task_linux_amd64.tar.gz"}
-"platforms.macos-arm64" = { checksum = "sha256:0f556b66df69d53b790c7fd26bfab73543b4a5ce1767df6b2e8499619e2a205b", url = "https://github.com/go-task/task/releases/download/v3.49.1/task_darwin_arm64.tar.gz"}
-"platforms.macos-x64" = { checksum = "sha256:8bc4dd3baed1c71956ade0bb0a9c1b94e3ed7b65e7f2ff3aab13d0562c820e59", url = "https://github.com/go-task/task/releases/download/v3.49.1/task_darwin_amd64.tar.gz"}
-"platforms.windows-x64" = { checksum = "sha256:725c551f699d4d6c0dc57bd8148f72bef8d5b2fb650d9c985f271a61522fd521", url = "https://github.com/go-task/task/releases/download/v3.49.1/task_windows_amd64.zip"}
 
 [[tools.uv]]
 version = "0.11.21"
@@ -70,10 +64,5 @@ backend = "aqua:astral-sh/uv"
 "platforms.windows-x64" = { checksum = "sha256:ace861f360c6de2babedc1607d0f454b6b09a820dbc8182dc15af927e4df9589", url = "https://github.com/astral-sh/uv/releases/download/0.11.21/uv-x86_64-pc-windows-msvc.zip"}
 
 [[tools.yq]]
-version = "4.52.4"
+version = "4.53.3"
 backend = "aqua:mikefarah/yq"
-"platforms.linux-arm64" = { checksum = "sha256:4c2cc022a129be5cc1187959bb4b09bebc7fb543c5837b93001c68f97ce39a5d", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_linux_arm64"}
-"platforms.linux-x64" = { checksum = "sha256:0c4d965ea944b64b8fddaf7f27779ee3034e5693263786506ccd1c120f184e8c", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_linux_amd64"}
-"platforms.macos-arm64" = { checksum = "sha256:6bfa43a439936644d63c70308832390c8838290d064970eaada216219c218a13", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_darwin_arm64"}
-"platforms.macos-x64" = { checksum = "sha256:d72a75fe9953c707d395f653d90095b133675ddd61aa738e1ac9a73c6c05e8be", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_darwin_amd64"}
-"platforms.windows-x64" = { checksum = "sha256:b7c4186f8a3e32879ddf99389bf59a4b2861f0f1b41ef58647d903b0a11e8151", url = "https://github.com/mikefarah/yq/releases/download/v4.52.4/yq_windows_amd64.exe"}
