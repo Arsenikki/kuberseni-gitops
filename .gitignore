@@ -10,3 +10,19 @@ Thumbs.db
 kubeconfig**.yaml
 # vscode-sops
 .decrypted~*.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+1password-credentials.json
+
+# editor/terraform backup files
+*.bak*
+
+# Local-only — kept out of the public repo (internal topology / 1Password details)
+CLAUDE.md
+# local MCP usage telemetry (logs/mcp_usage.jsonl) — no secrets
+logs/

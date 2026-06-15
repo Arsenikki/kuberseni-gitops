@@ -1,0 +1,40 @@
+---
+# Static A records for bare-metal infra hosts that aren't backed by a
+# Kubernetes Ingress/Service. external-dns publishes these to Cloudflare via
+# the DNSEndpoint CRD source (sources: ["crd", "ingress"]).
+# These are LAN-only addresses; the services serve their own TLS certs.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: infra-hosts
+  namespace: external-dns
+spec:
+  endpoints:
+    # Proxmox node web UIs (:8006)
+    - dnsName: router.proxmox.arsenikki.casa
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "192.168.1.10"
+    - dnsName: minipc.proxmox.arsenikki.casa
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "192.168.1.11"
+    - dnsName: nas.proxmox.arsenikki.casa
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "192.168.1.12"
+    # OPNSense firewall
+    - dnsName: opnsense.arsenikki.casa
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "192.168.1.1"
+    # TrueNAS
+    - dnsName: truenas.arsenikki.casa
+      recordType: A
+      recordTTL: 300
+      targets:
+        - "192.168.1.2"

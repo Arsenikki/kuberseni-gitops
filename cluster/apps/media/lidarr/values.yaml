@@ -1,0 +1,55 @@
+---
+image:
+  repository: ghcr.io/home-operations/lidarr
+  tag: 3.1.2.4902
+
+env:
+  TZ: Europe/London
+  LIDARR__AUTH__METHOD: External
+  LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  LIDARR__LOG__LEVEL: info
+service:
+  main:
+    ports:
+      http:
+        port: 8686
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: lidarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: lidarr-tls
+        hosts:
+          - lidarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: lidarr-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64M
+  limits:
+    memory: 512M

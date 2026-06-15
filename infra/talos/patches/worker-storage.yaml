@@ -1,0 +1,11 @@
+# Applied to worker-02 (NAS machine)
+# Mounts /dev/sdb (100GB Longhorn data disk) at /var/mnt/longhorn-data
+
+machine:
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/mnt/longhorn-data
+  kubelet:
+    extraArgs:
+      node-labels: node.kubernetes.io/storage-node=true

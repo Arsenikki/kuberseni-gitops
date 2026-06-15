@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: philips-bridge
+  namespace: home-automation
+  labels:
+    app: philips-bridge
+  annotations:
+    # auto-restart when the script ConfigMap changes (stakater reloader)
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single CoAP client; never run two at once
+  selector:
+    matchLabels:
+      app: philips-bridge
+  template:
+    metadata:
+      labels:
+        app: philips-bridge
+    spec:
+      # Must run on control-plane-01: the only node that reliably receives the
+      # purifier's fragmented CoAP status stream (project_philips_coap_fragmentation).
+      nodeSelector:
+        kubernetes.io/hostname: control-plane-01
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: bridge
+          image: python:3.12-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - "pip install --quiet --root-user-action=ignore aioairctrl==0.3.1 'paho-mqtt<2' && exec python -u /app/bridge.py"
+          env:
+            - { name: PURIFIER_HOST, value: "192.168.1.150" }
+            - { name: MQTT_HOST, value: "mosquitto.home-automation.svc.cluster.local" }
+            - { name: MQTT_PORT, value: "1883" }
+            - { name: POLL_SECONDS, value: "30" }
+            - { name: TZ, value: "Europe/London" }
+          volumeMounts:
+            - name: script
+              mountPath: /app
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: script
+          configMap:
+            name: philips-bridge-script

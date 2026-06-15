@@ -1,0 +1,24 @@
+---
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/gabe565/castsponsorskip
+          tag: 0.8.0
+        env:
+          TZ: "Europe/London"
+          # YouTube API key injected from ESO → cast-sponsor-skip-secret
+          CSS_YOUTUBE_API_KEY:
+            valueFrom:
+              secretKeyRef:
+                name: cast-sponsor-skip-secret
+                key: YOUTUBE_API_KEY
+    strategy: RollingUpdate
+    pod:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+
+service:
+  main:
+    enabled: false

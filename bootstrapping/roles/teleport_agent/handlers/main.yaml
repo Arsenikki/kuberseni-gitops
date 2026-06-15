@@ -1,8 +1,0 @@
----
-- name: Start or restart teleport service
-  become: true
-  ansible.builtin.systemd:
-    name: teleport.service
-    state: restarted
-    enabled: true
-    daemon_reload: true

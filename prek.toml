@@ -1,0 +1,57 @@
+# prek configuration for kuberseni-gitops
+# https://github.com/j178/prek
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+    # General file checks
+    { id = "trailing-whitespace" },
+    { id = "end-of-file-fixer" },
+    { id = "check-merge-conflict" },
+    { id = "check-case-conflict" },
+    { id = "mixed-line-ending" },
+
+    # YAML checks
+    { id = "check-yaml", args = ["--unsafe"] },  # --unsafe allows custom tags (like SOPS)
+    { id = "sort-simple-yaml" },
+
+    # Security checks
+    { id = "detect-private-key" },
+    { id = "detect-aws-credentials", args = ["--allow-missing-credentials"] },
+
+    # Large files
+    { id = "check-added-large-files", args = ["--maxkb=1024"] },
+]
+
+[[repos]]
+repo = "https://github.com/antonbabenko/pre-commit-terraform"
+rev = "v1.96.2"
+hooks = [
+    # Exclude SOPS-encrypted files to prevent breaking encryption metadata
+    { id = "terraform_fmt", exclude = "secrets\\.tfvars" },
+    { id = "terraform_validate", args = ["--hook-config=--retry-once-with-cleanup=true"], exclude = "secrets\\.tfvars" },
+    { id = "terraform_tflint", exclude = "secrets\\.tfvars" },
+]
+
+[[repos]]
+repo = "https://github.com/gitleaks/gitleaks"
+rev = "v8.21.2"
+hooks = [
+    { id = "gitleaks" },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+    # OpenTofu formatting (use our project-local opentofu)
+    {
+        id = "tofu-fmt",
+        name = "OpenTofu fmt",
+        entry = "tofu",
+        args = ["fmt", "-recursive"],
+        language = "system",
+        files = "\\.tf$",
+        pass_filenames = false,
+    },
+]

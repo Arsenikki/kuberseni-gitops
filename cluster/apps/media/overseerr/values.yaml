@@ -1,0 +1,45 @@
+---
+image:
+  repository: ghcr.io/sct/overseerr
+  tag: 1.33.2
+
+env:
+  TZ: "Europe/London"
+  LOG_LEVEL: "debug"
+  PORT: &port 80
+
+service:
+  main:
+    ports:
+      http:
+        port: *port
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: overseerr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: overseerr-tls
+        hosts:
+          - overseerr.arsenikki.casa
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: overseerr-config
+    mountPath: /app/config
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64M
+  limits:
+    memory: 256M

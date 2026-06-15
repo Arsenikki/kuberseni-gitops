@@ -1,0 +1,55 @@
+---
+image:
+  repository: ghcr.io/home-operations/readarr
+  tag: 0.4.18.2805
+
+env:
+  TZ: Europe/London
+  READARR__AUTH__METHOD: External
+  READARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  READARR__LOG__LEVEL: info
+service:
+  main:
+    ports:
+      http:
+        port: 8787
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: readarr.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: readarr-tls
+        hosts:
+          - readarr.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: readarr-config
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64M
+  limits:
+    memory: 256M

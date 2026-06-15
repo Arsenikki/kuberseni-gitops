@@ -1,0 +1,245 @@
+version: "3"
+
+vars:
+  TALOS_DIR: "{{.ROOT_DIR}}/talos"
+  TF_DIR: "{{.ROOT_DIR}}/terraform"
+  TALOSCONFIG: "{{.TALOS_DIR}}/clusterconfig/talosconfig"
+  CLUSTER_NAME:
+    sh: yq '.clusterName' {{.TALOS_DIR}}/talconfig.yaml
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  install:
+    desc: Install all project dependencies via mise (with lockfile verification)
+    cmds:
+      - mise install --locked
+
+  # ── Full lifecycle ────────────────────────────────────────────────────────
+
+  up:
+    desc: |
+      Full cluster bootstrap — metal install approach:
+        1. Provision VMs (boots from Talos ISO into maintenance mode)
+        2. Generate Talos machine configs
+        3. Apply configs (nodes install Talos to disk with A/B layout, reboot)
+        4. Bootstrap etcd + fetch kubeconfig
+        5. Remove ISO from VMs (boot from disk from now on)
+        6. Bootstrap ArgoCD + apps
+    cmds:
+      - task: terraform:apply
+      - task: talos:generate
+      - task: talos:apply-controlplane
+      - task: talos:bootstrap
+      - task: talos:apply-workers
+      - task: talos:kubeconfig
+      - task: argocd:bootstrap
+
+  down:
+    desc: Destroy all Proxmox VMs (data loss — use with care)
+    prompt: This destroys ALL cluster VMs. Are you sure?
+    cmds:
+      - task: terraform:destroy
+
+  # ── ArgoCD bootstrap ──────────────────────────────────────────────────────
+
+  argocd:bootstrap:
+    desc: Bootstrap ArgoCD, ESO, 1Password Connect and apply root Application
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/bootstrap-cluster.sh
+
+  argocd:password:
+    desc: Print the initial ArgoCD admin password
+    cmds:
+      - kubectl --context admin@kuberseni get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d && echo
+
+  argocd:port-forward:
+    desc: Port-forward ArgoCD UI to localhost:8080
+    cmds:
+      - kubectl --context admin@kuberseni port-forward svc/argocd-server -n argocd 8080:443
+
+  # ── Terraform ─────────────────────────────────────────────────────────────
+
+  terraform:create-api-token:
+    desc: Create Proxmox API token for Terraform (one-time setup)
+    prompt: This will create a terraform@pve user and API token on Proxmox. Continue?
+    vars:
+      PROXMOX_HOST:
+        sh: 'bash -c ''read -p "Proxmox host IP [192.168.1.10]: " host </dev/tty && echo "${host:-192.168.1.10}"'''
+      SSH_KEY: '{{.SSH_KEY | default "~/.ssh/arsenikki"}}'
+    cmds:
+      - |
+        echo "Creating Terraform user and API token on {{.PROXMOX_HOST}}..."
+        ssh -i {{.SSH_KEY}} root@{{.PROXMOX_HOST}} 'bash -s' <<'EOF'
+        set -e
+
+        # Create terraform user if not exists
+        if ! pveum user list | grep -q "terraform@pve"; then
+          echo "Creating terraform@pve user..."
+          pveum user add terraform@pve --comment "Terraform automation user"
+        else
+          echo "User terraform@pve already exists"
+        fi
+
+        # Delete old token if exists (to allow regeneration)
+        if pveum user token list terraform@pve | grep -q "provider"; then
+          echo "Removing old token..."
+          pveum user token remove terraform@pve provider
+        fi
+
+        # Create API token with privilege separation disabled
+        echo "Creating API token..."
+        pveum user token add terraform@pve provider --privsep=0
+
+        # Grant Administrator role
+        echo "Granting permissions..."
+        pveum aclmod / -user terraform@pve -role Administrator
+
+        echo ""
+        echo "✅ API token created successfully!"
+        echo "Copy the token secret shown above - it won't be shown again"
+        EOF
+      - |
+        echo ""
+        echo "Update infra/terraform/terraform.tfvars with:"
+        echo "  proxmox_endpoint  = \"https://{{.PROXMOX_HOST}}:8006/\""
+        echo "  proxmox_api_token = \"terraform@pve!provider=<SECRET_FROM_ABOVE>\""
+
+  terraform:init:
+    desc: Initialise Terraform providers
+    dir: "{{.TF_DIR}}"
+    # State is encrypted (OpenTofu native encryption). The PBKDF2 passphrase
+    # comes from encryption.sops.yaml (age-encrypted) and is injected via
+    # TF_ENCRYPTION so it never lands in a committed .tf file.
+    env: &tf_encryption
+      TF_ENCRYPTION:
+        sh: printf 'key_provider "pbkdf2" "state" { passphrase = "%s" }' "$(sops -d --extract '["tf_state_passphrase"]' {{.TF_DIR}}/encryption.sops.yaml)"
+    cmds:
+      - tofu init
+
+  terraform:plan:
+    desc: Plan Proxmox VM changes
+    dir: "{{.TF_DIR}}"
+    deps: [terraform:init]
+    env: *tf_encryption
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu plan -var-file={}'
+
+  terraform:apply:
+    desc: Provision Proxmox VMs
+    dir: "{{.TF_DIR}}"
+    deps: [terraform:init]
+    env: *tf_encryption
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu apply -var-file={} -auto-approve'
+
+  terraform:destroy:
+    desc: Destroy Proxmox VMs
+    dir: "{{.TF_DIR}}"
+    env: *tf_encryption
+    cmds:
+      - sops exec-file secrets.tfvars 'tofu destroy -var-file={} -auto-approve'
+
+
+
+  # ── Talos ─────────────────────────────────────────────────────────────────
+
+  talos:gensecret:
+    desc: Generate Talos cluster secrets (encrypt talsecret.yaml with sops before committing)
+    dir: "{{.TALOS_DIR}}"
+    cmds:
+      - talhelper gensecret > talsecret.yaml
+      - echo "Remember to encrypt talsecret.yaml with sops before committing"
+    status:
+      - test -f talsecret.yaml
+
+  talos:generate:
+    desc: Generate per-node Talos machine configs via talhelper
+    dir: "{{.TALOS_DIR}}"
+    deps: [talos:gensecret]
+    cmds:
+      - talhelper genconfig
+      # talhelper v3.x generates LinkConfig.routes without destination field which
+      # overrides machine.network.interfaces routes in Talos v1.12, breaking internet.
+      # Remove routes from LinkConfig so only machine.network.interfaces handles routing.
+      - python3 fix-routes.py
+
+  talos:apply-controlplane:
+    desc: Apply Talos config to all control plane nodes (parallel)
+    deps:
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-01 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-02 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: control-plane-03 }
+
+  talos:apply-workers:
+    desc: Apply Talos config to all worker nodes (parallel)
+    deps:
+      - task: talos:_apply-node
+        vars: { HOSTNAME: worker-01 }
+      - task: talos:_apply-node
+        vars: { HOSTNAME: worker-02 }
+
+  talos:_apply-node:
+    internal: true
+    vars:
+      STATIC_IP:
+        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+      # Proxmox node and VM ID for discovering the DHCP IP during maintenance mode
+      PVE_NODE:
+        sh: yq '.nodes[] | select(.hostname == "{{.HOSTNAME}}") | .controlPlane // "false"' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - |
+        STATIC_IP="{{.STATIC_IP}}"
+        HOSTNAME="{{.HOSTNAME}}"
+        CONFIG="{{.TALOS_DIR}}/clusterconfig/{{.CLUSTER_NAME}}-${HOSTNAME}.yaml"
+
+        echo "Waiting for ${HOSTNAME} to enter maintenance mode..."
+
+        # Try static IP first (works if OPNSense has DHCP reservation), then discover via Proxmox
+        until talosctl apply-config --insecure --nodes "$STATIC_IP" --file "$CONFIG" 2>/dev/null; do
+          sleep 5
+        done
+        echo "${HOSTNAME}: config applied at ${STATIC_IP}, Talos installing to disk..."
+
+  talos:bootstrap:
+    desc: Bootstrap the Talos cluster (run once, after first apply)
+    vars:
+      CP1_IP:
+        sh: yq '.nodes[] | select(.hostname == "control-plane-01") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - |
+        echo "Waiting for control-plane-01 ({{.CP1_IP}}) to be ready for bootstrap..."
+        until talosctl --talosconfig {{.TALOSCONFIG}} -n {{.CP1_IP}} version >/dev/null 2>&1; do
+          sleep 5
+        done
+        echo "Bootstrapping etcd..."
+        talosctl --talosconfig {{.TALOSCONFIG}} bootstrap --nodes {{.CP1_IP}}
+
+  talos:kubeconfig:
+    desc: Fetch kubeconfig and merge into ~/.kube/config
+    vars:
+      CP1_IP:
+        sh: yq '.nodes[] | select(.hostname == "control-plane-01") | .ipAddress' {{.TALOS_DIR}}/talconfig.yaml
+    cmds:
+      - talosctl --talosconfig {{.TALOSCONFIG}} kubeconfig --nodes {{.CP1_IP}} --merge
+
+  # Control planes are upgraded sequentially to preserve etcd quorum;
+  # workers run in parallel.
+  talos:upgrade:
+    desc: Upgrade Talos on all nodes (uses correct schematic from talconfig.yaml)
+    dir: "{{.TALOS_DIR}}"
+    cmds:
+      # talhelper gencommand upgrade generates the correct image URL with schematic per node
+      - talhelper gencommand upgrade --talosconfig clusterconfig/talosconfig | bash
+
+  talos:upgrade:node:
+    desc: Upgrade Talos on a single node (HOSTNAME=control-plane-01)
+    dir: "{{.TALOS_DIR}}"
+    cmds:
+      - talhelper gencommand upgrade --talosconfig clusterconfig/talosconfig | grep "{{.HOSTNAME}}" | bash

@@ -1,0 +1,111 @@
+clusterName: kuberseni
+# renovate: datasource=github-releases depName=siderolabs/talos
+talosVersion: v1.13.2
+# renovate: datasource=github-releases depName=siderolabs/kubernetes
+kubernetesVersion: v1.35.2
+
+# Use standard installer (ghcr.io) for fast initial install from ISO.
+# Extensions are added via A/B upgrade after cluster is up: task talos:upgrade
+talosImageURL: ghcr.io/siderolabs/installer
+
+# VIP shared across all control plane nodes
+endpoint: https://192.168.1.40:6443
+
+additionalApiServerCertSans:
+  - 192.168.1.40
+
+nodes:
+  - hostname: control-plane-01
+    ipAddress: 192.168.1.41
+    installDisk: /dev/sda # verify with: talosctl get disks --insecure --nodes 192.168.1.41
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          driver: virtio_net  # machine-type agnostic: works on i440fx (ens18) and q35 (enp*)
+        dhcp: false
+        addresses:
+          - 192.168.1.41/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        vip:
+          ip: 192.168.1.40
+
+  - hostname: control-plane-02
+    ipAddress: 192.168.1.42
+    installDisk: /dev/sda
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          driver: virtio_net
+        dhcp: false
+        addresses:
+          - 192.168.1.42/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        vip:
+          ip: 192.168.1.40
+
+  - hostname: control-plane-03
+    ipAddress: 192.168.1.43
+    installDisk: /dev/sda
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          driver: virtio_net
+        dhcp: false
+        addresses:
+          - 192.168.1.43/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+        vip:
+          ip: 192.168.1.40
+
+  - hostname: worker-01
+    ipAddress: 192.168.1.44
+    # Use diskSelector instead of installDisk to avoid /dev/sdX ordering issues.
+    # worker-01 has 50GB OS disk + 500GB Longhorn data disk.
+    installDiskSelector:
+      size: "<= 60GB"
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          driver: virtio_net
+        dhcp: false
+        addresses:
+          - 192.168.1.44/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+    patches:
+      - "@./patches/worker-gpu.yaml"
+
+  - hostname: worker-02
+    ipAddress: 192.168.1.45
+    installDisk: /dev/sda
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          driver: virtio_net
+        dhcp: false
+        addresses:
+          - 192.168.1.45/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.1.1
+    patches:
+      - "@./patches/worker-storage.yaml"
+
+controlPlane:
+  patches:
+    - "@./patches/all.yaml"
+    - "@./patches/controlplane.yaml"
+    - "@./patches/install-image-override.yaml"
+
+worker:
+  patches:
+    - "@./patches/all.yaml"
+    - "@./patches/worker-common.yaml"
+    - "@./patches/install-image-override.yaml"

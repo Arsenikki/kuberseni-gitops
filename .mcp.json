@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ha-mcp": {
+      "type": "stdio",
+      "command": "op",
+      "args": ["run", "--", "uvx", "ha-mcp"],
+      "env": {
+        "OP_ACCOUNT": "my.1password.eu",
+        "HOMEASSISTANT_URL": "https://homeassistant.arsenikki.casa",
+        "HOMEASSISTANT_TOKEN": "op://homelab/home-assistant/mcp_token"
+      }
+    }
+  }
+}

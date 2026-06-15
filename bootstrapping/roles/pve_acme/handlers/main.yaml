@@ -1,4 +1,0 @@
----
-- name: Order ACME certificates
-  ansible.builtin.command:
-    cmd: pvenode acme cert order
