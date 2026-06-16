@@ -27,4 +27,13 @@ data:
             Content-Type: application/json
           layout:
             chat_id: "128627881"
-            text: "⚠️ {{.Reason}}: {{.InvolvedObject.Namespace}}/{{.InvolvedObject.Name}}\n{{.Message}}"
+            text: |
+              🚨 {{.InvolvedObject.Name}}
+              ━━━━━━━━━━━━━━━━━
+              📍 Namespace:  {{.InvolvedObject.Namespace}}
+              ⚡ Reason:     {{.Reason}}
+              🖥 Node:       {{.Source.Host}}
+              🔁 Count:      {{.Count}}
+              🕐 Time:       {{.LastTimestamp.Format "02 Jan 15:04 UTC"}}
+
+              {{.Message}}
