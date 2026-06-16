@@ -1,0 +1,17 @@
+#!/bin/bash
+# Auto-merge origin/main into the current branch before pushing so PRs are never behind.
+
+git fetch origin main --quiet 2>/dev/null
+
+# Already up to date — nothing to do
+if git merge-base --is-ancestor origin/main HEAD 2>/dev/null; then
+    exit 0
+fi
+
+echo "↻ Branch is behind origin/main, merging..."
+if ! git merge origin/main --no-edit; then
+    echo "✗ Merge failed. Resolve conflicts and push again."
+    exit 1
+fi
+
+echo "✓ Merged origin/main."
