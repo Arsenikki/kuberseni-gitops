@@ -58,6 +58,11 @@ entries:
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
+        name: tautulli
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
         name: zigbee2mqtt
       required: true
 
@@ -78,6 +83,7 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "radarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "readarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "tautulli"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "zigbee2mqtt"]]
       config:
         authentik_host: https://authentik.arsenikki.casa
