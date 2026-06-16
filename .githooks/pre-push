@@ -1,0 +1,24 @@
+#!/bin/bash
+# Auto-rebase onto origin/main before pushing so PRs are never behind.
+# If rebase changes history, force-pushes with --force-with-lease and
+# aborts the original push (which would fail anyway after a rebase).
+
+# Prevent recursive invocation after the internal force-push below
+[ "${GIT_SKIP_REBASE_HOOK}" = "1" ] && exit 0
+
+git fetch origin main --quiet 2>/dev/null
+
+# Already up to date — nothing to do
+if git merge-base --is-ancestor origin/main HEAD 2>/dev/null; then
+    exit 0
+fi
+
+echo "↻ Branch is behind origin/main, rebasing..."
+if ! git rebase origin/main; then
+    echo "✗ Rebase failed. Resolve conflicts and push again."
+    exit 1
+fi
+
+echo "✓ Rebased. Force-pushing with --force-with-lease..."
+GIT_SKIP_REBASE_HOOK=1 git push --force-with-lease
+exit 1  # abort the original push — already handled above
