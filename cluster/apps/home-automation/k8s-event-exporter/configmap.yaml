@@ -18,17 +18,13 @@ data:
             - namespace: kube-system
             - namespace: kube-node-lease
           sink:
-            - ref: ntfy
+            - ref: telegram
     sinks:
-      - name: ntfy
+      - name: telegram
         webhook:
-          endpoint: http://ntfy.home-automation.svc.cluster.local
+          endpoint: "https://api.telegram.org/botTELEGRAM_TOKEN_PLACEHOLDER/sendMessage"
           headers:
             Content-Type: application/json
           layout:
-            topic: k8s-events
-            title: "{{.Reason}}: {{.InvolvedObject.Namespace}}/{{.InvolvedObject.Name}}"
-            message: "{{.Message}}"
-            priority: 3
-            tags:
-              - warning
+            chat_id: "128627881"
+            text: "⚠️ {{.Reason}}: {{.InvolvedObject.Namespace}}/{{.InvolvedObject.Name}}\n{{.Message}}"
