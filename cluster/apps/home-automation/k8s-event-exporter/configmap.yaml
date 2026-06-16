@@ -34,6 +34,6 @@ data:
               ⚡ Reason:     {{.Reason}}
               🖥 Node:       {{.Source.Host}}
               🔁 Count:      {{.Count}}
-              🕐 Time:       {{.LastTimestamp.Format "02 Jan 15:04 UTC"}}
+              🕐 Time:       {{if gt .Count 1}}{{.FirstTimestamp.Format "02 Jan 15:04"}} → {{.LastTimestamp.Format "15:04 UTC"}}{{else}}{{.LastTimestamp.Format "02 Jan 15:04 UTC"}}{{end}}
 
               {{.Message}}
