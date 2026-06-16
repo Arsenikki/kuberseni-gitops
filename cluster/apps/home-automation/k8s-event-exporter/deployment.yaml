@@ -19,11 +19,29 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+      initContainers:
+        - name: config-renderer
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - "sed 's|TELEGRAM_TOKEN_PLACEHOLDER|'\"$TELEGRAM_BOT_TOKEN\"'|g' /etc/event-exporter/config.yaml > /etc/event-exporter-rendered/config.yaml"
+          env:
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: casabot-credentials
+                  key: TELEGRAM_BOT_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /etc/event-exporter
+              readOnly: true
+            - name: config-rendered
+              mountPath: /etc/event-exporter-rendered
       containers:
         - name: k8s-event-exporter
           image: ghcr.io/resmoio/kubernetes-event-exporter:v1.7
           args:
-            - -conf=/etc/event-exporter/config.yaml
+            - -conf=/etc/event-exporter-rendered/config.yaml
           resources:
             requests:
               cpu: 20m
@@ -36,10 +54,12 @@ spec:
             capabilities:
               drop: [ALL]
           volumeMounts:
-            - name: config
-              mountPath: /etc/event-exporter
+            - name: config-rendered
+              mountPath: /etc/event-exporter-rendered
               readOnly: true
       volumes:
         - name: config
           configMap:
             name: k8s-event-exporter-config
+        - name: config-rendered
+          emptyDir: {}
