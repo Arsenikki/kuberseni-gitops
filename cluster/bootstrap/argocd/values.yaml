@@ -45,51 +45,24 @@ notifications:
     create: true
     items: {}
   notifiers:
-    "service.webhook.ntfy": |
-      url: http://ntfy.home-automation.svc.cluster.local
-      headers:
-        - name: Content-Type
-          value: application/json
+    "service.telegram": |
+      token: $argocd-casabot:telegram-token
   templates:
     "template.app-sync-succeeded": |
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Synced: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} synced successfully.",
-              "tags": ["white_check_mark"],
-              "priority": 2
-            }
+      telegram:
+        message: |
+          ✅ *Synced:* {{.app.metadata.name}}
+          {{.app.metadata.name}} synced successfully.
     "template.app-sync-failed": |
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Sync Failed: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} sync failed.\n\n{{.app.status.operationState.message}}",
-              "tags": ["x"],
-              "priority": 4
-            }
+      telegram:
+        message: |
+          ❌ *Sync Failed:* {{.app.metadata.name}}
+          {{.app.status.operationState.message}}
     "template.app-health-degraded": |
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Degraded: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} health is Degraded.",
-              "tags": ["warning"],
-              "priority": 4
-            }
+      telegram:
+        message: |
+          ⚠️ *Degraded:* {{.app.metadata.name}}
+          {{.app.metadata.name}} health is Degraded.
   triggers:
     "trigger.on-sync-succeeded": |
       - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
@@ -102,10 +75,30 @@ notifications:
         send: [app-health-degraded]
   subscriptions:
     - recipients:
-        - webhook:ntfy
+        - telegram:128627881
       triggers:
         - on-sync-failed
         - on-health-degraded
+
+extraObjects:
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-casabot
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: argocd-casabot
+        creationPolicy: Owner
+      data:
+        - secretKey: telegram-token
+          remoteRef:
+            key: "CasaBot (Telegram)"
+            property: credential
 
 # Run ArgoCD components on control-plane nodes
 controller:
