@@ -6,27 +6,34 @@
     ":disableRateLimiting",
     ":dependencyDashboard",
     ":semanticCommits",
-    ":automergeBranch"
+    "github-actions:pinDigests"
   ],
-  "dependencyDashboard": true,
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],
-  "rebaseWhen": "conflicted",
-  "schedule": ["on saturday"],
+  "schedule": ["at any time"],
+  "prConcurrentLimit": 10,
+  "platformAutomerge": true,
+  "osvVulnerabilityAlerts": true,
   // ArgoCD Application manifests reference Helm charts (chart + targetRevision)
   "argocd": {
-    "fileMatch": [
-      "(^|/)cluster/argocd/apps/.+\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)cluster/argocd/apps/.+\\.ya?ml$/"
     ]
   },
+  // Scoped to actual values files to avoid false matches on ArgoCD/namespace manifests
   "helm-values": {
-    "fileMatch": [
-      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
+    "managerFilePatterns": [
+      "/(^|/)cluster/.+/values\\.ya?ml(\\.j2)?$/"
     ]
   },
   "kubernetes": {
-    "fileMatch": [
-      "(^|/)cluster/.+\\.ya?ml(\\.j2)?$"
+    "managerFilePatterns": [
+      "/(^|/)cluster/.+\\.ya?ml(\\.j2)?$/"
+    ]
+  },
+  "mise": {
+    "managerFilePatterns": [
+      "/(^|/)\\.mise\\.toml$/"
     ]
   },
   // commit message topics
@@ -41,8 +48,21 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
-      "ignoreTests": true,
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    // stability buffer — avoid landing a bad release on Saturday morning
+    {
+      "description": ["Wait 3 days before applying minor/patch updates"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days"
+    },
+    // group media stack patches to keep the PR count down
+    {
+      "description": ["Group media app patch/digest updates"],
+      "matchFileNames": ["cluster/apps/media/**"],
+      "matchUpdateTypes": ["patch", "digest"],
+      "groupName": "media app patches",
+      "addLabels": ["group/media"]
     },
     // commit message topics
     {
@@ -145,6 +165,23 @@
       "semanticCommitType": "fix",
       "semanticCommitScope": "github-action"
     },
+    {
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["major"],
+      "commitMessagePrefix": "feat(mise)!: "
+    },
+    {
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["minor"],
+      "semanticCommitType": "feat",
+      "semanticCommitScope": "mise"
+    },
+    {
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["patch"],
+      "semanticCommitType": "fix",
+      "semanticCommitScope": "mise"
+    },
     // labels
     {
       "matchUpdateTypes": ["major"],
@@ -177,6 +214,15 @@
     {
       "matchManagers": ["github-actions"],
       "addLabels": ["renovate/github-action"]
+    },
+    {
+      "matchManagers": ["mise"],
+      "addLabels": ["renovate/mise"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["prek.toml"],
+      "addLabels": ["renovate/pre-commit"]
     }
   ],
   // custom managers
@@ -184,9 +230,9 @@
     {
       "customType": "regex",
       "description": ["Process custom dependencies"],
-      "fileMatch": [
-        "(^|/)cluster/.+\\.ya?ml(\\.j2)?$",
-        "(^|/)infra/.+\\.ya?ml(\\.j2)?$"
+      "managerFilePatterns": [
+        "/(^|/)cluster/.+\\.ya?ml(\\.j2)?$/",
+        "/(^|/)infra/.+\\.ya?ml(\\.j2)?$/"
       ],
       "matchStrings": [
         // # renovate: datasource=github-releases depName=siderolabs/talos
@@ -197,6 +243,15 @@
         "(?m:# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n.+?\/(?<currentValue>(v|\\d)[^\/]+)\\S+$)"
       ],
       "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}github-releases{{/if}}"
+    },
+    {
+      "customType": "regex",
+      "description": ["Track prek.toml hook revisions"],
+      "managerFilePatterns": ["/(^|/)prek\\.toml$/"],
+      "matchStrings": [
+        "repo = \"https://github.com/(?<depName>[^\"]+)\"\\nrev = \"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "github-tags"
     }
   ]
 }
