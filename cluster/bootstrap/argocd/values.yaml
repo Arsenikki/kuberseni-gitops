@@ -50,8 +50,14 @@ notifications:
       headers:
         - name: Content-Type
           value: application/json
+    "service.telegram": |
+      token: $argocd-casabot:telegram-token
   templates:
     "template.app-sync-succeeded": |
+      telegram:
+        message: |
+          ✅ *Synced:* {{.app.metadata.name}}
+          {{.app.metadata.name}} synced successfully.
       webhook:
         ntfy:
           method: POST
@@ -65,6 +71,10 @@ notifications:
               "priority": 2
             }
     "template.app-sync-failed": |
+      telegram:
+        message: |
+          ❌ *Sync Failed:* {{.app.metadata.name}}
+          {{.app.status.operationState.message}}
       webhook:
         ntfy:
           method: POST
@@ -78,6 +88,10 @@ notifications:
               "priority": 4
             }
     "template.app-health-degraded": |
+      telegram:
+        message: |
+          ⚠️ *Degraded:* {{.app.metadata.name}}
+          {{.app.metadata.name}} health is Degraded.
       webhook:
         ntfy:
           method: POST
@@ -103,9 +117,30 @@ notifications:
   subscriptions:
     - recipients:
         - webhook:ntfy
+        - telegram:128627881
       triggers:
         - on-sync-failed
         - on-health-degraded
+
+extraObjects:
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-casabot
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: argocd-casabot
+        creationPolicy: Owner
+      data:
+        - secretKey: telegram-token
+          remoteRef:
+            key: "CasaBot (Telegram)"
+            property: credential
 
 # Run ArgoCD components on control-plane nodes
 controller:
