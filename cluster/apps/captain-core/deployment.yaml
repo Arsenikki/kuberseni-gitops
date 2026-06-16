@@ -85,6 +85,10 @@ spec:
                   name: captain-core-credentials
                   key: gcal-refresh-token
                   optional: true
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
           resources:
             requests:
               cpu: 100m
