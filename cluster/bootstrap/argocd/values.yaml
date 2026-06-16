@@ -45,11 +45,6 @@ notifications:
     create: true
     items: {}
   notifiers:
-    "service.webhook.ntfy": |
-      url: http://ntfy.home-automation.svc.cluster.local
-      headers:
-        - name: Content-Type
-          value: application/json
     "service.telegram": |
       token: $argocd-casabot:telegram-token
   templates:
@@ -58,52 +53,16 @@ notifications:
         message: |
           ✅ *Synced:* {{.app.metadata.name}}
           {{.app.metadata.name}} synced successfully.
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Synced: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} synced successfully.",
-              "tags": ["white_check_mark"],
-              "priority": 2
-            }
     "template.app-sync-failed": |
       telegram:
         message: |
           ❌ *Sync Failed:* {{.app.metadata.name}}
           {{.app.status.operationState.message}}
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Sync Failed: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} sync failed.\n\n{{.app.status.operationState.message}}",
-              "tags": ["x"],
-              "priority": 4
-            }
     "template.app-health-degraded": |
       telegram:
         message: |
           ⚠️ *Degraded:* {{.app.metadata.name}}
           {{.app.metadata.name}} health is Degraded.
-      webhook:
-        ntfy:
-          method: POST
-          path: /
-          body: |
-            {
-              "topic": "argocd",
-              "title": "Degraded: {{.app.metadata.name}}",
-              "message": "{{.app.metadata.name}} health is Degraded.",
-              "tags": ["warning"],
-              "priority": 4
-            }
   triggers:
     "trigger.on-sync-succeeded": |
       - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
@@ -116,7 +75,6 @@ notifications:
         send: [app-health-degraded]
   subscriptions:
     - recipients:
-        - webhook:ntfy
         - telegram:128627881
       triggers:
         - on-sync-failed
