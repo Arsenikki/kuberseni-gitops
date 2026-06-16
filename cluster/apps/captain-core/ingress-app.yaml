@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: captain-core-app
+  namespace: captain-core
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: captain-core.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: captain-core-app
+                port:
+                  number: 8000
+  tls:
+    - hosts:
+        - captain-core.arsenikki.casa
+      secretName: captain-core-app-tls
