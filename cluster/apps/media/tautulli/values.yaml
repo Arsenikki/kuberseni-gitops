@@ -1,0 +1,47 @@
+---
+image:
+  repository: ghcr.io/home-operations/tautulli
+  tag: 2.17.1
+
+env:
+  TZ: Europe/London
+
+service:
+  main:
+    ports:
+      http:
+        port: 8181
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: tautulli.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: tautulli-tls
+        hosts:
+          - tautulli.arsenikki.casa
+
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: OnRootMismatch
+
+persistence:
+  config:
+    enabled: true
+    existingClaim: tautulli-config
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
