@@ -24,7 +24,7 @@ entries:
           authentik_flows.flow,
           [slug, "default-provider-invalidation-flow"],
         ]
-      mode: proxy
+      mode: forward_single
       internal_host: http://tautulli.media.svc.cluster.local:8181
       external_host: https://tautulli.arsenikki.casa
       access_token_validity: hours=1
