@@ -8,7 +8,7 @@ data:
   config.yaml: |
     logLevel: error
     logFormat: json
-    maxEventAgeSeconds: 10
+    maxEventAgeSeconds: 30
     route:
       routes:
         - match:
@@ -27,4 +27,13 @@ data:
             Content-Type: application/json
           layout:
             chat_id: "128627881"
-            text: "⚠️ {{.Reason}}: {{.InvolvedObject.Namespace}}/{{.InvolvedObject.Name}}\n{{.Message}}"
+            text: |
+              🚨 {{.InvolvedObject.Name}}
+              ━━━━━━━━━━━━━━━━━
+              📍 Namespace:  {{.InvolvedObject.Namespace}}
+              ⚡ Reason:     {{.Reason}}
+              🖥 Node:       {{.Source.Host}}
+              🔁 Count:      {{.Count}}
+              🕐 Time:       {{if gt .Count 1}}{{.FirstTimestamp.Format "02 Jan 15:04"}} → {{.LastTimestamp.Format "15:04 UTC"}}{{else}}{{.LastTimestamp.Format "02 Jan 15:04 UTC"}}{{end}}
+
+              {{.Message}}
