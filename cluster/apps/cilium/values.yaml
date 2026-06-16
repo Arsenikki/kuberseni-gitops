@@ -28,6 +28,7 @@ loadBalancer:
 
 bpf:
   hostLegacyRouting: false
+  masquerade: true
 
 l2announcements:
   enabled: true
