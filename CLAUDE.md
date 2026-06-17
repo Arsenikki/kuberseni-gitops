@@ -39,5 +39,5 @@ Repo: `github.com/Arsenikki/kuberseni-gitops`.
 
 ## Conventions / gotchas
 - ArgoCD reconciles from git — **don't fix drift out-of-band; commit it** (selfHeal reverts manual changes). For a maintenance stop, patch `spec.syncPolicy.automated.selfHeal=false` on the Application first.
-- Nodes use `deviceSelector: {driver: virtio_net}` (interface is `ens18`/`ens+`); Talos v1.13.2, k8s managed via talhelper.
+- Nodes use `deviceSelector: {driver: virtio_net}` (interface is `ens18`/`ens+`); k8s managed via talhelper (version in `infra/talos/talconfig.yaml`).
 - **1Password**: personal account `my.1password.eu` has the **`homelab`** vault. `op` returns empty inside `$(...)` substitution (TTY detection) — fetch by **item ID** redirected to a temp file, then read it.
