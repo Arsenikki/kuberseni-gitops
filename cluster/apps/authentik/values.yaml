@@ -23,8 +23,6 @@ blueprints:
     - authentik-blueprints
 
 server:
-  podAnnotations:
-    configmap.reloader.stakater.com/reload: "authentik-blueprints"
   ingress:
     enabled: true
     hosts:
