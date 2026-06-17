@@ -12,6 +12,7 @@ defaultSettings:
   defaultDataPath: /var/mnt/longhorn-data
   defaultReplicaCount: 2
   replicaSoftAntiAffinity: true
+  replicaAutoBalance: best-effort
   # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
   # can mount Longhorn volumes (data still lives on worker disks)
   taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
