@@ -23,6 +23,8 @@ blueprints:
     - authentik-blueprints
 
 server:
+  podAnnotations:
+    configmap.reloader.stakater.com/reload: "authentik-blueprints"
   ingress:
     enabled: true
     hosts:
@@ -34,6 +36,10 @@ server:
       - secretName: authentik-tls
         hosts:
           - authentik.arsenikki.casa
+
+worker:
+  podAnnotations:
+    configmap.reloader.stakater.com/reload: "authentik-blueprints"
 
 postgresql:
   enabled: true
