@@ -9,6 +9,8 @@ data:
     logLevel: error
     logFormat: json
     maxEventAgeSeconds: 120
+    kubeQPS: 50
+    kubeBurst: 200
     route:
       routes:
         - match:
