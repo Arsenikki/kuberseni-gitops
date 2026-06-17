@@ -26,7 +26,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/antonbabenko/pre-commit-terraform"
-rev = "v1.96.2"
+rev = "v1.106.0"
 hooks = [
     # Exclude SOPS-encrypted files to prevent breaking encryption metadata
     { id = "terraform_fmt", exclude = "secrets\\.tfvars" },
