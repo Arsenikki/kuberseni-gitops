@@ -8,7 +8,7 @@ data:
   config.yaml: |
     logLevel: error
     logFormat: json
-    maxEventAgeSeconds: 120
+    maxEventAgeSeconds: 30
     route:
       routes:
         - match:
