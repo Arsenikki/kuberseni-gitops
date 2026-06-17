@@ -10,7 +10,7 @@ machine:
       - name: i915
   kubelet:
     extraArgs:
-      node-labels: intel.feature.node.kubernetes.io/gpu=true,node.longhorn.io/create-default-disk=true
+      node-labels: intel.feature.node.kubernetes.io/gpu=true
   disks:
     - device: /dev/sdb
       partitions:

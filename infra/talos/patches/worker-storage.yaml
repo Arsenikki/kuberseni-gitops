@@ -8,4 +8,4 @@ machine:
         - mountpoint: /var/mnt/longhorn-data
   kubelet:
     extraArgs:
-      node-labels: node.kubernetes.io/storage-node=true,node.longhorn.io/create-default-disk=true
+      node-labels: node.kubernetes.io/storage-node=true
