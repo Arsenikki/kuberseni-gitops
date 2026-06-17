@@ -16,10 +16,10 @@ data:
         - match:
             - type: Warning
               reason: "BackOff|OOMKilling|Failed|FailedMount|FailedScheduling|Evicted|NodeNotReady|Killing"
+              receiver: telegram
           drop:
             - namespace: kube-system
             - namespace: kube-node-lease
-          receiver: telegram
     receivers:
       - name: telegram
         webhook:
