@@ -19,9 +19,8 @@ data:
           drop:
             - namespace: kube-system
             - namespace: kube-node-lease
-          sink:
-            - ref: telegram
-    sinks:
+          receiver: telegram
+    receivers:
       - name: telegram
         webhook:
           endpoint: "https://api.telegram.org/botTELEGRAM_TOKEN_PLACEHOLDER/sendMessage"
