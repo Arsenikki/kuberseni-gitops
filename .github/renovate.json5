@@ -6,7 +6,6 @@
     ":disableRateLimiting",
     ":dependencyDashboard",
     ":semanticCommits",
-    "github-actions:pinDigests"
   ],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],
@@ -48,7 +47,8 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
+      "pinDigests": true,
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     // stability buffer — avoid landing a bad release on Saturday morning
     {
