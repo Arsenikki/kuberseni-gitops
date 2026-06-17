@@ -1,7 +1,7 @@
 # CLAUDE.md — kuberseni-gitops
 
 Homelab GitOps: **Talos Linux** Kubernetes on **Proxmox**, managed by **ArgoCD**.
-Repo: `github.com/Arsenikki/kuberseni-gitops`. Migrated from k3s+Flux → Talos+ArgoCD.
+Repo: `github.com/Arsenikki/kuberseni-gitops`.
 
 > Living doc — add hard-won, non-obvious facts here so they don't need re-discovery.
 > Operational gotchas also live in Claude's memory (`MEMORY.md`).
@@ -40,4 +40,4 @@ Repo: `github.com/Arsenikki/kuberseni-gitops`. Migrated from k3s+Flux → Talos+
 ## Conventions / gotchas
 - ArgoCD reconciles from git — **don't fix drift out-of-band; commit it** (selfHeal reverts manual changes). For a maintenance stop, patch `spec.syncPolicy.automated.selfHeal=false` on the Application first.
 - Nodes use `deviceSelector: {driver: virtio_net}` (interface is `ens18`/`ens+`); Talos v1.13.2, k8s managed via talhelper.
-- **1Password**: two `op` accounts — work `automata.1password.eu`, personal `my.1password.eu` (has the **`homelab`** vault). `op` returns empty inside `$(...)` substitution (TTY detection) — fetch by **item ID** redirected to a temp file, then read it.
+- **1Password**: personal account `my.1password.eu` has the **`homelab`** vault. `op` returns empty inside `$(...)` substitution (TTY detection) — fetch by **item ID** redirected to a temp file, then read it.
