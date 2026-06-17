@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-event-exporter-config
+  namespace: home-automation
+data:
+  config.yaml: |
+    logLevel: error
+    logFormat: json
+    maxEventAgeSeconds: 120
+    kubeQPS: 50
+    kubeBurst: 200
+    route:
+      routes:
+        - match:
+            - type: Warning
+              reason: "BackOff|OOMKilling|Failed|FailedMount|FailedScheduling|Evicted|NodeNotReady|Killing"
+              receiver: telegram
+          drop:
+            - namespace: kube-system
+            - namespace: kube-node-lease
+    receivers:
+      - name: telegram
+        webhook:
+          endpoint: "https://api.telegram.org/botTELEGRAM_TOKEN_PLACEHOLDER/sendMessage"
+          headers:
+            Content-Type: application/json
+          layout:
+            chat_id: "128627881"
+            text: |
+              🚨 {{.InvolvedObject.Name}}
+              ━━━━━━━━━━━━━━━━━
+              📍 Namespace:  {{.InvolvedObject.Namespace}}
+              ⚡ Reason:     {{.Reason}}
+              🖥 Node:       {{.Source.Host}}
+              🔁 Count:      {{.Count}}
+              🕐 Time:       {{if gt .Count 1}}{{.FirstTimestamp.Format "02 Jan 15:04"}} → {{.LastTimestamp.Format "15:04 UTC"}}{{else}}{{.LastTimestamp.Format "02 Jan 15:04 UTC"}}{{end}}
+
+              {{.Message}}

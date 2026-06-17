@@ -15,6 +15,21 @@ dnsProxy:
 devices: "ens+"
 directRoutingDevice: "ens18"
 
+encryption:
+  enabled: true
+  type: wireguard
+  nodeEncryption: true
+
+bandwidthManager:
+  enabled: true
+
+loadBalancer:
+  algorithm: maglev
+
+bpf:
+  hostLegacyRouting: false
+  masquerade: true
+
 l2announcements:
   enabled: true
   # Values are high due to https://github.com/cilium/cilium/issues/26586

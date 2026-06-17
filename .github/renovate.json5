@@ -5,7 +5,7 @@
     "docker:enableMajor",
     ":disableRateLimiting",
     ":dependencyDashboard",
-    ":semanticCommits",
+    ":semanticCommits"
   ],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],

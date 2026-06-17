@@ -31,6 +31,75 @@ server:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists
 
+notifications:
+  enabled: true
+  argocdUrl: https://argocd.arsenikki.casa
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  cm:
+    create: true
+  secret:
+    create: true
+    items: {}
+  notifiers:
+    "service.telegram": |
+      token: $argocd-casabot:telegram-token
+  templates:
+    "template.app-sync-succeeded": |
+      telegram:
+        message: |
+          ✅ *Synced:* {{.app.metadata.name}}
+          {{.app.metadata.name}} synced successfully.
+    "template.app-sync-failed": |
+      telegram:
+        message: |
+          ❌ *Sync Failed:* {{.app.metadata.name}}
+          {{.app.status.operationState.message}}
+    "template.app-health-degraded": |
+      telegram:
+        message: |
+          ⚠️ *Degraded:* {{.app.metadata.name}}
+          {{.app.metadata.name}} health is Degraded.
+  triggers:
+    "trigger.on-sync-succeeded": |
+      - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+        send: [app-sync-succeeded]
+    "trigger.on-sync-failed": |
+      - when: app.status.operationState.phase in ['Error', 'Failed']
+        send: [app-sync-failed]
+    "trigger.on-health-degraded": |
+      - when: app.status.health.status == 'Degraded'
+        send: [app-health-degraded]
+  subscriptions:
+    - recipients:
+        - telegram:128627881
+      triggers:
+        - on-sync-failed
+        - on-health-degraded
+
+extraObjects:
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-casabot
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: argocd-casabot
+        creationPolicy: Owner
+      data:
+        - secretKey: telegram-token
+          remoteRef:
+            key: "CasaBot (Telegram)"
+            property: credential
+
 # Run ArgoCD components on control-plane nodes
 controller:
   nodeSelector:
