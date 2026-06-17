@@ -29,7 +29,7 @@ spec:
         - operator: Exists
       containers:
         - name: bridge
-          image: python:3.12-slim
+          image: python:3.14-slim
           command: ["/bin/sh", "-c"]
           args:
             - "pip install --quiet --root-user-action=ignore aioairctrl==0.3.1 'paho-mqtt<2' && exec python -u /app/bridge.py"
