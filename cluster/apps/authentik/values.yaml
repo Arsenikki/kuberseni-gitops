@@ -35,6 +35,10 @@ server:
         hosts:
           - authentik.arsenikki.casa
 
+worker:
+  podAnnotations:
+    configmap.reloader.stakater.com/reload: "authentik-blueprints"
+
 postgresql:
   enabled: true
   auth:
