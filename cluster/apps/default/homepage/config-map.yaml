@@ -197,6 +197,7 @@ data:
     headerStyle: boxed
     statusStyle: dot
     hideVersion: true
+    allowed_hosts: home.arsenikki.casa
     layout:
       Infrastructure:
         style: row
