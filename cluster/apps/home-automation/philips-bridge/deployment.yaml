@@ -29,6 +29,7 @@ spec:
         - operator: Exists
       containers:
         - name: bridge
+          # renovate: ignore
           image: python:3.12-slim
           command: ["/bin/sh", "-c"]
           args:

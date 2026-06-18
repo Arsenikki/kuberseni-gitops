@@ -4,11 +4,11 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "~> 0.99"
+      version = "~> 0.109"
     }
     opnsense = {
       source  = "browningluke/opnsense"
-      version = "~> 0.22"
+      version = "~> 0.23"
     }
   }
 
