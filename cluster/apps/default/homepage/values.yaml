@@ -10,6 +10,9 @@ controllers:
           tag: v1.13.2
         env:
           TZ: "Europe/London"
+        envFrom:
+          - secretRef:
+              name: homepage-secrets
         resources:
           requests:
             cpu: 15m
