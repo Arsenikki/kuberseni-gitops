@@ -10,6 +10,7 @@ controllers:
           tag: v1.13.2
         env:
           TZ: "Europe/London"
+          HOMEPAGE_ALLOWED_HOSTS: "home.arsenikki.casa"
         envFrom:
           - secretRef:
               name: homepage-secrets
