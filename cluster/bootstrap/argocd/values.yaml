@@ -4,7 +4,10 @@ global:
 
 configs:
   params:
-    server.insecure: false
+    # Traefik terminates TLS at the edge and proxies HTTP to the backend.
+    # insecure:false made argocd-server serve TLS on :443; Traefik spoke
+    # HTTP to it -> 500. Serve plaintext in-cluster instead.
+    server.insecure: true
   cm:
     admin.enabled: true
     # Allow ArgoCD to manage itself (app-of-apps)
