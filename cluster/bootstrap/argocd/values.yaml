@@ -14,6 +14,11 @@ configs:
     application.resourceTrackingMethod: annotation
     # Poll git every 60 seconds (default is 3 minutes)
     timeout.reconciliation: 60s
+    # Read-only API-key account for the Home Assistant dashboard widget
+    accounts.dashboard: apiKey
+  rbac:
+    policy.csv: |
+      g, dashboard, role:readonly
 
 server:
   ingress:
