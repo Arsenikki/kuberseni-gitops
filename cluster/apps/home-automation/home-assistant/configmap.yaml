@@ -98,6 +98,88 @@ data:
           - hot
           - violet
 
+    # Homelab infra reachability checks (up/down). Internal svc URLs bypass
+    # Authentik; LAN hosts use verify_ssl:false for self-signed certs.
+    binary_sensor:
+      - platform: rest
+        name: "ArgoCD"
+        unique_id: infra_argocd
+        resource: "https://argocd-server.argocd.svc:443/healthz"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Authentik"
+        unique_id: infra_authentik
+        resource: "http://authentik-server.authentik.svc/-/health/live/"
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Longhorn"
+        unique_id: infra_longhorn
+        resource: "http://longhorn-frontend.longhorn-system.svc/"
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Plex Server"
+        unique_id: infra_plex
+        resource: "http://plex.media.svc.cluster.local:32400/identity"
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "OPNSense"
+        unique_id: infra_opnsense
+        resource: "https://192.168.1.1"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "TrueNAS"
+        unique_id: infra_truenas
+        resource: "https://192.168.1.2"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Proxmox Router"
+        unique_id: infra_proxmox_router
+        resource: "https://192.168.1.10:8006"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Proxmox MiniPC"
+        unique_id: infra_proxmox_minipc
+        resource: "https://192.168.1.11:8006"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+      - platform: rest
+        name: "Proxmox NAS"
+        unique_id: infra_proxmox_nas
+        resource: "https://192.168.1.12:8006"
+        verify_ssl: false
+        device_class: connectivity
+        value_template: "{{ true }}"
+        timeout: 10
+        scan_interval: 60
+
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
     automation: !include automations.yaml
