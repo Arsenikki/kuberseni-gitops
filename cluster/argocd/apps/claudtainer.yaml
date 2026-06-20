@@ -1,0 +1,30 @@
+---
+# claudtainer-homelab — in-cluster AI investigation bot (Telegram + Alertmanager).
+# Source lives in a SEPARATE (private) repo; rendered with kustomize (path ".").
+# Wave 6 — after ESO/1Password (secrets), Longhorn (NATS PVC) and the monitoring
+# stack (the grafana/proxmox specialists query Mimir/Loki).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: claudtainer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/claudtainer-homelab
+    targetRevision: main
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: claudtainer
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

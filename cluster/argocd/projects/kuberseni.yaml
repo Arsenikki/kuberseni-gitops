@@ -10,6 +10,7 @@ spec:
   description: Kuberseni home cluster
   sourceRepos:
     - https://github.com/Arsenikki/kuberseni-gitops
+    - https://github.com/Arsenikki/claudtainer-homelab
     - https://helm.cilium.io
     - https://charts.jetstack.io
     - https://charts.longhorn.io

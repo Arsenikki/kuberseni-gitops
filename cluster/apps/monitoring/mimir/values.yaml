@@ -127,6 +127,16 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
+      routes:
+        # Also fan warning/critical alerts to claudtainer, which auto-investigates
+        # and reports findings to Telegram. continue:true keeps the CasaBot notice.
+        - receiver: claudtainer
+          continue: true
+          matchers:
+            - severity =~ "warning|critical"
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
     receivers:
       - name: telegram
         telegram_configs:
@@ -134,6 +144,10 @@ alertmanager:
             chat_id: 128627881
             parse_mode: HTML
             send_resolved: true
+      - name: claudtainer
+        webhook_configs:
+          - url: http://claudtainer-gateway.claudtainer.svc.cluster.local:8080/alertmanager/webhook
+            send_resolved: false
   extraVolumes:
     - name: telegram-secret
       secret:
