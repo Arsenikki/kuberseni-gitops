@@ -9,6 +9,10 @@ image:
 env:
   TZ: "Europe/London"
 
+envFrom:
+  - secretRef:
+      name: argocd-dashboard
+
 hostNetwork: true
 
 service:

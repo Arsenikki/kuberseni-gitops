@@ -180,6 +180,23 @@ data:
         timeout: 10
         scan_interval: 60
 
+    # ArgoCD applications (read-only) for the dashboard apps table.
+    # Token injected via ARGOCD_BEARER env (ESO -> argocd-dashboard secret).
+    # fields= keeps the payload small enough for an HA attribute.
+    rest:
+      - resource: "http://argocd-server.argocd.svc/api/v1/applications?fields=items.metadata.name,items.status.sync.status,items.status.health.status"
+        headers:
+          Authorization: !env_var ARGOCD_BEARER
+        scan_interval: 60
+        timeout: 15
+        sensor:
+          - name: "ArgoCD Apps"
+            unique_id: argocd_apps
+            value_template: "{{ value_json.items | length }}"
+            unit_of_measurement: "apps"
+            json_attributes:
+              - items
+
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
     automation: !include automations.yaml
