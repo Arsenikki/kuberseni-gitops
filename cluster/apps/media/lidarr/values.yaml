@@ -6,7 +6,7 @@ image:
 env:
   TZ: Europe/London
   LIDARR__AUTH__METHOD: External
-  LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  LIDARR__AUTH__REQUIRED: Enabled
   LIDARR__LOG__LEVEL: info
 service:
   main:

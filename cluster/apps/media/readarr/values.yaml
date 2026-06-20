@@ -6,7 +6,7 @@ image:
 env:
   TZ: Europe/London
   READARR__AUTH__METHOD: External
-  READARR__AUTH__REQUIRED: DisabledForLocalAddresses
+  READARR__AUTH__REQUIRED: Enabled
   READARR__LOG__LEVEL: info
 service:
   main:

@@ -5,6 +5,8 @@ image:
 
 env:
   TZ: "Europe/London"
+  PROWLARR__AUTH__METHOD: External
+  PROWLARR__AUTH__REQUIRED: Enabled
 
 service:
   main:

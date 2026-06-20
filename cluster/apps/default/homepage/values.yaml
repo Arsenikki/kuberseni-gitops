@@ -34,6 +34,7 @@ ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
       external-dns/is-public: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
     hosts:
       - host: &host home.arsenikki.casa
         paths:
