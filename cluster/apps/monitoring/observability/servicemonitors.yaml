@@ -1,0 +1,98 @@
+---
+# ServiceMonitors for apps that already expose Prometheus metrics. Alloy
+# (prometheusOperatorObjects feature) discovers these and remote_writes to Mimir.
+#
+# NOTE: selectors/port names are per standard chart conventions — verify against the
+# live Services after first deploy (`kubectl get svc -n <ns> --show-labels` and check
+# the Prometheus/Alloy targets page). A non-matching ServiceMonitor scrapes nothing
+# (harmless), it does not error.
+
+# Traefik — metrics entrypoint on :9100 (enabled in cluster/apps/traefik/values.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: traefik
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [traefik]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  endpoints:
+    - port: metrics
+      scheme: http
+      interval: 30s
+---
+# ArgoCD — metrics services (argocd-metrics, argocd-server-metrics, argocd-repo-server)
+# expose a `metrics` port by default.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [argocd]
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/part-of
+        operator: In
+        values: [argocd]
+  endpoints:
+    - port: metrics
+      scheme: http
+      interval: 30s
+---
+# cert-manager — metrics on :9402 (service port name tcp-prometheus-servlet).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cert-manager
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [cert-manager]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/component: controller
+  endpoints:
+    - port: tcp-prometheus-servlet
+      scheme: http
+      interval: 30s
+---
+# Longhorn — longhorn-backend service exposes manager metrics on :9500.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: longhorn
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [longhorn-system]
+  selector:
+    matchLabels:
+      app: longhorn-manager
+  endpoints:
+    - port: manager
+      scheme: http
+      interval: 30s
+---
+# Cilium Hubble — metrics already enabled in cluster/apps/cilium/values.yaml (:9965).
+# (cilium-agent/operator core metrics need prometheus.enabled in cilium values — follow-up.)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hubble
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [kube-system]
+  selector:
+    matchLabels:
+      k8s-app: hubble
+  endpoints:
+    - port: hubble-metrics
+      scheme: http
+      interval: 30s

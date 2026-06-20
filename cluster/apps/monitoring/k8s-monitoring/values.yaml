@@ -1,0 +1,96 @@
+---
+# Grafana Kubernetes Monitoring v4 — Alloy collection layer.
+# Scrapes cluster + control-plane + ServiceMonitors → remote_write to Mimir;
+# ships pod logs + cluster events → Loki; syncs PrometheusRule CRDs → Mimir ruler.
+
+cluster:
+  name: kuberseni
+
+# Destinations are a MAP keyed by name (referenced by the features below).
+destinations:
+  mimir:
+    type: prometheus
+    url: http://mimir-gateway.monitoring.svc.cluster.local/api/v1/push
+    tenantId: homelab # → X-Scope-OrgID (matches Mimir no_auth_tenant)
+  loki:
+    type: loki
+    url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+    tenantId: homelab
+
+# ---- Metrics: cluster + control plane ----
+clusterMetrics:
+  enabled: true
+  collector: alloy-metrics
+  destinations: [mimir]
+  # Talos exposes these on 0.0.0.0 via the talconfig patch (controllerManager/scheduler).
+  kubeControllerManager:
+    enabled: true
+    port: 10257
+  kubeScheduler:
+    enabled: true
+    port: 10259
+  # Cilium runs kubeProxyReplacement=true → there is NO kube-proxy to scrape.
+  kubeProxy:
+    enabled: false
+  # etcd is NOT supported by this chart — scraped via ServiceMonitor+Endpoints
+  # in cluster/apps/monitoring/observability/ instead.
+
+# ---- Host metrics (node-exporter) ----
+hostMetrics:
+  enabled: true
+  collector: alloy-metrics
+  destinations: [mimir]
+
+# ---- Logs + events ----
+podLogsViaLoki:
+  enabled: true
+  collector: alloy-logs
+  destinations: [loki]
+clusterEvents:
+  enabled: true
+  collector: alloy-singleton
+  destinations: [loki]
+
+# ---- Discover ServiceMonitors / PodMonitors / Probes (config-as-code scraping) ----
+prometheusOperatorObjects:
+  enabled: true
+  collector: alloy-metrics
+  destinations: [mimir]
+
+# ---- Deploy node-exporter + kube-state-metrics (cluster has neither) ----
+telemetryServices:
+  node-exporter:
+    deploy: true
+    # Cover control-plane nodes too.
+    tolerations:
+      - operator: Exists
+  kube-state-metrics:
+    deploy: true
+
+# ---- Collectors ----
+# Must be explicitly enabled (features attach to them). Three standard collectors:
+#   alloy-metrics   — Deployment, scrapes metrics (cluster/host/operator objects)
+#   alloy-logs      — DaemonSet, tails pod logs (needs CP tolerations for CP node logs)
+#   alloy-singleton — single replica, cluster events + PrometheusRule→ruler sync
+collectors:
+  alloy-metrics:
+    enabled: true
+    # Clustering is required by the cluster-metrics feature (target sharding/dedup).
+    alloy:
+      clustering:
+        enabled: true
+  alloy-logs:
+    enabled: true
+    # Mount host /var/log/pods so the DaemonSet can tail container logs (Talos exposes them here).
+    presets: [filesystem-log-reader]
+    controller:
+      tolerations:
+        - operator: Exists
+  alloy-singleton:
+    enabled: true
+    # mimir.rules.kubernetes talks to the ruler API directly (no forward_to needed).
+    extraConfig: |-
+      mimir.rules.kubernetes "local" {
+        address   = "http://mimir-gateway.monitoring.svc.cluster.local"
+        tenant_id = "homelab"
+      }
