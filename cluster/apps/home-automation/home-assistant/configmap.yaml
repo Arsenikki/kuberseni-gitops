@@ -104,8 +104,7 @@ data:
       - platform: rest
         name: "ArgoCD"
         unique_id: infra_argocd
-        resource: "https://argocd-server.argocd.svc:443/healthz"
-        verify_ssl: false
+        resource: "http://argocd-server.argocd.svc/healthz"
         device_class: connectivity
         value_template: "{{ true }}"
         timeout: 10
@@ -192,7 +191,7 @@ data:
         sensor:
           - name: "ArgoCD Apps"
             unique_id: argocd_apps
-            value_template: "{{ value_json.items | length }}"
+            value_template: "{{ value_json.items | length if value_json else 0 }}"
             unit_of_measurement: "apps"
             json_attributes:
               - items
