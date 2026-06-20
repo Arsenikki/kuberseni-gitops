@@ -191,7 +191,7 @@ data:
         sensor:
           - name: "ArgoCD Apps"
             unique_id: argocd_apps
-            value_template: "{{ value_json.items | length if value_json else 0 }}"
+            value_template: "{{ value_json['items'] | length if value_json else 0 }}"
             unit_of_measurement: "apps"
             json_attributes:
               - items
