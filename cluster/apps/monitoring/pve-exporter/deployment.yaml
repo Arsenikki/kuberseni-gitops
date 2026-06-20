@@ -41,6 +41,11 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          # readOnlyRootFilesystem leaves no writable temp dir; the exporter (Python)
+          # needs one → mount an emptyDir at /tmp.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               cpu: 25m
@@ -59,3 +64,6 @@ spec:
               port: metrics
             initialDelaySeconds: 5
             periodSeconds: 15
+      volumes:
+        - name: tmp
+          emptyDir: {}
