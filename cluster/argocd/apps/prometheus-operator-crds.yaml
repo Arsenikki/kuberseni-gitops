@@ -1,0 +1,35 @@
+---
+# Installs ONLY the Prometheus Operator CRDs (ServiceMonitor, PodMonitor, Probe,
+# PrometheusRule, ...). No operator controller, no Prometheus CRs — Alloy *consumes*
+# these CRDs (prometheus.operator.* + mimir.rules.kubernetes). Must exist before any
+# app references a ServiceMonitor/PrometheusRule.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-operator-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: prometheus-operator-crds
+      targetRevision: 30.0.0
+      helm:
+        valueFiles:
+          - $values/cluster/apps/monitoring/prometheus-operator-crds/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

@@ -1,0 +1,74 @@
+---
+# Grafana Loki — SingleBinary on SeaweedFS S3. Homelab footprint: 1 replica,
+# replication factor 1, memcached caches disabled.
+
+# S3 creds injected as AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY; Loki's S3 client
+# picks them up via the AWS SDK env chain (creds left unset below → none in git).
+global:
+  extraEnvFrom:
+    - secretRef:
+        name: seaweedfs-s3
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  storage:
+    type: s3
+    bucketNames:
+      chunks: loki-data
+      ruler: loki-data
+      admin: loki-data
+    s3:
+      endpoint: seaweedfs-s3.monitoring.svc.cluster.local:8333
+      region: us-east-1
+      s3ForcePathStyle: true
+      insecure: true
+  limits_config:
+    retention_period: 744h # 31d
+    volume_enabled: true
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+# Zero out the SimpleScalable targets — SingleBinary only.
+write:
+  replicas: 0
+read:
+  replicas: 0
+backend:
+  replicas: 0
+
+# Memcached caches off for a homelab single node.
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+
+# Bundled MinIO off — we use SeaweedFS.
+minio:
+  enabled: false
+
+# nginx gateway → service loki-gateway.monitoring.svc:80
+gateway:
+  enabled: true
+
+lokiCanary:
+  enabled: false
+test:
+  enabled: false

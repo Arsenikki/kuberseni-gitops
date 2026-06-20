@@ -1,0 +1,5 @@
+---
+# Install all Prometheus Operator CRDs (defaults). Alloy consumes ServiceMonitor,
+# PodMonitor, Probe and PrometheusRule; the rest are harmless and kept for completeness.
+# CRDs are applied server-side (see Application syncOptions) to avoid the
+# last-applied-configuration annotation size limit on the large monitoring CRDs.

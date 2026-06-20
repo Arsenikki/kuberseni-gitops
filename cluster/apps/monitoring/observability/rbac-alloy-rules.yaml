@@ -1,0 +1,25 @@
+---
+# Grant the alloy-singleton collector read access to PrometheusRule CRDs so its
+# mimir.rules.kubernetes component can sync them into the Mimir ruler. The
+# alloy-operator may already grant this; this binding makes it explicit/guaranteed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: alloy-mimir-rules-reader
+rules:
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["prometheusrules"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alloy-mimir-rules-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alloy-mimir-rules-reader
+subjects:
+  - kind: ServiceAccount
+    name: k8s-monitoring-alloy-singleton
+    namespace: monitoring
