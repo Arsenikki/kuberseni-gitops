@@ -41,6 +41,9 @@ s3:
   enabled: true
   replicas: 1
   port: 8333
+  # Logs default to hostPath /storage — read-only on Talos. Use emptyDir.
+  logs:
+    type: "emptyDir"
   enableAuth: true
   # JSON identity config templated from 1Password by ESO (see externalsecrets.yaml).
   existingConfigSecret: "seaweedfs-s3-config"
