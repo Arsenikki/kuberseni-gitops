@@ -1,0 +1,37 @@
+---
+# Proxmox alerts → Mimir ruler → Alertmanager → Telegram/CasaBot.
+# ProxmoxVMDown is the alert that would have paged on worker-02 stopping.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: proxmox-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: monitoring
+spec:
+  groups:
+    - name: proxmox
+      rules:
+        - alert: ProxmoxVMDown
+          expr: pve_up{id=~"qemu/.*"} == 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox VM {{ $labels.id }} is not running"
+        - alert: ProxmoxNodeDown
+          expr: pve_up{id=~"node/.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Proxmox node {{ $labels.id }} is down"
+        - alert: ProxmoxStorageAlmostFull
+          expr: |
+            pve_disk_usage_bytes{id=~"storage/.*"}
+              / pve_disk_size_bytes{id=~"storage/.*"} > 0.90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox storage {{ $labels.id }} over 90% full"
