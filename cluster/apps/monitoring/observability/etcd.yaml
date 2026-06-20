@@ -1,0 +1,55 @@
+---
+# etcd metrics are not handled by the k8s-monitoring chart. Talos serves them over
+# plain HTTP on :2381 (see infra/talos/patches/controlplane.yaml). We point a manual
+# Service+Endpoints at the control-plane node IPs and let Alloy discover the ServiceMonitor.
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd-metrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: etcd-metrics
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 2381
+      targetPort: 2381
+      protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: etcd-metrics
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: etcd-metrics
+subsets:
+  - addresses:
+      - ip: 192.168.1.41
+      - ip: 192.168.1.42
+      - ip: 192.168.1.43
+    ports:
+      - name: metrics
+        port: 2381
+        protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: etcd
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: etcd-metrics
+spec:
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: etcd-metrics
+  endpoints:
+    - port: metrics
+      scheme: http
+      interval: 30s

@@ -1,0 +1,149 @@
+---
+# Grafana Mimir — single-node homelab footprint on SeaweedFS S3.
+# Every component runs 1 replica; replication factor 1; zone-aware replication,
+# caches, MinIO, Kafka and the rollout-operator all disabled.
+
+# S3 credentials → env vars in every Mimir pod, referenced as ${S3_ACCESS_KEY} /
+# ${S3_SECRET_KEY} in the config below (the chart runs Mimir with -config.expand-env).
+global:
+  extraEnvFrom:
+    - secretRef:
+        name: seaweedfs-s3
+
+minio:
+  enabled: false
+kafka:
+  enabled: false
+rollout_operator:
+  enabled: false
+chunks-cache:
+  enabled: false
+index-cache:
+  enabled: false
+metadata-cache:
+  enabled: false
+results-cache:
+  enabled: false
+
+mimir:
+  structuredConfig:
+    multitenancy_enabled: false
+    no_auth_tenant: homelab
+
+    # Chart 6.x defaults to the Kafka-based ingest-storage architecture, which fails
+    # with "Kafka address has not been configured" when kafka.enabled=false. Force the
+    # classic architecture: no Kafka, push to ingesters over gRPC.
+    ingest_storage:
+      enabled: false
+
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint: seaweedfs-s3.monitoring.svc.cluster.local:8333
+          insecure: true
+          bucket_lookup_type: path
+          access_key_id: "${S3_ACCESS_KEY}"
+          secret_access_key: "${S3_SECRET_KEY}"
+
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+
+    # Single ingester → RF must be 1, else writes are rejected.
+    # push_grpc re-enabled (chart disables it for the ingest-storage architecture).
+    ingester:
+      push_grpc_method_enabled: true
+      ring:
+        replication_factor: 1
+
+    ruler:
+      rule_path: /data/ruler
+      alertmanager_url: http://mimir-alertmanager.monitoring.svc.cluster.local:8080/alertmanager
+
+    alertmanager:
+      external_url: https://mimir.arsenikki.casa/alertmanager
+
+# ---- component sizing / storage ----
+distributor:
+  replicas: 1
+querier:
+  replicas: 1
+query_frontend:
+  replicas: 1
+query_scheduler:
+  replicas: 1
+
+ingester:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+store_gateway:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+compactor:
+  replicas: 1
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+ruler:
+  replicas: 1
+
+alertmanager:
+  enabled: true
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 1Gi
+    storageClass: longhorn
+  # Fallback config applies to the single `homelab` tenant → routes alerts to
+  # Telegram/CasaBot. bot_token_file is mounted from the ESO secret below
+  # (AM config is a static ConfigMap, so no env expansion — must use *_file).
+  fallbackConfig: |
+    route:
+      receiver: telegram
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: telegram
+        telegram_configs:
+          - bot_token_file: /etc/mimir/secrets/telegram/token
+            chat_id: 128627881
+            parse_mode: HTML
+            send_resolved: true
+  extraVolumes:
+    - name: telegram-secret
+      secret:
+        secretName: mimir-alertmanager-telegram
+  extraVolumeMounts:
+    - name: telegram-secret
+      mountPath: /etc/mimir/secrets/telegram
+      readOnly: true
+
+# Mimir's own gateway (nginx) → service mimir-gateway.monitoring.svc:80
+gateway:
+  enabled: true
+  replicas: 1

@@ -1,0 +1,11 @@
+---
+# Privileged PodSecurity: node-exporter (hostPath /proc,/sys,/ + hostNetwork/hostPID)
+# and the Alloy logs DaemonSet (hostPath /var/log/pods) violate the restricted profile.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: privileged
