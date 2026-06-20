@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pve-exporter
+  namespace: monitoring
+  labels:
+    app: pve-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pve-exporter
+  template:
+    metadata:
+      labels:
+        app: pve-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pve-exporter
+          image: prompve/prometheus-pve-exporter:3.9.0
+          ports:
+            - name: metrics
+              containerPort: 9221
+          env:
+            # Don't verify the Proxmox self-signed API cert.
+            - name: PVE_VERIFY_SSL
+              value: "false"
+          # PVE_USER / PVE_TOKEN_NAME / PVE_TOKEN_VALUE from the ESO secret.
+          envFrom:
+            - secretRef:
+                name: pve-exporter
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 15

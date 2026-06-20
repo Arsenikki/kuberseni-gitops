@@ -1,0 +1,28 @@
+---
+# Proxmox VE exporter — hypervisor + VM-level metrics (incl. VM power state) via the
+# Proxmox API, so a stopped/crashed VM (like worker-02) is visible in Grafana/alerts.
+# Plain manifests; Alloy discovers its ServiceMonitor. Wave 6 (after CRDs + Alloy).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pve-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/monitoring/pve-exporter
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
