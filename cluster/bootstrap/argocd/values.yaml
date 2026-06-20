@@ -16,9 +16,20 @@ configs:
     timeout.reconciliation: 60s
     # Read-only API-key account for the Home Assistant dashboard widget
     accounts.dashboard: apiKey
+    # Public base URL — required for the OIDC redirect/callback
+    url: https://argocd.arsenikki.casa
+    # Native OIDC SSO via Authentik (no Dex). Local admin + dashboard apiKey stay intact.
+    oidc.config: |
+      name: Authentik
+      issuer: https://authentik.arsenikki.casa/application/o/argocd/
+      clientID: $argocd-oidc:clientID
+      clientSecret: $argocd-oidc:clientSecret
+      requestedScopes: ["openid", "profile", "email"]
+      requestedIDTokenClaims: {"groups": {"essential": true}}
   rbac:
     policy.csv: |
       g, dashboard, role:readonly
+      g, authentik Admins, role:admin
 
 server:
   ingress:
@@ -107,6 +118,35 @@ extraObjects:
           remoteRef:
             key: "CasaBot (Telegram)"
             property: credential
+  # OIDC client credentials for argocd-cm oidc.config ($argocd-oidc:clientID/clientSecret).
+  # Same client as the Authentik argocd OAuth2 provider — shares the 1Password "authentik" item.
+  # REQUIRED before merge: add argocd_oidc_client_id + argocd_oidc_client_secret to that item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-oidc
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: argocd-oidc
+        creationPolicy: Owner
+        template:
+          metadata:
+            labels:
+              app.kubernetes.io/part-of: argocd
+      data:
+        - secretKey: clientID
+          remoteRef:
+            key: "authentik"
+            property: argocd_oidc_client_id
+        - secretKey: clientSecret
+          remoteRef:
+            key: "authentik"
+            property: argocd_oidc_client_secret
 
 # Run ArgoCD components on control-plane nodes
 controller:

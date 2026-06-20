@@ -65,6 +65,11 @@ entries:
       identifiers:
         name: zigbee2mqtt
       required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: homepage
+      required: true
 
   # Configure the embedded outpost with all proxy providers
   - model: authentik_outposts.outpost
@@ -85,6 +90,7 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "sonarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "tautulli"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "zigbee2mqtt"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "homepage"]]
       config:
         authentik_host: https://authentik.arsenikki.casa
         kubernetes_ingress_annotations:
