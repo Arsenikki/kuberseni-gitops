@@ -30,6 +30,12 @@ mimir:
     multitenancy_enabled: false
     no_auth_tenant: homelab
 
+    # Chart 6.x defaults to the Kafka-based ingest-storage architecture, which fails
+    # with "Kafka address has not been configured" when kafka.enabled=false. Force the
+    # classic architecture: no Kafka, push to ingesters over gRPC.
+    ingest_storage:
+      enabled: false
+
     common:
       storage:
         backend: s3
@@ -51,7 +57,9 @@ mimir:
         bucket_name: mimir-alertmanager
 
     # Single ingester → RF must be 1, else writes are rejected.
+    # push_grpc re-enabled (chart disables it for the ingest-storage architecture).
     ingester:
+      push_grpc_method_enabled: true
       ring:
         replication_factor: 1
 
