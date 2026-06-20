@@ -13,11 +13,6 @@ entries:
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
-        name: home-assistant
-      required: true
-  - model: authentik_blueprints.metaapplyblueprint
-    attrs:
-      identifiers:
         name: lidarr
       required: true
   - model: authentik_blueprints.metaapplyblueprint
@@ -79,7 +74,6 @@ entries:
     attrs:
       providers:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "bazarr"]]
-        - !Find [authentik_providers_proxy.proxyprovider, [name, "home-assistant"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "lidarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "longhorn"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "nodered"]]
