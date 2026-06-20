@@ -1,0 +1,74 @@
+---
+# Seed alerting rules. Alloy's mimir.rules.kubernetes syncs these into the Mimir
+# ruler, which routes firing alerts to Telegram/CasaBot via the Mimir Alertmanager.
+# Metric names assume kube-state-metrics + node-exporter + kubelet (all deployed by
+# the k8s-monitoring chart). Tune thresholds/labels after observing real data.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: homelab-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: monitoring
+spec:
+  groups:
+    - name: watchdog
+      rules:
+        # Always-firing alert to prove the rule→ruler→Alertmanager→Telegram path works.
+        - alert: Watchdog
+          expr: vector(1)
+          labels:
+            severity: none
+          annotations:
+            summary: "Alerting pipeline is alive"
+
+    - name: nodes
+      rules:
+        - alert: KubeNodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} not ready"
+        - alert: NodeFilesystemAlmostFull
+          expr: |
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+              / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"} < 0.10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Filesystem on {{ $labels.instance }} ({{ $labels.mountpoint }}) below 10% free"
+        - alert: NodeMemoryHigh
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} has <10% memory available"
+
+    - name: workloads
+      rules:
+        - alert: KubePodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash-looping"
+        - alert: KubePersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes < 0.10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} below 10% free"
+        - alert: TargetDown
+          expr: up == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Scrape target {{ $labels.job }} ({{ $labels.instance }}) is down"

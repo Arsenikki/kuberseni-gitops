@@ -1,8 +1,19 @@
 cluster:
   allowSchedulingOnControlPlanes: false
+  # Expose control-plane component metrics for the monitoring stack.
+  # Talos binds these to 127.0.0.1 by default; rebind to 0.0.0.0 so Alloy can scrape them.
+  controllerManager:
+    extraArgs:
+      bind-address: 0.0.0.0 # metrics on :10257
+  scheduler:
+    extraArgs:
+      bind-address: 0.0.0.0 # metrics on :10259
   etcd:
     advertisedSubnets:
       - 192.168.1.0/24
+    extraArgs:
+      # Serve etcd metrics over plain HTTP on :2381 (no mTLS client cert needed).
+      listen-metrics-urls: http://0.0.0.0:2381
   network:
     cni:
       name: none

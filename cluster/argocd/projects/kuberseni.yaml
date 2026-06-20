@@ -26,6 +26,7 @@ spec:
     - https://kubernetes-sigs.github.io/external-dns/
     - https://prometheus-community.github.io/helm-charts
     - https://grafana.github.io/helm-charts
+    - https://seaweedfs.github.io/seaweedfs/helm
     - https://oauth2-proxy.github.io/manifests
   destinations:
     - server: https://kubernetes.default.svc
