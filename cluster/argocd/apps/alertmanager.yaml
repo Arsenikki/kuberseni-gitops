@@ -1,0 +1,30 @@
+---
+# Standalone upstream Prometheus Alertmanager. Mimir's ruler routes alerts here
+# (ruler.alertmanager_url) instead of Mimir's bundled AM, because only upstream
+# Alertmanager supports the Telegram `message_thread_id` field needed to post into
+# a forum Topic. Plain manifests; ESO renders the config from 1Password. Wave 5
+# (alongside Mimir, so the ruler has an AM to target).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alertmanager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/monitoring/alertmanager
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

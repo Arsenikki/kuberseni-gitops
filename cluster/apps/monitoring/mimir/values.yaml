@@ -65,10 +65,10 @@ mimir:
 
     ruler:
       rule_path: /data/ruler
-      alertmanager_url: http://mimir-alertmanager.monitoring.svc.cluster.local:8080/alertmanager
-
-    alertmanager:
-      external_url: https://mimir.arsenikki.casa/alertmanager
+      # Route alerts to the STANDALONE upstream Alertmanager (not Mimir's bundled AM,
+      # which lacks Telegram message_thread_id). Base URL only — Mimir appends
+      # /api/v2/alerts. See cluster/apps/monitoring/alertmanager.
+      alertmanager_url: http://alertmanager.monitoring.svc.cluster.local:9093
 
 # ---- component sizing / storage ----
 distributor:
@@ -108,30 +108,13 @@ compactor:
 ruler:
   replicas: 1
 
+# Mimir's bundled Alertmanager is DISABLED. It vendors Grafana's alertmanager fork,
+# whose Telegram config has no `message_thread_id` field — it cannot post to a forum
+# Topic and CrashLoops if the field is present. A standalone upstream Alertmanager
+# (cluster/apps/monitoring/alertmanager) handles routing instead; the ruler targets
+# it via ruler.alertmanager_url above.
 alertmanager:
-  enabled: true
-  replicas: 1
-  zoneAwareReplication:
-    enabled: false
-  persistentVolume:
-    enabled: true
-    size: 1Gi
-    storageClass: longhorn
-  # Fallback config for the single `homelab` tenant. The full config (routing +
-  # bot token + group/topic IDs) is rendered by ESO into the Secret
-  # `mimir-alertmanager-config` (see externalsecret-alertmanager-telegram.yaml) so
-  # no chat IDs or tokens live in this PUBLIC repo. We mount that Secret and point
-  # Mimir's fallback flag at it instead of using the chart's inline fallbackConfig.
-  extraArgs:
-    alertmanager.configs.fallback: /etc/mimir/am/alertmanager.yaml
-  extraVolumes:
-    - name: am-config
-      secret:
-        secretName: mimir-alertmanager-config
-  extraVolumeMounts:
-    - name: am-config
-      mountPath: /etc/mimir/am
-      readOnly: true
+  enabled: false
 
 # Mimir's own gateway (nginx) → service mimir-gateway.monitoring.svc:80
 gateway:
