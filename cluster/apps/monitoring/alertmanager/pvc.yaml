@@ -1,0 +1,17 @@
+---
+# Durable storage for silences + the notification log (nflog). RWO single-attach,
+# so the Deployment uses strategy: Recreate to avoid a multi-attach deadlock on roll.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alertmanager-data
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi

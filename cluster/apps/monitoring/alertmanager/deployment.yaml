@@ -1,0 +1,89 @@
+---
+# Standalone upstream Prometheus Alertmanager (v0.28+) — replaces Mimir's bundled AM
+# so we get Telegram `message_thread_id` (forum Topic) support. Mimir's ruler sends
+# alerts here via ruler.alertmanager_url (see mimir/values.yaml).
+#
+# Reloader (stakater) restarts the pod when the mounted `alertmanager-config` Secret
+# changes (upstream AM does not hot-reload a file-mounted config on its own).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  # RWO PVC → only one pod may attach at a time; Recreate avoids a roll deadlock.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534          # make the longhorn PVC writable by the nobody user
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alertmanager
+          image: quay.io/prometheus/alertmanager:v0.28.1
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            - --storage.path=/alertmanager
+            - --web.listen-address=:9093
+            # Single replica — disable HA gossip (empty value turns it off).
+            - --cluster.listen-address=
+          ports:
+            - name: web
+              containerPort: 9093
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+              readOnly: true
+            - name: data
+              mountPath: /alertmanager
+            # readOnlyRootFilesystem leaves no writable temp dir — give AM one.
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: config
+          secret:
+            secretName: alertmanager-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: alertmanager-data
+        - name: tmp
+          emptyDir: {}
