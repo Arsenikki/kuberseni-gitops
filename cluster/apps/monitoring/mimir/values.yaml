@@ -117,46 +117,20 @@ alertmanager:
     enabled: true
     size: 1Gi
     storageClass: longhorn
-  # Fallback config applies to the single `homelab` tenant → routes alerts to
-  # Telegram/CasaBot. bot_token_file is mounted from the ESO secret below
-  # (AM config is a static ConfigMap, so no env expansion — must use *_file).
-  fallbackConfig: |
-    route:
-      receiver: telegram
-      group_by: ['alertname', 'namespace']
-      group_wait: 30s
-      group_interval: 5m
-      repeat_interval: 4h
-      routes:
-        # Also fan warning/critical alerts to claudtainer, which auto-investigates
-        # and reports findings to Telegram. continue:true keeps the CasaBot notice.
-        - receiver: claudtainer
-          continue: true
-          matchers:
-            - severity =~ "warning|critical"
-          group_wait: 30s
-          group_interval: 5m
-          repeat_interval: 4h
-    receivers:
-      - name: telegram
-        telegram_configs:
-          # Casa Automation supergroup, "debug" Topic (thread 3). Was 128627881 (a DM).
-          - bot_token_file: /etc/mimir/secrets/telegram/token
-            chat_id: -1004308954067
-            message_thread_id: 3
-            parse_mode: HTML
-            send_resolved: true
-      - name: claudtainer
-        webhook_configs:
-          - url: http://claudtainer-gateway.claudtainer.svc.cluster.local:8080/alertmanager/webhook
-            send_resolved: false
+  # Fallback config for the single `homelab` tenant. The full config (routing +
+  # bot token + group/topic IDs) is rendered by ESO into the Secret
+  # `mimir-alertmanager-config` (see externalsecret-alertmanager-telegram.yaml) so
+  # no chat IDs or tokens live in this PUBLIC repo. We mount that Secret and point
+  # Mimir's fallback flag at it instead of using the chart's inline fallbackConfig.
+  extraArgs:
+    alertmanager.configs.fallback: /etc/mimir/am/alertmanager.yaml
   extraVolumes:
-    - name: telegram-secret
+    - name: am-config
       secret:
-        secretName: mimir-alertmanager-telegram
+        secretName: mimir-alertmanager-config
   extraVolumeMounts:
-    - name: telegram-secret
-      mountPath: /etc/mimir/secrets/telegram
+    - name: am-config
+      mountPath: /etc/mimir/am
       readOnly: true
 
 # Mimir's own gateway (nginx) → service mimir-gateway.monitoring.svc:80
