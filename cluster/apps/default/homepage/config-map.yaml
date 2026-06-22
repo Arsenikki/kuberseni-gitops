@@ -8,132 +8,226 @@ metadata:
     app.kubernetes.io/name: homepage
 data:
   bookmarks.yaml: |
-    - Communication:
-      - Discord:
-        - icon: discord.png
-          href: https://discord.com/app
+    - Developer:
+      - GitHub:
+        - icon: github.png
+          href: https://github.com/Arsenikki
+      - kubesearch:
+        - icon: kubernetes-dashboard.png
+          href: https://kubesearch.dev
     - Media:
       - YouTube:
         - icon: youtube.png
           href: https://youtube.com/feed/subscriptions
-    - Reading:
+    - Social:
       - Reddit:
         - icon: reddit.png
           href: https://reddit.com
-    - Git:
-      - kubesearch:
-        - icon: kubernetes-dashboard.png
-          href: https://kubesearch.dev
-      - flux-cluster-template:
-        - icon: github.png
-          href: https://github.com/onedr0p/flux-cluster-template
+      - Discord:
+        - icon: discord.png
+          href: https://discord.com/app
+
   docker.yaml: ""
+
   kubernetes.yaml: |
     mode: cluster
+
   services.yaml: |
+    - Infrastructure:
+      - ArgoCD:
+          icon: argocd.png
+          href: https://argocd.arsenikki.casa
+          description: GitOps continuous delivery
+          siteMonitor: http://argocd-server.argocd.svc.cluster.local
+      - Authentik:
+          icon: authentik.png
+          href: https://authentik.arsenikki.casa
+          description: Identity & SSO provider
+          siteMonitor: http://authentik-server.authentik.svc.cluster.local
+      - Longhorn:
+          icon: longhorn.png
+          href: https://longhorn.arsenikki.casa
+          description: Distributed block storage
+          siteMonitor: http://longhorn-frontend.longhorn-system.svc.cluster.local
+          widget:
+            type: longhorn
+            url: http://longhorn-frontend.longhorn-system.svc.cluster.local
+      - Traefik:
+          icon: traefik.png
+          href: https://argocd.arsenikki.casa
+          description: Ingress controller
+          siteMonitor: http://traefik.traefik.svc.cluster.local:9000/ping
+
     - Home Automation:
       - Home Assistant:
           icon: homeassistant.png
-          href: https://homeassistant.${SECRET_DOMAIN}
+          href: https://homeassistant.arsenikki.casa
+          description: Home automation hub
           siteMonitor: http://home-assistant.home-automation.svc.cluster.local:8123
-          widget:
-            type: homeassistant
-            url: http://home-assistant.home-automation.svc.cluster.local:8123
-            key: ${SECRET_HOMEASSISTANT_ACCESS_TOKEN}
+      - Node-RED:
+          icon: node-red.png
+          href: https://nodered.arsenikki.casa
+          description: Automation flow editor
+          siteMonitor: http://node-red.home-automation.svc.cluster.local:1880
+      - Zigbee2MQTT:
+          icon: zigbee2mqtt.png
+          href: https://zigbee.arsenikki.casa
+          description: Zigbee bridge
+          siteMonitor: http://zigbee2mqtt.home-automation.svc.cluster.local:8080
+
     - Media:
       - Plex:
           icon: plex.png
-          href: https://plex.${SECRET_DOMAIN}
+          href: https://plex.arsenikki.casa
+          description: Media server
           siteMonitor: http://plex.media.svc.cluster.local:32400
           widget:
             type: plex
             url: http://plex.media.svc.cluster.local:32400
-            key: ${SECRET_PLEX_TOKEN}
+            key: "{{HOMEPAGE_VAR_PLEX_TOKEN}}"
+      - Tautulli:
+          icon: tautulli.png
+          href: https://tautulli.arsenikki.casa
+          description: Plex monitoring & stats
+          siteMonitor: http://tautulli.media.svc.cluster.local:8181
+          widget:
+            type: tautulli
+            url: http://tautulli.media.svc.cluster.local:8181
+            key: "{{HOMEPAGE_VAR_TAUTULLI_API_KEY}}"
+      - Overseerr:
+          icon: overseerr.png
+          href: https://overseerr.arsenikki.casa
+          description: Media request management
+          siteMonitor: http://overseerr.media.svc.cluster.local:5055
+          widget:
+            type: overseerr
+            url: http://overseerr.media.svc.cluster.local:5055
+            key: "{{HOMEPAGE_VAR_OVERSEERR_API_KEY}}"
       - Sonarr:
           icon: sonarr.png
-          href: https://sonarr.${SECRET_DOMAIN}
+          href: https://sonarr.arsenikki.casa
+          description: TV show management
           siteMonitor: http://sonarr.media.svc.cluster.local:8989
           widget:
             type: sonarr
             url: http://sonarr.media.svc.cluster.local:8989
-            key: ${SECRET_SONARR_API_KEY}
+            key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
       - Radarr:
           icon: radarr.png
-          href: https://radarr.${SECRET_DOMAIN}
+          href: https://radarr.arsenikki.casa
+          description: Movie management
           siteMonitor: http://radarr.media.svc.cluster.local:7878
           widget:
             type: radarr
             url: http://radarr.media.svc.cluster.local:7878
-            key: ${SECRET_RADARR_API_KEY}
-      - qBittorrent:
-          icon: qbittorrent.png
-          href: https://qbittorrent.${SECRET_DOMAIN}
-          siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
+            key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+      - Lidarr:
+          icon: lidarr.png
+          href: https://lidarr.arsenikki.casa
+          description: Music management
+          siteMonitor: http://lidarr.media.svc.cluster.local:8686
           widget:
-            type: qbittorrent
-            url: http://qbittorrent.media.svc.cluster.local:8080
-            username: ${SECRET_USERNAME}
-            password: ${SECRET_QBITTORRENT_PASSWORD}
-      - Overseerr:
-          icon: overseerr.png
-          href: https://overseerr.${SECRET_DOMAIN}
-          siteMonitor: http://overseerr.media.svc.cluster.local:80
+            type: lidarr
+            url: http://lidarr.media.svc.cluster.local:8686
+            key: "{{HOMEPAGE_VAR_LIDARR_API_KEY}}"
+      - Readarr:
+          icon: readarr.png
+          href: https://readarr.arsenikki.casa
+          description: Book management
+          siteMonitor: http://readarr.media.svc.cluster.local:8787
           widget:
-            type: overseerr
-            url: http://overseerr.media.svc.cluster.local:80
-            key: ${SECRET_OVERSEERR_API_KEY}
+            type: readarr
+            url: http://readarr.media.svc.cluster.local:8787
+            key: "{{HOMEPAGE_VAR_READARR_API_KEY}}"
       - Prowlarr:
           icon: prowlarr.png
-          href: https://prowlarr.${SECRET_DOMAIN}
+          href: https://prowlarr.arsenikki.casa
+          description: Indexer aggregator
           siteMonitor: http://prowlarr.media.svc.cluster.local:9696
           widget:
             type: prowlarr
             url: http://prowlarr.media.svc.cluster.local:9696
-            key: ${SECRET_PROWLARR_API_KEY}
+            key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
       - Bazarr:
           icon: bazarr.png
-          href: https://bazarr.${SECRET_DOMAIN}
+          href: https://bazarr.arsenikki.casa
+          description: Subtitle management
           siteMonitor: http://bazarr.media.svc.cluster.local:6767
           widget:
             type: bazarr
             url: http://bazarr.media.svc.cluster.local:6767
-            key: ${SECRET_BAZARR_API_KEY}
+            key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+      - qBittorrent:
+          icon: qbittorrent.png
+          href: https://qbittorrent.arsenikki.casa
+          description: Torrent client
+          siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
+
+    - Network & Storage:
+      - OPNSense:
+          icon: opnsense.png
+          href: https://opnsense.arsenikki.casa
+          description: Firewall & router
+          siteMonitor: https://opnsense.arsenikki.casa
+      - TrueNAS:
+          icon: truenas.png
+          href: https://truenas.arsenikki.casa
+          description: NFS storage
+          siteMonitor: https://truenas.arsenikki.casa
+      - Proxmox (router):
+          icon: proxmox.png
+          href: https://router.proxmox.arsenikki.casa:8006
+          description: OPNSense VM host
+          siteMonitor: https://router.proxmox.arsenikki.casa:8006
+      - Proxmox (minipc):
+          icon: proxmox.png
+          href: https://minipc.proxmox.arsenikki.casa:8006
+          description: Main k8s host
+          siteMonitor: https://minipc.proxmox.arsenikki.casa:8006
+      - Proxmox (nas):
+          icon: proxmox.png
+          href: https://nas.proxmox.arsenikki.casa:8006
+          description: NAS & worker host
+          siteMonitor: https://nas.proxmox.arsenikki.casa:8006
+
   settings.yaml: |
-    title: Dashboard
+    title: arsenikki.casa
     theme: dark
     color: slate
     headerStyle: boxed
     statusStyle: dot
+    hideVersion: true
+    allowed_hosts: home.arsenikki.casa
     layout:
-      Home:
-        style: column
-        icon: mdi-home-analytics
+      Infrastructure:
+        style: row
+        columns: 4
+        icon: mdi-server-network
       Home Automation:
         style: row
-        columns: 1
+        columns: 3
+        icon: mdi-home-automation
       Media:
         style: row
-        columns: 3
+        columns: 5
+        icon: mdi-play-circle
+      Network & Storage:
+        style: row
+        columns: 5
+        icon: mdi-network
+
   widgets.yaml: |
     - kubernetes:
         cluster:
-          # Shows cluster-wide statistics
           show: true
-          # Shows the aggregate CPU stats
           cpu: true
-          # Shows the aggregate memory stats
           memory: true
-          # Shows a custom label
           showLabel: true
-          label: "cluster"
+          label: "kuberseni"
         nodes:
-          # Shows node-specific statistics
           show: true
-          # Shows the CPU for each node
           cpu: true
-          # Shows the memory for each node
           memory: true
-          # Shows the label, which is always the node name
           showLabel: true
     - datetime:
         text_size: l
@@ -141,3 +235,6 @@ data:
           dateStyle: long
           timeStyle: short
           hourCycle: h23
+    - search:
+        provider: google
+        target: _blank

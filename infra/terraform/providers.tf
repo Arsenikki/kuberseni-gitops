@@ -10,6 +10,10 @@ terraform {
       source  = "browningluke/opnsense"
       version = "~> 0.23"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
 
   # Uncomment to use remote state (e.g. an S3-compatible store on TrueNAS)

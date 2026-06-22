@@ -1,0 +1,122 @@
+---
+# Grafana Mimir — single-node homelab footprint on SeaweedFS S3.
+# Every component runs 1 replica; replication factor 1; zone-aware replication,
+# caches, MinIO, Kafka and the rollout-operator all disabled.
+
+# S3 credentials → env vars in every Mimir pod, referenced as ${S3_ACCESS_KEY} /
+# ${S3_SECRET_KEY} in the config below (the chart runs Mimir with -config.expand-env).
+global:
+  extraEnvFrom:
+    - secretRef:
+        name: seaweedfs-s3
+
+minio:
+  enabled: false
+kafka:
+  enabled: false
+rollout_operator:
+  enabled: false
+chunks-cache:
+  enabled: false
+index-cache:
+  enabled: false
+metadata-cache:
+  enabled: false
+results-cache:
+  enabled: false
+
+mimir:
+  structuredConfig:
+    multitenancy_enabled: false
+    no_auth_tenant: homelab
+
+    # Chart 6.x defaults to the Kafka-based ingest-storage architecture, which fails
+    # with "Kafka address has not been configured" when kafka.enabled=false. Force the
+    # classic architecture: no Kafka, push to ingesters over gRPC.
+    ingest_storage:
+      enabled: false
+
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint: seaweedfs-s3.monitoring.svc.cluster.local:8333
+          insecure: true
+          bucket_lookup_type: path
+          access_key_id: "${S3_ACCESS_KEY}"
+          secret_access_key: "${S3_SECRET_KEY}"
+
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+
+    # Single ingester → RF must be 1, else writes are rejected.
+    # push_grpc re-enabled (chart disables it for the ingest-storage architecture).
+    ingester:
+      push_grpc_method_enabled: true
+      ring:
+        replication_factor: 1
+
+    ruler:
+      rule_path: /data/ruler
+      # Route alerts to the STANDALONE upstream Alertmanager (not Mimir's bundled AM,
+      # which lacks Telegram message_thread_id). Base URL only — Mimir appends
+      # /api/v2/alerts. See cluster/apps/monitoring/alertmanager.
+      alertmanager_url: http://alertmanager.monitoring.svc.cluster.local:9093
+
+# ---- component sizing / storage ----
+distributor:
+  replicas: 1
+querier:
+  replicas: 1
+query_frontend:
+  replicas: 1
+query_scheduler:
+  replicas: 1
+
+ingester:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+store_gateway:
+  replicas: 1
+  zoneAwareReplication:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+compactor:
+  replicas: 1
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: longhorn
+
+ruler:
+  replicas: 1
+
+# Mimir's bundled Alertmanager is DISABLED. It vendors Grafana's alertmanager fork,
+# whose Telegram config has no `message_thread_id` field — it cannot post to a forum
+# Topic and CrashLoops if the field is present. A standalone upstream Alertmanager
+# (cluster/apps/monitoring/alertmanager) handles routing instead; the ruler targets
+# it via ruler.alertmanager_url above.
+alertmanager:
+  enabled: false
+
+# Mimir's own gateway (nginx) → service mimir-gateway.monitoring.svc:80
+gateway:
+  enabled: true
+  replicas: 1

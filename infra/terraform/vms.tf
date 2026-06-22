@@ -4,7 +4,11 @@ locals {
     # usb_zigbee: USB device ID (vendor:product) to pass through, or null for no USB
     # control-plane-01: SONOFF Zigbee 3.0 USB Dongle Plus V2 (1a86:55d4) plugged into router
     # machine_type: "q35" for PCIe (GPU passthrough), "" for default i440fx
-    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr2", vm_id = 1001, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.41", mac = "BC:24:11:75:55:EB", usb_zigbee = "1a86:55d4", machine_type = "q35" }
+    # network_bridge vmbr1 = the router host's LAN bridge directly on the physical switch
+    # (host mgmt + OPNSense LAN gateway live here). Previously vmbr2, which reached the LAN
+    # only THROUGH OPNSense's internal net1<->net2 bridge — fragile, broke cross-node
+    # routing and made the API VIP unreachable when it failed over to cp-01.
+    control-plane-01 = { proxmox_node = "router",  network_bridge = "vmbr1", vm_id = 1001, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.41", mac = "BC:24:11:75:55:EB", usb_zigbee = "1a86:55d4", machine_type = "q35" }
     control-plane-02 = { proxmox_node = "minipc",  network_bridge = "vmbr0", vm_id = 1002, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.42", mac = "BC:24:11:E5:85:2F", usb_zigbee = null,          machine_type = "q35" }
     control-plane-03 = { proxmox_node = "nas",     network_bridge = "vmbr0", vm_id = 1003, cores = 2,  memory = 6144,  disk_size = 50,  ip = "192.168.1.43", mac = "BC:24:11:70:E7:4E", usb_zigbee = null,          machine_type = "q35" }
   }

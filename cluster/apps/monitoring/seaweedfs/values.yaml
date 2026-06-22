@@ -1,0 +1,56 @@
+---
+# SeaweedFS S3 object store for the observability stack (in-cluster, single-node).
+# All persistence on Longhorn — the chart defaults to hostPath (/ssd, /storage) which
+# does NOT exist on Talos' read-only rootfs.
+
+master:
+  replicas: 1
+  data:
+    type: "persistentVolumeClaim"
+    size: "2Gi"
+    storageClass: "longhorn"
+  logs:
+    type: "emptyDir"
+
+volume:
+  replicas: 1
+  dataDirs:
+    - name: data1
+      type: "persistentVolumeClaim"
+      storageClass: "longhorn"
+      size: "50Gi"
+      maxVolumes: 0
+  idx:
+    type: "persistentVolumeClaim"
+    size: "5Gi"
+    storageClass: "longhorn"
+  logs:
+    type: "emptyDir"
+
+filer:
+  replicas: 1
+  data:
+    type: "persistentVolumeClaim"
+    size: "5Gi"
+    storageClass: "longhorn"
+  logs:
+    type: "emptyDir"
+
+# S3 gateway → service seaweedfs-s3.monitoring.svc:8333 (plain HTTP, in-cluster only).
+s3:
+  enabled: true
+  replicas: 1
+  port: 8333
+  # Logs default to hostPath /storage — read-only on Talos. Use emptyDir.
+  logs:
+    type: "emptyDir"
+  enableAuth: true
+  # JSON identity config templated from 1Password by ESO (see externalsecrets.yaml).
+  existingConfigSecret: "seaweedfs-s3-config"
+  # Declaratively pre-create the buckets. Mimir requires SEPARATE buckets for
+  # blocks / ruler / alertmanager; Loki shares one bucket (chunks + ruler).
+  createBuckets:
+    - name: mimir-blocks
+    - name: mimir-ruler
+    - name: mimir-alertmanager
+    - name: loki-data

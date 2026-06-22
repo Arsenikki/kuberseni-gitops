@@ -4,13 +4,32 @@ global:
 
 configs:
   params:
-    server.insecure: false
+    # Traefik terminates TLS at the edge and proxies HTTP to the backend.
+    # insecure:false made argocd-server serve TLS on :443; Traefik spoke
+    # HTTP to it -> 500. Serve plaintext in-cluster instead.
+    server.insecure: true
   cm:
     admin.enabled: true
     # Allow ArgoCD to manage itself (app-of-apps)
     application.resourceTrackingMethod: annotation
     # Poll git every 60 seconds (default is 3 minutes)
     timeout.reconciliation: 60s
+    # Read-only API-key account for the Home Assistant dashboard widget
+    accounts.dashboard: apiKey
+    # Public base URL — required for the OIDC redirect/callback
+    url: https://argocd.arsenikki.casa
+    # Native OIDC SSO via Authentik (no Dex). Local admin + dashboard apiKey stay intact.
+    oidc.config: |
+      name: Authentik
+      issuer: https://authentik.arsenikki.casa/application/o/argocd/
+      clientID: $argocd-oidc:clientID
+      clientSecret: $argocd-oidc:clientSecret
+      requestedScopes: ["openid", "profile", "email"]
+      requestedIDTokenClaims: {"groups": {"essential": true}}
+  rbac:
+    policy.csv: |
+      g, dashboard, role:readonly
+      g, authentik Admins, role:admin
 
 server:
   ingress:
@@ -99,6 +118,73 @@ extraObjects:
           remoteRef:
             key: "CasaBot (Telegram)"
             property: credential
+  # OIDC client credentials for argocd-cm oidc.config ($argocd-oidc:clientID/clientSecret).
+  # Same client as the Authentik argocd OAuth2 provider — shares the 1Password "authentik" item.
+  # REQUIRED before merge: add argocd_oidc_client_id + argocd_oidc_client_secret to that item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-oidc
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: argocd-oidc
+        creationPolicy: Owner
+        template:
+          metadata:
+            labels:
+              app.kubernetes.io/part-of: argocd
+      data:
+        - secretKey: clientID
+          remoteRef:
+            key: "authentik"
+            property: argocd_oidc_client_id
+        - secretKey: clientSecret
+          remoteRef:
+            key: "authentik"
+            property: argocd_oidc_client_secret
+
+  # Repository credential so ArgoCD can pull the PRIVATE claudtainer-homelab repo.
+  # 1Password item "claudtainer" (vault homelab) must have a read-only
+  # fine-grained PAT for that repo in field `github_pat`.
+  # (Skip this block if you make the claudtainer-homelab repo public.)
+  #
+  # NOTE: this object is rendered through the argo-cd chart's `tpl` on
+  # extraObjects, so Helm evaluates any `{{ ... }}` BEFORE ESO does. We must NOT
+  # use an ESO template like `{{ .github_pat }}` here — Helm would consume it and
+  # render an empty password. Instead map `password` directly as a secretKey and
+  # use mergePolicy: Merge so the static type/url/username are merged on top.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: claudtainer-homelab-repo
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: claudtainer-homelab-repo
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            type: git
+            url: https://github.com/Arsenikki/claudtainer-homelab
+            username: Arsenikki
+      data:
+        - secretKey: password
+          remoteRef:
+            key: "claudtainer"
+            property: github_pat
 
 # Run ArgoCD components on control-plane nodes
 controller:

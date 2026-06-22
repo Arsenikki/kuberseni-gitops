@@ -1,0 +1,35 @@
+---
+# Grafana Kubernetes Monitoring (v4) — the Alloy collection layer. Deploys Alloy
+# (metrics/logs/events), node-exporter and kube-state-metrics; scrapes the cluster +
+# control plane + ServiceMonitors and remote_writes to Mimir / pushes logs to Loki.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k8s-monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: k8s-monitoring
+      targetRevision: 4.1.6
+      helm:
+        valueFiles:
+          - $values/cluster/apps/monitoring/k8s-monitoring/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

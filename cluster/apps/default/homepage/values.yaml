@@ -10,6 +10,10 @@ controllers:
           tag: v1.13.2
         env:
           TZ: "Europe/London"
+          HOMEPAGE_ALLOWED_HOSTS: "home.arsenikki.casa"
+        envFrom:
+          - secretRef:
+              name: homepage-secrets
         resources:
           requests:
             cpu: 15m
@@ -30,6 +34,7 @@ ingress:
     annotations:
       kubernetes.io/tls-acme: "true"
       external-dns/is-public: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
     hosts:
       - host: &host home.arsenikki.casa
         paths:

@@ -1,0 +1,29 @@
+---
+# Owns the monitoring namespace (with privileged PodSecurity labels) so it exists
+# before the storage/CRD apps sync. Helm apps also keep CreateNamespace=true (no-op
+# once this exists), which never strips these labels.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-namespace
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/monitoring
+    directory:
+      recurse: false
+      include: "namespace.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
