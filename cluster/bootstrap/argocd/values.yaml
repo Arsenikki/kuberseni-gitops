@@ -148,6 +148,38 @@ extraObjects:
             key: "authentik"
             property: argocd_oidc_client_secret
 
+  # Repository credential so ArgoCD can pull the PRIVATE claudtainer-homelab repo.
+  # 1Password item "claudtainer" (vault homelab) must have a read-only
+  # fine-grained PAT for that repo in field `github_pat`.
+  # (Skip this block if you make the claudtainer-homelab repo public.)
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: claudtainer-homelab-repo
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: claudtainer-homelab-repo
+        creationPolicy: Owner
+        template:
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            type: git
+            url: https://github.com/Arsenikki/claudtainer-homelab
+            username: Arsenikki
+            password: "{{ .github_pat }}"
+      data:
+        - secretKey: github_pat
+          remoteRef:
+            key: "claudtainer"
+            property: github_pat
+
 # Run ArgoCD components on control-plane nodes
 controller:
   nodeSelector:
