@@ -1,21 +1,9 @@
 # Proxmox ACME (Let's Encrypt) via Cloudflare DNS-01 challenge.
 # Each node gets its own cert for its *.proxmox.arsenikki.casa hostname.
 # After initial order, Proxmox renews automatically via its built-in cron.
-
-resource "proxmox_virtual_environment_acme_account" "default" {
-  name      = "default"
-  contact   = ["mailto:${var.acme_contact_email}"]
-  directory = "https://acme-v02.api.letsencrypt.org/directory"
-}
-
-resource "proxmox_virtual_environment_acme_plugin" "cloudflare" {
-  plugin = "cloudflare"
-  type   = "dns"
-  api    = "cf"
-  data   = "CF_Token=${var.cloudflare_api_token}"
-
-  depends_on = [proxmox_virtual_environment_acme_account.default]
-}
+#
+# agent=false on all SSH connections bypasses the 1Password SSH agent
+# (which intercepts and breaks auth to Proxmox nodes).
 
 locals {
   proxmox_nodes_acme = {
@@ -25,15 +13,36 @@ locals {
   }
 }
 
-# SSH into each node to set the ACME domain and order the cert.
-# agent=false bypasses the 1Password SSH agent (which intercepts and breaks Proxmox SSH).
-# Triggers re-run if plugin or target hostname changes; Proxmox handles renewals itself.
+# Register ACME account and Cloudflare DNS plugin cluster-wide (run on primary node).
+resource "null_resource" "proxmox_acme_setup" {
+  triggers = {
+    cloudflare_token = sha256(var.cloudflare_api_token)
+    contact          = var.acme_contact_email
+  }
+
+  connection {
+    type        = "ssh"
+    host        = "192.168.1.10"
+    user        = "root"
+    private_key = file(pathexpand("~/.ssh/arsenikki"))
+    agent       = false
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "pvesh create /cluster/acme/account --name default --contact 'mailto:${var.acme_contact_email}' --directory https://acme-v02.api.letsencrypt.org/directory 2>/dev/null || true",
+      "pvesh create /cluster/acme/plugins --id cloudflare --type dns --api cf --data 'CF_Token=${var.cloudflare_api_token}' 2>/dev/null || pvesh set /cluster/acme/plugins/cloudflare --data 'CF_Token=${var.cloudflare_api_token}'",
+    ]
+  }
+}
+
+# Order cert on each node (set domain + issue).
 resource "null_resource" "proxmox_acme_cert" {
   for_each = local.proxmox_nodes_acme
 
   triggers = {
-    plugin_id = proxmox_virtual_environment_acme_plugin.cloudflare.plugin
-    hostname  = each.value.hostname
+    setup_id = null_resource.proxmox_acme_setup.id
+    hostname = each.value.hostname
   }
 
   connection {
@@ -51,5 +60,5 @@ resource "null_resource" "proxmox_acme_cert" {
     ]
   }
 
-  depends_on = [proxmox_virtual_environment_acme_plugin.cloudflare]
+  depends_on = [null_resource.proxmox_acme_setup]
 }
