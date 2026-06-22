@@ -140,8 +140,10 @@ alertmanager:
     receivers:
       - name: telegram
         telegram_configs:
+          # Casa Automation supergroup, "debug" Topic (thread 3). Was 128627881 (a DM).
           - bot_token_file: /etc/mimir/secrets/telegram/token
-            chat_id: 128627881
+            chat_id: -1004308954067
+            message_thread_id: 3
             parse_mode: HTML
             send_resolved: true
       - name: claudtainer
