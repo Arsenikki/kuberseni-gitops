@@ -152,6 +152,12 @@ extraObjects:
   # 1Password item "claudtainer" (vault homelab) must have a read-only
   # fine-grained PAT for that repo in field `github_pat`.
   # (Skip this block if you make the claudtainer-homelab repo public.)
+  #
+  # NOTE: this object is rendered through the argo-cd chart's `tpl` on
+  # extraObjects, so Helm evaluates any `{{ ... }}` BEFORE ESO does. We must NOT
+  # use an ESO template like `{{ .github_pat }}` here — Helm would consume it and
+  # render an empty password. Instead map `password` directly as a secretKey and
+  # use mergePolicy: Merge so the static type/url/username are merged on top.
   - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:
@@ -166,6 +172,7 @@ extraObjects:
         name: claudtainer-homelab-repo
         creationPolicy: Owner
         template:
+          mergePolicy: Merge
           metadata:
             labels:
               argocd.argoproj.io/secret-type: repository
@@ -173,9 +180,8 @@ extraObjects:
             type: git
             url: https://github.com/Arsenikki/claudtainer-homelab
             username: Arsenikki
-            password: "{{ .github_pat }}"
       data:
-        - secretKey: github_pat
+        - secretKey: password
           remoteRef:
             key: "claudtainer"
             property: github_pat
