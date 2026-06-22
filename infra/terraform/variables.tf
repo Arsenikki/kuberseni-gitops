@@ -51,4 +51,10 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "acme_contact_email" {
+  description = "Contact email for Let's Encrypt ACME account on Proxmox nodes"
+  type        = string
+  sensitive   = true
+}
+
 

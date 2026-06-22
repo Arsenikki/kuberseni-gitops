@@ -4,7 +4,7 @@
 
 resource "proxmox_virtual_environment_acme_account" "default" {
   name      = "default"
-  contact   = ["mailto:arseni@automata.tech"]
+  contact   = ["mailto:${var.acme_contact_email}"]
   directory = "https://acme-v02.api.letsencrypt.org/directory"
 }
 
