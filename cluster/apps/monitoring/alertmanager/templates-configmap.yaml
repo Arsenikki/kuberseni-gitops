@@ -1,0 +1,27 @@
+---
+# Telegram message template for Alertmanager. Kept in a ConfigMap (NOT the
+# ESO-rendered Secret) on purpose: ESO Go-templates the whole alertmanager.yml, so
+# any `{{ ... }}` Alertmanager-template syntax placed there would be consumed by ESO
+# before Alertmanager sees it. A separate .tmpl file is never ESO-processed, so its
+# braces survive. The Secret only references this template by name (one escaped line).
+#
+# parse_mode is HTML (set in the telegram_config), so <b>/<i>/<code> render. Alert
+# annotation values are assumed plain text (no raw < > &) — true for our PrometheusRules.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-templates
+  namespace: monitoring
+  labels:
+    app: alertmanager
+data:
+  telegram.tmpl: |
+    {{ define "telegram.casa.message" }}
+    {{- range .Alerts }}
+    {{ if eq .Status "firing" }}{{ if eq .Labels.severity "critical" }}🚨{{ else if eq .Labels.severity "warning" }}⚠️{{ else }}🔔{{ end }}{{ else }}✅ <b>RESOLVED</b> · {{ end }}<b>{{ .Labels.alertname }}</b>{{ with .Labels.severity }} · <i>{{ . }}</i>{{ end }}
+    {{ with .Annotations.summary }}{{ . }}
+    {{ end }}{{- with .Annotations.description }}{{ . }}
+    {{ end }}{{- with .Labels.namespace }}📦 <code>{{ . }}</code>  {{ end }}{{- with .Labels.instance }}🖥 <code>{{ . }}</code>  {{ end }}{{- with .Labels.job }}⚙️ <code>{{ . }}</code>{{ end }}
+    {{ end }}
+    ↩️ <i>reply + mention @CasaAgenticBot to investigate</i>
+    {{- end }}
