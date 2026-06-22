@@ -11,7 +11,7 @@ sops = "3.13.1"
 age = "1.3.1"
 
 # Infrastructure as Code
-opentofu = "1.12.2"
+opentofu = "1.12.3"
 
 # Utilities
 yq = "4.53.3"
