@@ -45,4 +45,10 @@ variable "opnsense_api_secret" {
   sensitive   = true
 }
 
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token with Zone:DNS:Edit for arsenikki.casa (used by Proxmox ACME)"
+  type        = string
+  sensitive   = true
+}
+
 
