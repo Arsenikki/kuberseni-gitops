@@ -19,6 +19,57 @@ data:
   app-argocd.yaml: "---\nversion: 1\nmetadata:\n  name: argocd\nentries:\n  - id: provider\n    model: authentik_providers_oauth2.oauth2provider\n    identifiers:\n      name: argocd\n    attrs:\n      authorization_flow: !Find [authentik_flows.flow, [slug, \"default-provider-authorization-implicit-consent\"]]\n      invalidation_flow: !Find [authentik_flows.flow, [slug, \"default-provider-invalidation-flow\"]]\n      client_type: confidential\n      grant_types:\n        - authorization_code\n      client_id: !Env [ARGOCD_OIDC_CLIENT_ID, \"\"]\n      client_secret: !Env [ARGOCD_OIDC_CLIENT_SECRET, \"\"]\n      signing_key: !Find [authentik_crypto.certificatekeypair, [name, \"authentik Self-signed Certificate\"]]\n      include_claims_in_id_token: true\n      access_token_validity: hours=1\n      redirect_uris:\n        - matching_mode: strict\n          url: https://argocd.arsenikki.casa/auth/callback\n      property_mappings:\n        - !Find [authentik_providers_oauth2.scopemapping, [managed, \"goauthentik.io/providers/oauth2/scope-openid\"]]\n        - !Find [authentik_providers_oauth2.scopemapping, [managed, \"goauthentik.io/providers/oauth2/scope-email\"]]\n        - !Find [authentik_providers_oauth2.scopemapping, [managed, \"goauthentik.io/providers/oauth2/scope-profile\"]]\n\n  - id: application\n    model: authentik_core.application\n    identifiers:\n      slug: argocd\n    attrs:\n      name: argocd\n      group: Apps\n      icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/argo-cd.png\n      provider: !KeyOf provider\n      policy_engine_mode: any\n"
   app-homepage.yaml: "---\nversion: 1\nmetadata:\n  name: &app homepage\nentries:\n  - id: provider\n    model: authentik_providers_proxy.proxyprovider\n    identifiers:\n      name: *app\n    attrs:\n      authorization_flow:\n        !Find [authentik_flows.flow, [slug, \"default-provider-authorization-implicit-consent\"]]\n      signing_key:\n        !Find [authentik_crypto.certificatekeypair, [name, \"authentik Self-signed Certificate\"]]\n      invalidation_flow:\n        !Find [authentik_flows.flow, [slug, \"default-provider-invalidation-flow\"]]\n      mode: forward_single\n      internal_host: http://homepage.default.svc.cluster.local:3000\n      external_host: https://home.arsenikki.casa\n      access_token_validity: hours=1\n\n  - id: application\n    model: authentik_core.application\n    identifiers:\n      slug: *app\n    attrs:\n      name: *app\n      group: Apps\n      icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/homepage.png\n      provider: !KeyOf provider\n      policy_engine_mode: any\n"
   source-github.yaml: "---\nversion: 1\nmetadata:\n  name: source-github\nentries:\n  - id: github-source\n    model: authentik_sources_oauth.oauthsource\n    identifiers:\n      slug: github\n    attrs:\n      name: GitHub\n      provider_type: github\n      consumer_key: !Env [GITHUB_OAUTH_CLIENT_ID, \"\"]\n      consumer_secret: !Env [GITHUB_OAUTH_CLIENT_SECRET, \"\"]\n      authentication_flow: !Find [authentik_flows.flow, [slug, \"default-source-authentication\"]]\n      enrollment_flow: !Find [authentik_flows.flow, [slug, \"default-source-enrollment\"]]\n      enabled: true\n      user_matching_mode: email_link\n\n  - model: authentik_stages_identification.identificationstage\n    identifiers:\n      name: default-authentication-identification\n    attrs:\n      sources:\n        - !KeyOf github-source\n      show_source_labels: true\n"
+  app-grafana.yaml: |
+    ---
+    version: 1
+    metadata:
+      name: grafana
+    entries:
+      - id: groups-scope
+        model: authentik_providers_oauth2.scopemapping
+        state: present
+        identifiers:
+          managed: "custom.grafana/scope-groups"
+        attrs:
+          name: "Grafana Groups Scope"
+          scope_name: "groups"
+          expression: |
+            return [group.name for group in request.user.ak_groups.all()]
+
+      - id: provider
+        model: authentik_providers_oauth2.oauth2provider
+        identifiers:
+          name: grafana
+        attrs:
+          authorization_flow: !Find [authentik_flows.flow, [slug, "default-provider-authorization-implicit-consent"]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
+          client_type: confidential
+          grant_types:
+            - authorization_code
+          client_id: !Env [GRAFANA_OAUTH_CLIENT_ID, ""]
+          client_secret: !Env [GRAFANA_OAUTH_CLIENT_SECRET, ""]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
+          include_claims_in_id_token: true
+          access_token_validity: hours=1
+          redirect_uris:
+            - matching_mode: strict
+              url: https://grafana.arsenikki.casa/login/generic_oauth
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-openid"]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-email"]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, "goauthentik.io/providers/oauth2/scope-profile"]]
+            - !KeyOf groups-scope
+
+      - id: application
+        model: authentik_core.application
+        identifiers:
+          slug: grafana
+        attrs:
+          name: grafana
+          group: Apps
+          icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/grafana.png
+          provider: !KeyOf provider
+          policy_engine_mode: any
 kind: ConfigMap
 metadata:
   name: authentik-blueprints
