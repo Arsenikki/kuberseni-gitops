@@ -1,0 +1,189 @@
+---
+# media-notifier relay script. Receives Sonarr/Radarr/Overseerr webhooks and posts
+# pretty Telegram messages. Stdlib only (http.server + urllib) → runs on a stock
+# python:alpine image with ZERO pip deps; no custom image to build/maintain.
+# Mounted read-only at /app; Reloader restarts the pod when this ConfigMap changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-notifier
+  namespace: media
+  labels:
+    app: media-notifier
+data:
+  relay.py: |
+    #!/usr/bin/env python3
+    """media-notifier — Sonarr/Radarr/Overseerr webhooks -> pretty Telegram messages.
+    Stdlib only. Env: TG_BOT_TOKEN, TG_CHAT_ID, TG_TOPIC_ID (empty = General topic)."""
+    import base64, hmac, json, os, html, urllib.request, urllib.parse
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    TOKEN = os.environ.get("TG_BOT_TOKEN", "")
+    CHAT  = os.environ.get("TG_CHAT_ID", "")
+    TOPIC = os.environ.get("TG_TOPIC_ID", "").strip()
+    # Shared secret. If set, callers must present it (Bearer or Basic password) — stops
+    # any in-cluster workload from forging notifications. Empty = auth disabled.
+    WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "").strip()
+    MAX_BODY = 256 * 1024  # cap request body to avoid memory/thread exhaustion
+
+    def esc(s):
+        return html.escape(str(s)) if s is not None else ""
+
+    def authorized(headers):
+        if not WEBHOOK_TOKEN:
+            return True
+        h = headers.get("Authorization", "")
+        if h.startswith("Bearer "):
+            return hmac.compare_digest(h[7:].strip(), WEBHOOK_TOKEN)
+        if h.startswith("Basic "):
+            try:
+                raw = base64.b64decode(h[6:].strip()).decode()
+                pw = raw.split(":", 1)[1] if ":" in raw else raw
+            except Exception:
+                return False
+            return hmac.compare_digest(pw, WEBHOOK_TOKEN)
+        return False
+
+    def tg_send(text):
+        """Raises on failure so the caller can return a non-2xx (never silently drop)."""
+        if not (TOKEN and CHAT):
+            raise RuntimeError("missing TG_BOT_TOKEN/TG_CHAT_ID")
+        params = {"chat_id": CHAT, "text": text, "parse_mode": "HTML",
+                  "disable_web_page_preview": "true"}
+        if TOPIC:
+            params["message_thread_id"] = TOPIC
+        req = urllib.request.Request(
+            "https://api.telegram.org/bot%s/sendMessage" % TOKEN,
+            data=urllib.parse.urlencode(params).encode())
+        urllib.request.urlopen(req, timeout=15)
+
+    def _quality(d, key):
+        q = d.get(key) or {}
+        if isinstance(q, dict) and q.get("quality"):
+            return q["quality"]
+        return (d.get("release") or {}).get("quality") or ""
+
+    def fmt_sonarr(d):
+        et = d.get("eventType")
+        if et == "Test":
+            return "✅ <b>Sonarr</b> connected to media-notifier."
+        if et not in ("Grab", "Download"):
+            return None
+        series = (d.get("series") or {}).get("title", "?")
+        eps = d.get("episodes") or []
+        code = eptitle = ""
+        if eps:
+            e0 = eps[0]
+            code = "S%02dE%02d" % (e0.get("seasonNumber", 0), e0.get("episodeNumber", 0))
+            if len(eps) > 1:
+                code += " (+%d)" % (len(eps) - 1)
+            eptitle = e0.get("title", "")
+        qual = _quality(d, "episodeFile")
+        if et == "Grab":
+            head = "\U0001F4E5 <b>Grabbed</b>"
+        else:
+            head = "⬆️ <b>Upgraded</b>" if d.get("isUpgrade") else "\U0001F4FA <b>Downloaded</b>"
+        msg = "%s — <b>%s</b> %s" % (head, esc(series), esc(code))
+        if eptitle:
+            msg += "\n<i>%s</i>" % esc(eptitle)
+        if qual:
+            msg += "\n\U0001F39E %s" % esc(qual)
+        return msg
+
+    def fmt_radarr(d):
+        et = d.get("eventType")
+        if et == "Test":
+            return "✅ <b>Radarr</b> connected to media-notifier."
+        if et not in ("Grab", "Download"):
+            return None
+        movie = d.get("movie") or {}
+        title, year = movie.get("title", "?"), movie.get("year", "")
+        qual = _quality(d, "movieFile")
+        if et == "Grab":
+            head = "\U0001F4E5 <b>Grabbed</b>"
+        else:
+            head = "⬆️ <b>Upgraded</b>" if d.get("isUpgrade") else "\U0001F3AC <b>Downloaded</b>"
+        msg = "%s — <b>%s</b>%s" % (head, esc(title), (" (%s)" % esc(year) if year else ""))
+        if qual:
+            msg += "\n\U0001F39E %s" % esc(qual)
+        return msg
+
+    def fmt_overseerr(d):
+        nt = d.get("notification_type", "")
+        if nt == "TEST_NOTIFICATION":
+            return "✅ <b>Overseerr</b> connected to media-notifier."
+        icons = {"MEDIA_PENDING": "\U0001F195 <b>Requested</b>",
+                 "MEDIA_APPROVED": "✅ <b>Approved</b>",
+                 "MEDIA_AUTO_APPROVED": "✅ <b>Auto-approved</b>",
+                 "MEDIA_AVAILABLE": "\U0001F389 <b>Available</b>",
+                 "MEDIA_DECLINED": "\U0001F6AB <b>Declined</b>",
+                 "MEDIA_FAILED": "⚠️ <b>Failed</b>"}
+        head = icons.get(nt, "ℹ️ <b>%s</b>" % esc(nt))
+        msg = "%s — <b>%s</b>" % (head, esc(d.get("subject", "")))
+        bits = []
+        mtype = (d.get("media") or {}).get("media_type", "")
+        requester = (d.get("request") or {}).get("requestedBy_username", "")
+        if mtype:
+            bits.append(esc(mtype))
+        if requester:
+            bits.append("by %s" % esc(requester))
+        if bits:
+            msg += "\n" + " · ".join(bits)
+        return msg
+
+    ROUTES = {"/sonarr": fmt_sonarr, "/radarr": fmt_radarr, "/overseerr": fmt_overseerr}
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            if self.path in ("/healthz", "/"):
+                self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+            else:
+                self.send_response(404); self.end_headers()
+
+        def _reply(self, code, body=b""):
+            self.send_response(code); self.end_headers()
+            if body:
+                self.wfile.write(body)
+
+        def do_POST(self):
+            fmt = ROUTES.get(self.path.rstrip("/"))
+            if not fmt:
+                return self._reply(404)
+            if not authorized(self.headers):
+                print("[notifier] %s unauthorized" % self.path, flush=True)
+                return self._reply(401)
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+            except (TypeError, ValueError):
+                return self._reply(411)
+            if n <= 0 or n > MAX_BODY:
+                return self._reply(413)
+            try:
+                payload = json.loads(self.rfile.read(n) or b"{}")
+            except Exception as e:
+                print("[notifier] bad payload: %s" % e, flush=True)
+                return self._reply(400)
+            tag = payload.get("eventType") or payload.get("notification_type")
+            try:
+                msg = fmt(payload)
+            except Exception as e:                       # formatter bug — surface it
+                print("[notifier] %s formatter error: %s" % (self.path, e), flush=True)
+                return self._reply(500)
+            if not msg:                                  # event we deliberately ignore
+                print("[notifier] %s %s -> ignored" % (self.path, tag), flush=True)
+                return self._reply(200, b"ignored")
+            try:
+                tg_send(msg)
+            except Exception as e:                       # don't ACK a failed delivery
+                body = e.read().decode()[:300] if hasattr(e, "read") else ""
+                print("[notifier] %s telegram send failed: %s %s" % (self.path, e, body), flush=True)
+                return self._reply(502)
+            print("[notifier] %s %s -> sent" % (self.path, tag), flush=True)
+            self._reply(200, b"ok")
+
+    if __name__ == "__main__":
+        print("[notifier] listening :8080 (chat=%s topic=%s)" % (CHAT, TOPIC or "General"), flush=True)
+        ThreadingHTTPServer(("0.0.0.0", 8080), H).serve_forever()

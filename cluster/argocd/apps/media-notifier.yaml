@@ -1,0 +1,30 @@
+---
+# media-notifier — single relay pod that turns Sonarr/Radarr/Overseerr webhooks into
+# pretty Telegram messages. Plain manifests (ConfigMap script + Deployment + Service +
+# ESO secret); stdlib-only on a stock python:alpine image. Wave 5.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: media-notifier
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/media/media-notifier
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
