@@ -1,6 +1,9 @@
 ---
 # Grafana — Mimir + Loki datasources, Authentik OIDC SSO, dashboards-as-code.
 
+image:
+  pullPolicy: Always  # worker-02 had stale cached layer causing exec format error; Always forces fresh pull
+
 persistence:
   enabled: true
   size: 2Gi
