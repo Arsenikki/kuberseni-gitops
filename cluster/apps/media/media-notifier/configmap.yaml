@@ -15,19 +15,39 @@ data:
     #!/usr/bin/env python3
     """media-notifier — Sonarr/Radarr/Overseerr webhooks -> pretty Telegram messages.
     Stdlib only. Env: TG_BOT_TOKEN, TG_CHAT_ID, TG_TOPIC_ID (empty = General topic)."""
-    import json, os, html, urllib.request, urllib.parse
+    import base64, hmac, json, os, html, urllib.request, urllib.parse
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     TOKEN = os.environ.get("TG_BOT_TOKEN", "")
     CHAT  = os.environ.get("TG_CHAT_ID", "")
     TOPIC = os.environ.get("TG_TOPIC_ID", "").strip()
+    # Shared secret. If set, callers must present it (Bearer or Basic password) — stops
+    # any in-cluster workload from forging notifications. Empty = auth disabled.
+    WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "").strip()
+    MAX_BODY = 256 * 1024  # cap request body to avoid memory/thread exhaustion
 
     def esc(s):
         return html.escape(str(s)) if s is not None else ""
 
+    def authorized(headers):
+        if not WEBHOOK_TOKEN:
+            return True
+        h = headers.get("Authorization", "")
+        if h.startswith("Bearer "):
+            return hmac.compare_digest(h[7:].strip(), WEBHOOK_TOKEN)
+        if h.startswith("Basic "):
+            try:
+                raw = base64.b64decode(h[6:].strip()).decode()
+                pw = raw.split(":", 1)[1] if ":" in raw else raw
+            except Exception:
+                return False
+            return hmac.compare_digest(pw, WEBHOOK_TOKEN)
+        return False
+
     def tg_send(text):
+        """Raises on failure so the caller can return a non-2xx (never silently drop)."""
         if not (TOKEN and CHAT):
-            print("[notifier] missing TG_BOT_TOKEN/TG_CHAT_ID", flush=True); return
+            raise RuntimeError("missing TG_BOT_TOKEN/TG_CHAT_ID")
         params = {"chat_id": CHAT, "text": text, "parse_mode": "HTML",
                   "disable_web_page_preview": "true"}
         if TOPIC:
@@ -35,11 +55,7 @@ data:
         req = urllib.request.Request(
             "https://api.telegram.org/bot%s/sendMessage" % TOKEN,
             data=urllib.parse.urlencode(params).encode())
-        try:
-            urllib.request.urlopen(req, timeout=15)
-        except Exception as e:
-            body = e.read().decode()[:300] if hasattr(e, "read") else ""
-            print("[notifier] telegram send failed: %s %s" % (e, body), flush=True)
+        urllib.request.urlopen(req, timeout=15)
 
     def _quality(d, key):
         q = d.get(key) or {}
@@ -127,27 +143,46 @@ data:
             else:
                 self.send_response(404); self.end_headers()
 
+        def _reply(self, code, body=b""):
+            self.send_response(code); self.end_headers()
+            if body:
+                self.wfile.write(body)
+
         def do_POST(self):
             fmt = ROUTES.get(self.path.rstrip("/"))
             if not fmt:
-                self.send_response(404); self.end_headers(); return
+                return self._reply(404)
+            if not authorized(self.headers):
+                print("[notifier] %s unauthorized" % self.path, flush=True)
+                return self._reply(401)
             try:
                 n = int(self.headers.get("Content-Length", 0))
+            except (TypeError, ValueError):
+                return self._reply(411)
+            if n <= 0 or n > MAX_BODY:
+                return self._reply(413)
+            try:
                 payload = json.loads(self.rfile.read(n) or b"{}")
             except Exception as e:
                 print("[notifier] bad payload: %s" % e, flush=True)
-                self.send_response(400); self.end_headers(); return
+                return self._reply(400)
+            tag = payload.get("eventType") or payload.get("notification_type")
             try:
                 msg = fmt(payload)
-                tag = payload.get("eventType") or payload.get("notification_type")
-                if msg:
-                    tg_send(msg)
-                    print("[notifier] %s %s -> sent" % (self.path, tag), flush=True)
-                else:
-                    print("[notifier] %s %s -> ignored" % (self.path, tag), flush=True)
-            except Exception as e:
-                print("[notifier] handler error: %s" % e, flush=True)
-            self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+            except Exception as e:                       # formatter bug — surface it
+                print("[notifier] %s formatter error: %s" % (self.path, e), flush=True)
+                return self._reply(500)
+            if not msg:                                  # event we deliberately ignore
+                print("[notifier] %s %s -> ignored" % (self.path, tag), flush=True)
+                return self._reply(200, b"ignored")
+            try:
+                tg_send(msg)
+            except Exception as e:                       # don't ACK a failed delivery
+                body = e.read().decode()[:300] if hasattr(e, "read") else ""
+                print("[notifier] %s telegram send failed: %s %s" % (self.path, e, body), flush=True)
+                return self._reply(502)
+            print("[notifier] %s %s -> sent" % (self.path, tag), flush=True)
+            self._reply(200, b"ok")
 
     if __name__ == "__main__":
         print("[notifier] listening :8080 (chat=%s topic=%s)" % (CHAT, TOPIC or "General"), flush=True)
