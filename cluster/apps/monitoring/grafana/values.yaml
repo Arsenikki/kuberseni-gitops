@@ -1,6 +1,19 @@
 ---
 # Grafana — Mimir + Loki datasources, Authentik OIDC SSO, dashboards-as-code.
 
+# worker-02 (Celeron N5105, NAS host) has a corrupted containerd layer for this image
+# (bash binary is 0 bytes, causing exec /run.sh: exec format error). worker-01 (i5-13500H)
+# is also the better host: 10 CPU / 20 GB vs 3 CPU / 16 GB.
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - worker-01
+
 persistence:
   enabled: true
   size: 2Gi
