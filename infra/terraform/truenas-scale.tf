@@ -42,6 +42,7 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
   bios            = "seabios"
   machine         = "q35"  # PCIe bus required for HDD passthrough; SeaBIOS avoids OVMF/passthrough boot issues
   scsi_hardware   = "virtio-scsi-single"  # One I/O thread per disk via iothread=true
+  tags            = ["critical"]          # ProxmoxVMDown alerts only on `critical`-tagged VMs
 
   agent {
     enabled = true
