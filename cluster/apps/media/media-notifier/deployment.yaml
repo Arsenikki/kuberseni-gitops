@@ -1,0 +1,83 @@
+---
+# Single relay pod for all media notifications. Off-the-shelf python:alpine running
+# the stdlib-only script from the media-notifier ConfigMap — no custom image, minimal
+# deps. Reloader restarts it when the ConfigMap or secret changes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-notifier
+  namespace: media
+  labels:
+    app: media-notifier
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: media-notifier
+  template:
+    metadata:
+      labels:
+        app: media-notifier
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: media-notifier
+          image: python:3.12-alpine
+          command: ["python3", "/app/relay.py"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            # Empty => post to the group's General topic. Set to a thread id later
+            # to route media notifications into a dedicated Topic.
+            - name: TG_TOPIC_ID
+              value: ""
+          envFrom:
+            - secretRef:
+                name: media-notifier-telegram   # TG_BOT_TOKEN, TG_CHAT_ID
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: app
+          configMap:
+            name: media-notifier
+        - name: tmp
+          emptyDir: {}

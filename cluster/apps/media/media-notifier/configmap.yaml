@@ -1,0 +1,154 @@
+---
+# media-notifier relay script. Receives Sonarr/Radarr/Overseerr webhooks and posts
+# pretty Telegram messages. Stdlib only (http.server + urllib) → runs on a stock
+# python:alpine image with ZERO pip deps; no custom image to build/maintain.
+# Mounted read-only at /app; Reloader restarts the pod when this ConfigMap changes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-notifier
+  namespace: media
+  labels:
+    app: media-notifier
+data:
+  relay.py: |
+    #!/usr/bin/env python3
+    """media-notifier — Sonarr/Radarr/Overseerr webhooks -> pretty Telegram messages.
+    Stdlib only. Env: TG_BOT_TOKEN, TG_CHAT_ID, TG_TOPIC_ID (empty = General topic)."""
+    import json, os, html, urllib.request, urllib.parse
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    TOKEN = os.environ.get("TG_BOT_TOKEN", "")
+    CHAT  = os.environ.get("TG_CHAT_ID", "")
+    TOPIC = os.environ.get("TG_TOPIC_ID", "").strip()
+
+    def esc(s):
+        return html.escape(str(s)) if s is not None else ""
+
+    def tg_send(text):
+        if not (TOKEN and CHAT):
+            print("[notifier] missing TG_BOT_TOKEN/TG_CHAT_ID", flush=True); return
+        params = {"chat_id": CHAT, "text": text, "parse_mode": "HTML",
+                  "disable_web_page_preview": "true"}
+        if TOPIC:
+            params["message_thread_id"] = TOPIC
+        req = urllib.request.Request(
+            "https://api.telegram.org/bot%s/sendMessage" % TOKEN,
+            data=urllib.parse.urlencode(params).encode())
+        try:
+            urllib.request.urlopen(req, timeout=15)
+        except Exception as e:
+            body = e.read().decode()[:300] if hasattr(e, "read") else ""
+            print("[notifier] telegram send failed: %s %s" % (e, body), flush=True)
+
+    def _quality(d, key):
+        q = d.get(key) or {}
+        if isinstance(q, dict) and q.get("quality"):
+            return q["quality"]
+        return (d.get("release") or {}).get("quality") or ""
+
+    def fmt_sonarr(d):
+        et = d.get("eventType")
+        if et == "Test":
+            return "✅ <b>Sonarr</b> connected to media-notifier."
+        if et not in ("Grab", "Download"):
+            return None
+        series = (d.get("series") or {}).get("title", "?")
+        eps = d.get("episodes") or []
+        code = eptitle = ""
+        if eps:
+            e0 = eps[0]
+            code = "S%02dE%02d" % (e0.get("seasonNumber", 0), e0.get("episodeNumber", 0))
+            if len(eps) > 1:
+                code += " (+%d)" % (len(eps) - 1)
+            eptitle = e0.get("title", "")
+        qual = _quality(d, "episodeFile")
+        if et == "Grab":
+            head = "\U0001F4E5 <b>Grabbed</b>"
+        else:
+            head = "⬆️ <b>Upgraded</b>" if d.get("isUpgrade") else "\U0001F4FA <b>Downloaded</b>"
+        msg = "%s — <b>%s</b> %s" % (head, esc(series), esc(code))
+        if eptitle:
+            msg += "\n<i>%s</i>" % esc(eptitle)
+        if qual:
+            msg += "\n\U0001F39E %s" % esc(qual)
+        return msg
+
+    def fmt_radarr(d):
+        et = d.get("eventType")
+        if et == "Test":
+            return "✅ <b>Radarr</b> connected to media-notifier."
+        if et not in ("Grab", "Download"):
+            return None
+        movie = d.get("movie") or {}
+        title, year = movie.get("title", "?"), movie.get("year", "")
+        qual = _quality(d, "movieFile")
+        if et == "Grab":
+            head = "\U0001F4E5 <b>Grabbed</b>"
+        else:
+            head = "⬆️ <b>Upgraded</b>" if d.get("isUpgrade") else "\U0001F3AC <b>Downloaded</b>"
+        msg = "%s — <b>%s</b>%s" % (head, esc(title), (" (%s)" % esc(year) if year else ""))
+        if qual:
+            msg += "\n\U0001F39E %s" % esc(qual)
+        return msg
+
+    def fmt_overseerr(d):
+        nt = d.get("notification_type", "")
+        if nt == "TEST_NOTIFICATION":
+            return "✅ <b>Overseerr</b> connected to media-notifier."
+        icons = {"MEDIA_PENDING": "\U0001F195 <b>Requested</b>",
+                 "MEDIA_APPROVED": "✅ <b>Approved</b>",
+                 "MEDIA_AUTO_APPROVED": "✅ <b>Auto-approved</b>",
+                 "MEDIA_AVAILABLE": "\U0001F389 <b>Available</b>",
+                 "MEDIA_DECLINED": "\U0001F6AB <b>Declined</b>",
+                 "MEDIA_FAILED": "⚠️ <b>Failed</b>"}
+        head = icons.get(nt, "ℹ️ <b>%s</b>" % esc(nt))
+        msg = "%s — <b>%s</b>" % (head, esc(d.get("subject", "")))
+        bits = []
+        mtype = (d.get("media") or {}).get("media_type", "")
+        requester = (d.get("request") or {}).get("requestedBy_username", "")
+        if mtype:
+            bits.append(esc(mtype))
+        if requester:
+            bits.append("by %s" % esc(requester))
+        if bits:
+            msg += "\n" + " · ".join(bits)
+        return msg
+
+    ROUTES = {"/sonarr": fmt_sonarr, "/radarr": fmt_radarr, "/overseerr": fmt_overseerr}
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            if self.path in ("/healthz", "/"):
+                self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+            else:
+                self.send_response(404); self.end_headers()
+
+        def do_POST(self):
+            fmt = ROUTES.get(self.path.rstrip("/"))
+            if not fmt:
+                self.send_response(404); self.end_headers(); return
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                payload = json.loads(self.rfile.read(n) or b"{}")
+            except Exception as e:
+                print("[notifier] bad payload: %s" % e, flush=True)
+                self.send_response(400); self.end_headers(); return
+            try:
+                msg = fmt(payload)
+                tag = payload.get("eventType") or payload.get("notification_type")
+                if msg:
+                    tg_send(msg)
+                    print("[notifier] %s %s -> sent" % (self.path, tag), flush=True)
+                else:
+                    print("[notifier] %s %s -> ignored" % (self.path, tag), flush=True)
+            except Exception as e:
+                print("[notifier] handler error: %s" % e, flush=True)
+            self.send_response(200); self.end_headers(); self.wfile.write(b"ok")
+
+    if __name__ == "__main__":
+        print("[notifier] listening :8080 (chat=%s topic=%s)" % (CHAT, TOPIC or "General"), flush=True)
+        ThreadingHTTPServer(("0.0.0.0", 8080), H).serve_forever()
