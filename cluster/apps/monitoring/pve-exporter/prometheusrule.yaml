@@ -17,9 +17,12 @@ spec:
           # (`qm set <vmid> --tags critical`). Everything else — intentionally-off VMs,
           # templates, throwaway guests — stays quiet by default, so nothing pages
           # unless you've marked it important.
+          # `\bcritical\b` = whole-tag match (separator-agnostic): matches `critical`
+          # alone or among other tags, but NOT substrings like `noncritical`. The
+          # doubled backslash survives YAML; PromQL unescapes it to a regex word boundary.
           expr: |
             pve_up{id=~"qemu/.*"} == 0
-              and on(id) pve_guest_info{tags=~".*critical.*"}
+              and on(id) pve_guest_info{tags=~".*\\bcritical\\b.*"}
           for: 2m
           labels:
             severity: warning
