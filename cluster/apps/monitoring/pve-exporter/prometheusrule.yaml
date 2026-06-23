@@ -13,14 +13,13 @@ spec:
     - name: proxmox
       rules:
         - alert: ProxmoxVMDown
-          # Only VMs that are SUPPOSED to run. Tag intentionally-off VMs in Proxmox
-          # with `noalert` (`qm set <vmid> --tags noalert`) to suppress them. Templates
-          # never run, so exclude them too. If a label isn't populated the `unless`
-          # matches nothing and the alert behaves as before (no accidental silencing).
+          # Opt-in allowlist: alert ONLY on VMs explicitly tagged `critical` in Proxmox
+          # (`qm set <vmid> --tags critical`). Everything else — intentionally-off VMs,
+          # templates, throwaway guests — stays quiet by default, so nothing pages
+          # unless you've marked it important.
           expr: |
             pve_up{id=~"qemu/.*"} == 0
-              unless on(id) pve_guest_info{template="1"}
-              unless on(id) pve_guest_info{tags=~".*noalert.*"}
+              and on(id) pve_guest_info{tags=~".*critical.*"}
           for: 2m
           labels:
             severity: warning
