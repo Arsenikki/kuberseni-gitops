@@ -79,8 +79,47 @@ datasources:
         secureJsonData:
           httpHeaderValue1: "homelab"
 
-# Dashboards-as-code: the sidecar loads any ConfigMap labeled grafana_dashboard
-# (see observability/ for the imported community dashboards).
+# Community dashboards downloaded from grafana.com at pod startup via init container.
+# Each folder key maps to /var/lib/grafana/dashboards/{folder}/ and needs a matching
+# dashboardProviders entry below.
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: kubernetes
+        orgId: 1
+        folder: Kubernetes
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/kubernetes
+
+dashboards:
+  kubernetes:
+    node-exporter-full:
+      gnetId: 1860
+      revision: 37
+      datasource: Mimir
+    kubernetes-global:
+      gnetId: 15757
+      revision: 37
+      datasource: Mimir
+    kubernetes-namespaces:
+      gnetId: 15758
+      revision: 34
+      datasource: Mimir
+    kubernetes-nodes:
+      gnetId: 15759
+      revision: 29
+      datasource: Mimir
+    kubernetes-pods:
+      gnetId: 15760
+      revision: 29
+      datasource: Mimir
+
+# Dashboards-as-code: the sidecar loads any ConfigMap labeled grafana_dashboard.
+# Coexists with the gnetId download mechanism above.
 sidecar:
   dashboards:
     enabled: true
