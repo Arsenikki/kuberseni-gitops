@@ -1,0 +1,30 @@
+---
+# jeeves — ticket-driven autonomous maintenance system (GitHub Issues -> reviewed
+# PRs, built with Paseo + Claude Code). Source lives in a SEPARATE (private) repo;
+# rendered with kustomize (path "deploy/overlays/prod"). Wave 6 — after
+# ESO/1Password (secrets) and Longhorn (NATS + Paseo PVCs).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jeeves
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/jeeves
+    targetRevision: main
+    path: deploy/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jeeves
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
