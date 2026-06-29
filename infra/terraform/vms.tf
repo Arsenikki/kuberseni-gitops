@@ -79,6 +79,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   bios            = "ovmf"  # UEFI — required per Talos Proxmox guide
   machine         = each.value.machine_type != "" ? each.value.machine_type : null
   scsi_hardware   = "virtio-scsi-single"  # required for iothread per disk
+  tags            = ["critical"]          # ProxmoxVMDown alerts only on `critical`-tagged VMs
 
   agent {
     enabled = true
@@ -148,6 +149,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   bios            = "ovmf"
   machine         = each.value.machine_type != "" ? each.value.machine_type : null
   scsi_hardware   = "virtio-scsi-single"
+  tags            = ["critical"]  # ProxmoxVMDown alerts only on `critical`-tagged VMs
 
   agent {
     enabled = true
