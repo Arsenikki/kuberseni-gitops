@@ -2,13 +2,6 @@
 # Grafana Loki — SingleBinary on SeaweedFS S3. Homelab footprint: 1 replica,
 # replication factor 1, memcached caches disabled.
 
-# S3 creds injected as AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY; Loki's S3 client
-# picks them up via the AWS SDK env chain (creds left unset below → none in git).
-global:
-  extraEnvFrom:
-    - secretRef:
-        name: seaweedfs-s3
-
 deploymentMode: SingleBinary
 
 loki:
@@ -39,8 +32,12 @@ loki:
     retention_period: 744h # 31d
     volume_enabled: true
 
+# S3 creds — global.extraEnvFrom doesn't reach singleBinary; must set here directly.
 singleBinary:
   replicas: 1
+  extraEnvFrom:
+    - secretRef:
+        name: seaweedfs-s3
   persistence:
     enabled: true
     size: 10Gi
