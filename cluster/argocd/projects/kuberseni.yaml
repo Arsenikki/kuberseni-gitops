@@ -11,6 +11,7 @@ spec:
   sourceRepos:
     - https://github.com/Arsenikki/kuberseni-gitops
     - https://github.com/Arsenikki/claudtainer-homelab
+    - https://github.com/Arsenikki/jeeves
     - https://helm.cilium.io
     - https://charts.jetstack.io
     - https://charts.longhorn.io

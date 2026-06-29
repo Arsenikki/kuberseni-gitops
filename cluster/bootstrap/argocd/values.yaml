@@ -186,6 +186,45 @@ extraObjects:
             key: "claudtainer"
             property: github_pat
 
+  # Repository credential so ArgoCD can pull the PRIVATE jeeves repo, via the
+  # paseo-homelab GitHub App (ArgoCD mints installation tokens itself). Reuses the
+  # App already installed on the repo — no PAT needed. App id / installation id /
+  # private key come from the "Jeeves Agent" 1Password item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: jeeves-repo
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: jeeves-repo
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            type: git
+            url: https://github.com/Arsenikki/jeeves
+      data:
+        - secretKey: githubAppID
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_id
+        - secretKey: githubAppInstallationID
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_installation_id
+        - secretKey: githubAppPrivateKey
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_private_key
+
 # Run ArgoCD components on control-plane nodes
 controller:
   nodeSelector:
