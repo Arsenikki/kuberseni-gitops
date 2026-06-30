@@ -25,7 +25,11 @@ spec:
     path: deploy/overlays/prod
   destination:
     server: https://kubernetes.default.svc
-    namespace: jeeves
+    # Prod moved to its own namespace (symmetric with jeeves-dev). The matching
+    # jeeves-repo change renames the prod overlay namespace; ArgoCD migrates the
+    # workloads jeeves -> jeeves-prod (tears down the old namespace, NATS+daemon
+    # state reset — done with prod idle).
+    namespace: jeeves-prod
   syncPolicy:
     automated:
       prune: true
