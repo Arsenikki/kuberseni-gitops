@@ -18,7 +18,7 @@ spec:
       # Upgrading step-by-step: 1.17.2 → 1.18.10 → 1.19.x
       # 1.19.4 previously broke cross-node routing on CP-01 (vmbr2 vs vmbr0 bridge mismatch).
       # Re-attempting with explicit devices/directRoutingDevice already set in values.yaml.
-      targetRevision: 1.19.4
+      targetRevision: 1.19.5
       helm:
         valueFiles:
           - $values/cluster/apps/cilium/values.yaml
