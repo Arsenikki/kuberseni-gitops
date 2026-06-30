@@ -1,6 +1,6 @@
 clusterName: kuberseni
 # renovate: datasource=github-releases depName=siderolabs/talos
-talosVersion: v1.13.4
+talosVersion: v1.13.5
 # renovate: datasource=github-releases depName=siderolabs/kubernetes
 kubernetesVersion: v1.35.2
 
