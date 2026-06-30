@@ -12,16 +12,6 @@ metadata:
     app.kubernetes.io/part-of: monitoring
 spec:
   groups:
-    - name: watchdog
-      rules:
-        # Always-firing alert to prove the rule→ruler→Alertmanager→Telegram path works.
-        - alert: Watchdog
-          expr: vector(1)
-          labels:
-            severity: none
-          annotations:
-            summary: "Alerting pipeline is alive"
-
     - name: nodes
       rules:
         - alert: KubeNodeNotReady
