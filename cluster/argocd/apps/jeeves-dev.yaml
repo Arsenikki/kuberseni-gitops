@@ -1,0 +1,44 @@
+---
+# jeeves-dev — the CANDIDATE (dev) instance of Jeeves, co-located with prod in the
+# SAME cluster for environment parity (identical Longhorn/Cilium/Traefik/ESO), but
+# fully isolated in its own namespace `jeeves-dev` with its OWN NATS + Paseo daemon.
+# Via instance routing it watches the same repos as prod yet only claims issues
+# labelled jeeves-instance/dev, and is propose-only (never auto-merges). Source =
+# the SAME private jeeves repo, rendered from "deploy/overlays/dev". Wave 6.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jeeves-dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+    # Private source repo → the in-CI ArgoCD diff preview can't list its refs.
+    # Skip it here (same as the prod jeeves app); the live ArgoCD has the repo cred.
+    argocd-diff-preview/ignore: "true"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/jeeves
+    targetRevision: main
+    path: deploy/overlays/dev
+    # WHICH BUILD RUNS IN DEV: the overlay defaults to a stable tag; override it
+    # here to run a candidate. CI publishes an edge image per branch push tagged
+    #   ghcr.io/arsenikki/jeeves:<semver>-<branch>-<shortsha>
+    # (e.g. v1.3.2-feat-foo-a1b2c3d). To deploy a candidate, uncomment + set the
+    # tag below — a one-line change, no churn in the jeeves repo:
+    #
+    # kustomize:
+    #   images:
+    #     - ghcr.io/arsenikki/jeeves:v1.3.2-feat-foo-a1b2c3d
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jeeves-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
