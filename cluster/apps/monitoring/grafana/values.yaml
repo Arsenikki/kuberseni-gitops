@@ -107,6 +107,14 @@ dashboardProviders:
         editable: true
         options:
           path: /var/lib/grafana/dashboards/kubernetes
+      - name: proxmox
+        orgId: 1
+        folder: Proxmox
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/proxmox
 
 dashboards:
   kubernetes:
@@ -129,6 +137,13 @@ dashboards:
     kubernetes-pods:
       gnetId: 15760
       revision: 29
+      datasource: Mimir
+  proxmox:
+    # pve-exporter scrapes Proxmox API → exposes host (node/*) AND VM (qemu/*) metrics.
+    # Filters id=~"node/.*" show physical host CPU/mem/disk (router/minipc/nas),
+    # not just the k8s VM nodes that node-exporter already covers.
+    pve-overview:
+      gnetId: 10347
       datasource: Mimir
 
 # Dashboards-as-code: the sidecar loads any ConfigMap labeled grafana_dashboard.
