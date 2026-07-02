@@ -30,6 +30,7 @@ spec:
     - https://grafana.github.io/helm-charts
     - https://seaweedfs.github.io/seaweedfs/helm
     - https://oauth2-proxy.github.io/manifests
+    - https://mend.github.io/renovate-ce-ee
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
