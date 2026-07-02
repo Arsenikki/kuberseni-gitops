@@ -1,0 +1,41 @@
+---
+# Mend Renovate Community Edition — self-hosted dependency bot for this repo,
+# replacing the hosted Mend Renovate GitHub App. Multi-source (bjw-s /
+# cast-sponsor-skip pattern): the upstream Helm chart from Mend's chart repo +
+# a `$values` overlay and the raw manifests (namespace, ExternalSecret) from
+# this repo. Wave 6 — after ESO/1Password (secrets) and Longhorn (cache PVC).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: renovate-ce
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://mend.github.io/renovate-ce-ee
+      chart: mend-renovate-ce
+      targetRevision: 14.8.0
+      helm:
+        valueFiles:
+          - $values/cluster/apps/renovate/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/renovate
+      directory:
+        exclude: "values.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: renovate
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,60 @@
+---
+# Mend Renovate Community Edition (self-hosted) — replaces the hosted Mend
+# Renovate GitHub App for this repo. Values overlay for the upstream
+# mend-renovate-ce Helm chart (see cluster/argocd/apps/renovate-ce.yaml).
+#
+# Trigger model: SCHEDULER-ONLY. CE's built-in cron scans on the hour and on
+# startup; no public webhook/ingress is exposed (outbound to api.github.com
+# only). Repo config comes from this repo's existing .github/renovate.json5.
+image:
+  repository: ghcr.io/mend/renovate-ce
+  tag: "14.8.0"
+
+renovate:
+  # You must accept Mend's ToS (https://www.mend.io/terms-of-service/) — 'y'.
+  mendRnvAcceptTos: "y"
+  mendRnvPlatform: "github"
+  # License key, GitHub App ID + private key come from the ESO-managed Secret
+  # (see externalsecret.yaml). The chart pulls mendRnvLicenseKey /
+  # mendRnvGithubAppId / mendRnvGithubAppKey from it.
+  existingSecret: "renovate-ce"
+  # Blast-radius guard: only ever act on this one repo (defence-in-depth on top
+  # of installing the GitHub App on this repo only).
+  mendRnvAutoDiscoverFilter: "Arsenikki/kuberseni-gitops"
+  mendRnvSyncOnStartup: "true"
+  # Hourly full scan (CE default) — matches the hosted app's cadence.
+  mendRnvCronJobSchedulerAll: "0 * * * *"
+  mendRnvSqliteFilePath: "/tmp/renovate/renovate-ce.sqlite"
+  logLevel: "info"
+  logFormat: "json"
+
+# Persist the SQLite job queue + repo cache across restarts.
+cachePersistence:
+  enabled: true
+  storageClass: "longhorn"
+  accessModes:
+    - ReadWriteOnce
+  size: 2Gi
+
+# Container runs as uid/gid 12021; fsGroup makes the PVC writable.
+podSecurityContext:
+  runAsUser: 12021
+  runAsGroup: 12021
+  fsGroup: 12021
+
+# The chart sets no resources by default (BestEffort). Give it a real request
+# so it is not first to be OOM-killed, and a limit that covers a scan burst.
+resources:
+  requests:
+    cpu: 250m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 4Gi
+
+service:
+  type: ClusterIP
+
+# Scheduler-only: no inbound endpoint.
+ingress:
+  enabled: false
