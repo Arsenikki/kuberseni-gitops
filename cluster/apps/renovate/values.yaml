@@ -27,6 +27,34 @@ renovate:
   mendRnvSqliteFilePath: "/tmp/renovate/renovate-ce.sqlite"
   logLevel: "info"
   logFormat: "json"
+  # Private ghcr.io auth: inject the shared claudtainer GHCR creds (from ESO,
+  # see externalsecret.yaml) as env, then reference them from config.js below —
+  # so the token is never written into Git.
+  extraEnvVars:
+    - name: GHCR_USER
+      valueFrom:
+        secretKeyRef:
+          name: renovate-ce
+          key: ghcrUsername
+    - name: GHCR_PAT
+      valueFrom:
+        secretKeyRef:
+          name: renovate-ce
+          key: ghcrPat
+  # Self-hosted global config (mounted as /usr/src/app/config.js), merged under
+  # the repo's renovate.json5. The hostRule uses username + password because
+  # GHCR needs basic auth (a `token` field would take priority and break it).
+  config: |
+    module.exports = {
+      hostRules: [
+        {
+          hostType: 'docker',
+          matchHost: 'ghcr.io',
+          username: process.env.GHCR_USER,
+          password: process.env.GHCR_PAT,
+        },
+      ],
+    };
 
 # Persist the SQLite job queue + repo cache across restarts.
 cachePersistence:
