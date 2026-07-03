@@ -47,6 +47,6 @@ provider "proxmox" {
   # Required for disk image imports (file_id on disk blocks copies via SSH)
   ssh {
     username    = "root"
-    private_key = file(pathexpand("~/.ssh/arsenikki"))
+    private_key = file(pathexpand(var.proxmox_ssh_private_key_path))
   }
 }

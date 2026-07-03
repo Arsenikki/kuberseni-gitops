@@ -24,7 +24,7 @@ resource "null_resource" "proxmox_acme_setup" {
     type        = "ssh"
     host        = "192.168.1.10"
     user        = "root"
-    private_key = file(pathexpand("~/.ssh/arsenikki"))
+    private_key = file(pathexpand(var.proxmox_ssh_private_key_path))
     agent       = false
   }
 
@@ -49,7 +49,7 @@ resource "null_resource" "proxmox_acme_cert" {
     type        = "ssh"
     host        = each.value.ip
     user        = "root"
-    private_key = file(pathexpand("~/.ssh/arsenikki"))
+    private_key = file(pathexpand(var.proxmox_ssh_private_key_path))
     agent       = false
   }
 
