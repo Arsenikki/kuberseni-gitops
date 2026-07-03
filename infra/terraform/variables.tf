@@ -57,4 +57,10 @@ variable "acme_contact_email" {
   sensitive   = true
 }
 
+variable "proxmox_ssh_private_key_path" {
+  description = "Path to the SSH private key the Proxmox provider + ACME provisioners use to reach the PVE nodes as root. Defaults to the maintainer's key; override per-host (e.g. the in-cluster paseo box uses a dedicated automation key)."
+  type        = string
+  default     = "~/.ssh/arsenikki"
+}
+
 
