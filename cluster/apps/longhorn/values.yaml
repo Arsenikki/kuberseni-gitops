@@ -11,8 +11,18 @@ defaultSettings:
   # Both workers mount their data disk at /var/mnt/longhorn-data via Talos machine config.
   defaultDataPath: /var/mnt/longhorn-data
   defaultReplicaCount: 2
-  replicaSoftAntiAffinity: true
+  # Hard anti-affinity: refuse to place both replicas of a volume on the same node
+  # (fail loud / degraded) rather than silently collapsing redundancy onto one node.
+  # Set false after the 2026-07-04 incident where worker-02 filled with orphaned
+  # replicas, became unschedulable, and all 32 volumes stacked both replicas on
+  # worker-01. Trade-off: with only 2 storage nodes, a node down/full leaves the
+  # affected volumes degraded until it returns.
+  replicaSoftAntiAffinity: false
   replicaAutoBalance: best-effort
+  # Auto-delete orphaned replica/instance resources so a storage node can't silently
+  # fill with stale replica directories (the root cause of the 2026-07-04 collapse:
+  # orphans pushed worker-02 below the 25% min-available threshold -> unschedulable).
+  orphanResourceAutoDeletion: "replica-data;instance"
   # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
   # can mount Longhorn volumes (data still lives on worker disks)
   taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
