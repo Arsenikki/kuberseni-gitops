@@ -1,0 +1,59 @@
+---
+# Weekly fstrim of the Longhorn data disk on every storage node.
+#
+# Why: Talos runs no fstrim and mounts the data disk (see infra/talos/patches/
+# worker-storage.yaml) without the `discard` option, so blocks freed by Longhorn
+# (deleted/rebuilt/orphaned replicas) never propagate back to the underlying
+# Proxmox LVM-thin pool. Left unchecked the thin pool ratchets toward full — on
+# 2026-07-04 it hit 100% on nas and froze the VMs. The qemu disks have discard=on,
+# so an in-guest fstrim reclaims the space. Talos' guest agent can't fstrim, so we
+# run it from a privileged pod instead — one per storage node.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: longhorn-fstrim
+  namespace: longhorn-system
+spec:
+  schedule: "0 3 * * 0" # Sundays 03:00
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      completions: 2 # one per storage node
+      parallelism: 2
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: longhorn-fstrim
+        spec:
+          restartPolicy: Never
+          # Only the Longhorn storage nodes carry the data disk (both workers have
+          # this label; control-planes do not).
+          nodeSelector:
+            node.longhorn.io/create-default-disk: "true"
+          # Force the two Job pods onto two different nodes -> one fstrim per node.
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: longhorn-fstrim
+                  topologyKey: kubernetes.io/hostname
+          containers:
+            - name: fstrim
+              image: debian:12-slim
+              command: ["/usr/sbin/fstrim", "-v", "/data"]
+              securityContext:
+                privileged: true # FITRIM needs CAP_SYS_ADMIN
+              volumeMounts:
+                - name: longhorn-data
+                  mountPath: /data
+          volumes:
+            - name: longhorn-data
+              hostPath:
+                path: /var/mnt/longhorn-data
+                type: Directory
