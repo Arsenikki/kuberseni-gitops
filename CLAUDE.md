@@ -36,3 +36,50 @@ Homelab GitOps: **Talos Linux** Kubernetes on **Proxmox**, managed by **ArgoCD**
 
 - ArgoCD selfHeals — **don't fix drift manually; commit it**. To pause: set `spec.syncPolicy.automated.selfHeal=false` on the Application.
 - `op` returns empty in `$(...)` subshells (TTY detection) — fetch secrets by item ID to a temp file instead.
+
+## Handing work to Jeeves (autonomous maintenance)
+
+[Jeeves](https://github.com/Arsenikki/jeeves) is the in-cluster bot that turns a
+GitHub issue into a PR: it plans the ticket, codes it in an isolated worktree,
+runs the quality gate, and opens a PR — steered entirely from **GitHub labels +
+Telegram**. This repo is **registered and eligible**, so tickets filed here get
+worked automatically. Use this to hand off maintenance instead of doing it by hand.
+
+**File one issue per deliverable, labelled `jeeves`.** That label is the *only*
+trigger: an open issue carrying it (and no `agent/*` label yet) is claimed by the
+prod instance — picked up within ~5 min (issue poll), or seconds if the GitHub
+webhook is wired. To hand off several pieces of work (X, Y, Z), file several issues.
+
+```bash
+# one-time: create the trigger label if it doesn't exist yet
+gh label create jeeves -R Arsenikki/kuberseni-gitops \
+  -c 5319e7 -d 'Jeeves: autonomously plan, code and PR this ticket' 2>/dev/null || true
+
+gh issue create -R Arsenikki/kuberseni-gitops --label jeeves \
+  --title '<imperative, single-PR-sized summary>' \
+  --body  '<desired end state + acceptance criteria + paths to touch + constraints>'
+```
+
+**Write the body for an agent, not a human.** Planning batches *all* its questions
+up front, then either proceeds or parks the ticket in `agent/needs-decision` (and
+pings Telegram) until you answer — so a vague ticket stalls. Give it:
+- the desired **end state and acceptance criteria**, not just the symptom;
+- the **files/paths** to change (e.g. `cluster/apps/<ns>/…`, `infra/tofu/…`, `infra/talos/…`);
+- the repo rules that apply — sops-encrypted secrets, pin versions (never `latest`),
+  and **don't hand-fix ArgoCD drift, commit it** (see Gotchas). Keep each issue to one PR's worth.
+
+**Route (optional):** add `jeeves-instance/dev` to send a ticket to the dev/candidate
+instance instead; a bare `jeeves` label goes to prod.
+
+**Track it** via the labels Jeeves stamps on the issue:
+`agent/planning` → (`agent/needs-decision`) → `agent/in-progress` → `agent/pr-open` → `agent/done`.
+Don't set `agent/*` yourself — they're Jeeves-owned, and an issue that already carries
+one won't be re-ingested.
+
+**Merges are gated, not blind:**
+- Changes **outside `cluster/**`** auto-merge once the gate is green (`prek` hooks +
+  required checks `yaml` and `Render ArgoCD diff` + `yamllint ./cluster/`) — but only
+  when low-risk and non-behavioral.
+- Anything **touching `cluster/**`** (ArgoCD self-heals on merge), or any higher-risk /
+  behavioral change, is left for **you to review and merge on GitHub**. Add `human/hold`
+  to the issue to freeze auto-merge.
