@@ -10,7 +10,8 @@
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "suppressNotifications": ["prEditedNotification", "prIgnoreNotification"],
   "schedule": ["at any time"],
-  "prConcurrentLimit": 10,
+  // 0 = no limit — open a PR for every pending update at once
+  "prConcurrentLimit": 0,
   "platformAutomerge": true,
   "osvVulnerabilityAlerts": true,
   // ArgoCD Application manifests reference Helm charts (chart + targetRevision)
