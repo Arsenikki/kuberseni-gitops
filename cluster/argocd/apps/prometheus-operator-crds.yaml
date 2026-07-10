@@ -17,7 +17,7 @@ spec:
   sources:
     - repoURL: https://prometheus-community.github.io/helm-charts
       chart: prometheus-operator-crds
-      targetRevision: 30.0.0
+      targetRevision: 30.0.1
       helm:
         valueFiles:
           - $values/cluster/apps/monitoring/prometheus-operator-crds/values.yaml
