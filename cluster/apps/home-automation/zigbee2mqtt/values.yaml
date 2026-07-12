@@ -47,7 +47,7 @@ controllers:
                 name: mosquitto-credentials
                 key: ZIGBEE2MQTT_PASSWORD
           ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE: 115200
-          ZIGBEE2MQTT_CONFIG_SERIAL_PORT: &usbdevice /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
+          ZIGBEE2MQTT_CONFIG_SERIAL_PORT: /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
         resources:
           requests:
             cpu: 10m
@@ -92,7 +92,14 @@ persistence:
   usb:
     enabled: true
     type: hostPath
-    hostPath: *usbdevice
-    hostPathType: CharDevice
+    # Mount the PARENT by-id directory, NOT the single symlink file. If the single
+    # symlink is bound directly and the dongle briefly re-enumerates (e.g. USB drop),
+    # the container runtime fabricates an empty directory at that missing source path;
+    # that directory then shadows udev, permanently breaking the mount and crash-looping
+    # z2m with "Is a directory, cannot open ...-if00" — a reboot being the only recovery.
+    # Binding the parent dir avoids this: the dir persists as long as any serial device
+    # exists, and the by-id symlink (see ZIGBEE2MQTT_CONFIG_SERIAL_PORT) resolves live.
+    hostPath: /dev/serial/by-id
+    hostPathType: Directory
     globalMounts:
-      - path: *usbdevice
+      - path: /dev/serial/by-id
