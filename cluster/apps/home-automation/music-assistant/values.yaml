@@ -1,0 +1,64 @@
+---
+controller:
+  type: statefulset
+
+image:
+  repository: ghcr.io/music-assistant/server
+  tag: 2.9.8
+
+env:
+  TZ: "Europe/London"
+
+# The built-in Snapcast server is enabled in the Music Assistant UI
+# (Settings -> Providers -> Snapcast -> built-in server). No env is needed, but the
+# LoadBalancer below exposes 1704/1705 to the LAN so Snapcast clients can reach it.
+# The per-stream source ports (4953-5153) stay intra-pod and are not exposed.
+
+service:
+  main:
+    type: LoadBalancer
+    externalTrafficPolicy: Cluster
+    annotations:
+      # First free IP in the Cilium LB pool .220-.229 (.220 plex, .221 mosquitto,
+      # .222 traefik). Gives Snapcast clients one stable tcp://192.168.1.223 target
+      # regardless of which node the pod lands on.
+      io.cilium/lb-ipam-ips: "192.168.1.223"
+    ports:
+      http:
+        port: 8095
+      snapcast-stream:
+        port: 1704
+      snapcast-control:
+        port: 1705
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+    hosts:
+      - host: musicassistant.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: music-assistant-tls
+        hosts:
+          - musicassistant.arsenikki.casa
+
+persistence:
+  data:
+    enabled: true
+    type: pvc
+    existingClaim: music-assistant-data
+    mountPath: /data
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    # Leak fuse: MA 2.7.x has open OOM/RAM-ramp reports (#4263/#4991/#5089).
+    # Cap so a leak restarts only MA, not the node that also hosts Home Assistant.
+    memory: 1Gi
