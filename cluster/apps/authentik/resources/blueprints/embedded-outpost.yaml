@@ -23,6 +23,11 @@ entries:
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
+        name: music-assistant
+      required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
         name: nodered
       required: true
   - model: authentik_blueprints.metaapplyblueprint
@@ -81,6 +86,7 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "bazarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "lidarr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "longhorn"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "music-assistant"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "nodered"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "overseerr"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "prowlarr"]]
