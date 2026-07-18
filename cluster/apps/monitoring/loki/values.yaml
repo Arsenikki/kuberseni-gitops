@@ -28,6 +28,8 @@ loki:
       region: us-east-1
       s3ForcePathStyle: true
       insecure: true
+  compactor:
+    retention_enabled: true
   limits_config:
     retention_period: 744h # 31d
     volume_enabled: true

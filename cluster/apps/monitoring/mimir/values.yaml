@@ -58,6 +58,9 @@ mimir:
 
     # Single ingester → RF must be 1, else writes are rejected.
     # push_grpc re-enabled (chart disables it for the ingest-storage architecture).
+    limits:
+      compactor_blocks_retention_period: 30d
+
     ingester:
       push_grpc_method_enabled: true
       ring:
@@ -86,7 +89,7 @@ ingester:
     enabled: false
   persistentVolume:
     enabled: true
-    size: 10Gi
+    size: 20Gi
     storageClass: longhorn
 
 store_gateway:
