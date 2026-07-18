@@ -54,3 +54,4 @@ s3:
     - name: mimir-ruler
     - name: mimir-alertmanager
     - name: loki-data
+    - name: tempo-data

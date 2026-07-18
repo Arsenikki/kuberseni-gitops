@@ -1,0 +1,948 @@
+---
+# Jeeves / Claude Code native OTLP usage dashboard (dashboards-as-code).
+# The grafana chart's sidecar auto-loads any ConfigMap labeled grafana_dashboard;
+# grafana_folder places it in the "Jeeves" folder. Synced into the monitoring
+# namespace by the grafana ArgoCD app's directory source.
+#
+# NOTE: queries use the documented claude_code.* OTLP metric/attribute names
+# (not OpenLIT gen_ai_*). Tempo panels + metric->trace correlations depend on the
+# Tempo datasource and the telemetry-infra / Jeeves-exporter tickets landing;
+# reconcile names against a real test export before trusting absolute values.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-jeeves
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: Jeeves
+data:
+  jeeves-usage.json: |-
+    {
+      "uid": "jeeves-usage",
+      "title": "Jeeves — Model Usage & Cost",
+      "tags": [
+        "jeeves",
+        "claude-code",
+        "otlp"
+      ],
+      "timezone": "browser",
+      "editable": true,
+      "schemaVersion": 39,
+      "refresh": "5m",
+      "time": {
+        "from": "now-7d",
+        "to": "now"
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "environment",
+            "label": "Environment",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "mimir"
+            },
+            "query": {
+              "query": "label_values(claude_code_session_count_total, environment)",
+              "refId": "environment-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "model",
+            "label": "Model",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "mimir"
+            },
+            "query": {
+              "query": "label_values(claude_code_token_usage_tokens_total, model)",
+              "refId": "model-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "query_source",
+            "label": "Query source",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "mimir"
+            },
+            "query": {
+              "query": "label_values(claude_code_token_usage_tokens_total, query_source)",
+              "refId": "query_source-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "effort",
+            "label": "Effort",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "mimir"
+            },
+            "query": {
+              "query": "label_values(claude_code_token_usage_tokens_total, effort)",
+              "refId": "effort-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "skill",
+            "label": "Skill",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "mimir"
+            },
+            "query": {
+              "query": "label_values(claude_code_token_usage_tokens_total, skill)",
+              "refId": "skill-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "mcp_server",
+            "label": "MCP server",
+            "type": "query",
+            "datasource": {
+              "type": "loki",
+              "uid": "loki"
+            },
+            "query": {
+              "query": "label_values(mcp_server)",
+              "refId": "mcp_server-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          },
+          {
+            "name": "mcp_tool",
+            "label": "MCP tool",
+            "type": "query",
+            "datasource": {
+              "type": "loki",
+              "uid": "loki"
+            },
+            "query": {
+              "query": "label_values(mcp_tool)",
+              "refId": "mcp_tool-var"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": true,
+            "current": {},
+            "options": [],
+            "sort": 1
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "About this dashboard",
+          "gridPos": {
+            "h": 4,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "**Jeeves / Claude Code native OTLP usage.** Metrics come from Mimir (`claude_code.*`), events from Loki, traces from Tempo.\n\n⚠️ **Cost is an operational estimate**, computed by Claude Code from token counts — it is **not** the Anthropic invoice; use it for relative trends, not billing.\n\nMetric names follow the documented `claude_code.*` OTLP names mapped to Prometheus (dots→`_`, unit + `_total` suffixes). Reconcile against a real test export before relying on absolute values. No session/user/agent/ticket IDs are used as labels."
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Est. cost (USD)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_cost_usage_USD_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Tokens",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_token_usage_tokens_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Sessions",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 12,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_session_count_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Active time",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 16,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_active_time_total_seconds_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Commits",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 2,
+            "x": 20,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_commit_count_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "type": "stat",
+          "title": "PRs",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 2,
+            "x": 22,
+            "y": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum(increase(claude_code_pull_request_count_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Cost over time by model",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1,
+                "showPoints": "never",
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                }
+              },
+              "unit": "currencyUSD"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum by (model) (increase(claude_code_cost_usage_USD_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__rate_interval]))",
+              "legendFormat": "{{model}}"
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "type": "piechart",
+          "title": "Tokens by type",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum by (type) (increase(claude_code_token_usage_tokens_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))",
+              "legendFormat": "{{type}}",
+              "instant": true
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "type": "stat",
+          "title": "Edited lines",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "value_and_name"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum by (type) (increase(claude_code_lines_of_code_count_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__range]))",
+              "legendFormat": "{{type}}"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Token usage rate by type",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "mimir"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1,
+                "showPoints": "never",
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "mimir"
+              },
+              "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{environment=~\"$environment\",model=~\"$model\",query_source=~\"$query_source\",effort=~\"$effort\",skill=~\"$skill\"}[$__rate_interval]))",
+              "legendFormat": "{{type}}"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "type": "logs",
+          "title": "API failures / retries / refusals",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 24
+          },
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{service_name=\"claude-code\", environment=~\"$environment\"} | json | event=~\"api_error|api_request\" | line_format \"{{.event}} model={{.model}} status={{.status_code}} error={{.error}} attempt={{.attempt}}\"",
+              "queryType": "range"
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "type": "logs",
+          "title": "MCP / tool events",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 24
+          },
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "expr": "{service_name=\"claude-code\", environment=~\"$environment\"} | json | event=~\"tool_result|tool_decision\" | line_format \"{{.event}} tool={{.tool_name}} mcp={{.mcp_server}} decision={{.decision}} success={{.success}}\"",
+              "queryType": "range"
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "table",
+          "title": "Recent Jeeves interactions",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 32
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+              },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"claude-code\" && resource.environment =~ \"$environment\" }",
+              "tableType": "traces",
+              "limit": 20
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "table",
+          "title": "Slow model calls (>5s)",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 40
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+              },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"claude-code\" && span.gen_ai.operation.name != \"\" && duration > 5s }",
+              "tableType": "traces",
+              "limit": 20
+            }
+          ]
+        },
+        {
+          "id": 16,
+          "type": "table",
+          "title": "Failed tools",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 40
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "tempo",
+                "uid": "tempo"
+              },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"claude-code\" && span.tool.name != \"\" && status = error }",
+              "tableType": "traces",
+              "limit": 20
+            }
+          ]
+        }
+      ]
+    }
