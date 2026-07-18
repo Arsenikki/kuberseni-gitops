@@ -89,6 +89,39 @@ datasources:
         url: http://loki-gateway.monitoring.svc.cluster.local
         jsonData:
           httpHeaderName1: "X-Scope-OrgID"
+          # Turn a trace_id in a log line into a link to the Tempo trace view.
+          derivedFields:
+            - name: trace_id
+              matcherType: label
+              matcherRegex: trace_id
+              url: "$${__value.raw}"
+              datasourceUid: tempo
+        secureJsonData:
+          httpHeaderValue1: "homelab"
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        access: proxy
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        jsonData:
+          httpHeaderName1: "X-Scope-OrgID"
+          # Trace span -> correlated Loki logs / Mimir RED metrics.
+          tracesToLogsV2:
+            datasourceUid: loki
+            spanStartTimeShift: "-1h"
+            spanEndTimeShift: "1h"
+            filterByTraceID: true
+            tags:
+              - key: service.name
+                value: service_name
+          tracesToMetrics:
+            datasourceUid: mimir
+            spanStartTimeShift: "-1h"
+            spanEndTimeShift: "1h"
+          serviceMap:
+            datasourceUid: mimir
+          nodeGraph:
+            enabled: true
         secureJsonData:
           httpHeaderValue1: "homelab"
 
