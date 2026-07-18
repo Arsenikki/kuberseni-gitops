@@ -59,7 +59,7 @@ mimir:
     # Single ingester → RF must be 1, else writes are rejected.
     # push_grpc re-enabled (chart disables it for the ingest-storage architecture).
     limits:
-      compactor_blocks_retention_period: 90d
+      compactor_blocks_retention_period: 30d
 
     ingester:
       push_grpc_method_enabled: true
