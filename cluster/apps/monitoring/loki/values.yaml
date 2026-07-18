@@ -33,6 +33,19 @@ loki:
   limits_config:
     retention_period: 744h # 31d
     volume_enabled: true
+    # OTLP ingestion (used by the alloy-jeeves gateway for Jeeves logs): pin ONLY
+    # low-cardinality resource attributes as index labels; ignore_defaults=true
+    # means every other OTLP resource/scope/log attribute (e.g. Jeeves' per-run
+    # ids) falls through to Loki STRUCTURED METADATA instead of becoming a
+    # high-cardinality label. schema v13 already has allow_structured_metadata on.
+    otlp_config:
+      resource_attributes:
+        ignore_defaults: true
+        attributes_config:
+          - action: index_label
+            attributes:
+              - service.name
+              - service.namespace
 
 # S3 creds — global.extraEnvFrom doesn't reach singleBinary; must set here directly.
 singleBinary:

@@ -1,0 +1,69 @@
+---
+# Grafana Tempo — MONOLITHIC single-binary trace store on SeaweedFS S3. Homelab
+# footprint: 1 replica, single tenant (multitenancy off), OTLP receivers only.
+# Fed exclusively by the dedicated alloy-jeeves OTLP gateway; queried by Grafana's
+# Tempo datasource. WAL + local block cache live on a Longhorn PVC (/var/tempo).
+
+replicas: 1
+
+tempo:
+  # Single tenant "homelab" — no X-Scope-OrgID enforcement (header is ignored).
+  multitenancyEnabled: false
+  reportingEnabled: false
+
+  # Metrics generator (span metrics / service graphs) stays off for a homelab node.
+  metricsGenerator:
+    enabled: false
+
+  # Trace/block retention window — matches the homelab 14d default.
+  retention: 336h
+
+  # Only OTLP is used (gRPC 4317 / HTTP 4318). Drop the Jaeger/OpenCensus/Zipkin
+  # receivers the chart enables by default so the gateway surface stays minimal.
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: tempo-data
+        endpoint: seaweedfs-s3.monitoring.svc.cluster.local:8333
+        # Injected from the shared seaweedfs-s3 secret via -config.expand-env below.
+        access_key: "${S3_ACCESS_KEY}"
+        secret_key: "${S3_SECRET_KEY}"
+        insecure: true
+        forcepathstyle: true
+      # WAL lives on the Longhorn PVC mounted at /var/tempo (persistence below).
+      wal:
+        path: /var/tempo/wal
+
+  # Expand ${S3_ACCESS_KEY} / ${S3_SECRET_KEY} from the env at runtime.
+  extraArgs:
+    config.expand-env: "true"
+  # S3 credentials — same secret Mimir/Loki consume (ESO → seaweedfs-s3).
+  extraEnvFrom:
+    - secretRef:
+        name: seaweedfs-s3
+
+# Longhorn-backed WAL + local block cache (mounted at /var/tempo).
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: longhorn
+  accessModes:
+    - ReadWriteOnce
+
+# ClusterIP only — the gateway (alloy-jeeves) and Grafana reach it in-cluster.
+service:
+  type: ClusterIP
+
+# Scraped by Prometheus Operator (Alloy) → Mimir, per monitoring conventions.
+serviceMonitor:
+  enabled: true
+  interval: 30s

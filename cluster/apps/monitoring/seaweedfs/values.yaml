@@ -48,9 +48,11 @@ s3:
   # JSON identity config templated from 1Password by ESO (see externalsecrets.yaml).
   existingConfigSecret: "seaweedfs-s3-config"
   # Declaratively pre-create the buckets. Mimir requires SEPARATE buckets for
-  # blocks / ruler / alertmanager; Loki shares one bucket (chunks + ruler).
+  # blocks / ruler / alertmanager; Loki shares one bucket (chunks + ruler);
+  # Tempo stores trace blocks in its own bucket.
   createBuckets:
     - name: mimir-blocks
     - name: mimir-ruler
     - name: mimir-alertmanager
     - name: loki-data
+    - name: tempo-data

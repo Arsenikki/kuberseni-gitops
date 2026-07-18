@@ -1,0 +1,98 @@
+---
+# Dedicated Grafana Alloy OTLP gateway for Jeeves (Claude Code) telemetry.
+# Single-replica Deployment, ClusterIP only (no LoadBalancer/ingress). Accepts OTLP
+# gRPC(4317)+HTTP(4318) and fans out: traces → Tempo, logs → Loki OTLP, metrics →
+# Mimir remote_write. All under tenant "homelab" (X-Scope-OrgID). Ingress is locked
+# to jeeves-prod / jeeves-dev by the CiliumNetworkPolicy in this directory.
+
+controller:
+  type: deployment
+  replicas: 1
+
+alloy:
+  # Single instance — no clustering.
+  clustering:
+    enabled: false
+
+  # /metrics + UI on :12345 (scraped via serviceMonitor below).
+  enableHttpServerPort: true
+  enableReporting: false
+
+  # S3 creds are not needed here; the gateway only forwards over OTLP/remote_write.
+  configMap:
+    create: true
+    content: |-
+      // ---- OTLP ingest (gRPC 4317 / HTTP 4318) ----
+      otelcol.receiver.otlp "jeeves" {
+        grpc {
+          endpoint = "0.0.0.0:4317"
+        }
+        http {
+          endpoint = "0.0.0.0:4318"
+        }
+        output {
+          traces  = [otelcol.exporter.otlp.tempo.input]
+          logs    = [otelcol.exporter.otlphttp.loki.input]
+          metrics = [otelcol.exporter.prometheus.mimir.input]
+        }
+      }
+
+      // ---- Traces → Tempo (OTLP gRPC), tenant homelab ----
+      otelcol.exporter.otlp "tempo" {
+        client {
+          endpoint = "tempo.monitoring.svc.cluster.local:4317"
+          tls {
+            insecure = true
+          }
+          headers = {
+            "X-Scope-OrgID" = "homelab",
+          }
+        }
+      }
+
+      // ---- Logs → Loki OTLP endpoint (/otlp/v1/logs), tenant homelab.
+      // Non-promoted OTLP attributes are kept as Loki structured metadata
+      // (see otlp_config in cluster/apps/monitoring/loki/values.yaml). ----
+      otelcol.exporter.otlphttp "loki" {
+        client {
+          endpoint = "http://loki-gateway.monitoring.svc.cluster.local/otlp"
+          headers = {
+            "X-Scope-OrgID" = "homelab",
+          }
+        }
+      }
+
+      // ---- Metrics → Mimir remote_write (cumulative), tenant homelab ----
+      otelcol.exporter.prometheus "mimir" {
+        forward_to = [prometheus.remote_write.mimir.receiver]
+      }
+
+      prometheus.remote_write "mimir" {
+        endpoint {
+          url = "http://mimir-gateway.monitoring.svc.cluster.local/api/v1/push"
+          headers = {
+            "X-Scope-OrgID" = "homelab",
+          }
+        }
+      }
+
+  # OTLP receiver ports exposed on the container AND the ClusterIP service.
+  extraPorts:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+
+# ClusterIP only — never expose the gateway outside the cluster.
+service:
+  enabled: true
+  type: ClusterIP
+
+# Scraped by Prometheus Operator (Alloy) → Mimir on the http-metrics port (:12345).
+serviceMonitor:
+  enabled: true
+  interval: 30s
