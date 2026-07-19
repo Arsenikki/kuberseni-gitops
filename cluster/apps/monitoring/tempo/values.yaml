@@ -6,6 +6,13 @@
 
 replicas: 1
 
+# Run as the chart's non-root uid; fsGroup lets Tempo own (write) the Longhorn PVC.
+securityContext:
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  runAsNonRoot: true
+
 tempo:
   # Single tenant "homelab" — no X-Scope-OrgID enforcement (header is ignored).
   multitenancyEnabled: false

@@ -1,7 +1,6 @@
 ---
-# Grafana Tempo (monolithic) — S3-backed trace store. Receives OTLP from the
-# dedicated alloy-jeeves gateway; queried by Grafana's Tempo datasource.
-# Wave 5 (after SeaweedFS wave 2), alongside Loki/Mimir.
+# Grafana Tempo (monolithic single-binary) — S3-backed trace store on SeaweedFS.
+# Receives OTLP traces (from Alloy) and backs Grafana's Tempo datasource.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
