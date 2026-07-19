@@ -1,0 +1,34 @@
+---
+# Alerting for the alloy-jeeves OTLP gateway. Alloy's mimir.rules.kubernetes syncs
+# this into the Mimir ruler, which routes firing alerts to Telegram/CasaBot.
+# Metric names are Alloy's OTLP exporter/receiver instrumentation (otelcol_*).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: alloy-jeeves-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: monitoring
+spec:
+  groups:
+    - name: alloy-jeeves
+      rules:
+        - alert: AlloyJeevesGatewayDown
+          expr: |
+            up{job="monitoring/alloy-jeeves"} == 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Jeeves OTLP gateway (alloy-jeeves) is down"
+        - alert: AlloyJeevesExporterFailures
+          expr: |
+            sum(rate(otelcol_exporter_send_failed_spans_total{job="monitoring/alloy-jeeves"}[10m]))
+              + sum(rate(otelcol_exporter_send_failed_log_records_total{job="monitoring/alloy-jeeves"}[10m]))
+              + sum(rate(otelcol_exporter_send_failed_metric_points_total{job="monitoring/alloy-jeeves"}[10m]))
+              > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Jeeves OTLP gateway is failing to export telemetry to a backend"

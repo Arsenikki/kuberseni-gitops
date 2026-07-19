@@ -1,0 +1,108 @@
+---
+# ==========================================================================
+# CiliumNetworkPolicy: alloy-jeeves OTLP gateway lock-down
+# ==========================================================================
+#
+# WHAT THIS DOES
+#   The alloy-jeeves gateway is the ONLY OTLP ingest surface for Jeeves
+#   (Claude Code) telemetry. It must accept OTLP gRPC/HTTP ONLY from the
+#   jeeves-prod and jeeves-dev namespaces, and must only be able to reach the
+#   three telemetry backends (Tempo, Loki gateway, Mimir gateway) plus DNS.
+#
+# IMPORTANT SEMANTICS
+#   In Cilium, as soon as ANY policy selects an endpoint, that endpoint
+#   switches to DEFAULT-DENY for the directions present in the policy. This
+#   policy specifies BOTH ingress and egress, so the gateway becomes
+#   default-deny in both directions and ONLY the rules below are permitted.
+#
+# Chart context: grafana/alloy chart, Helm release "alloy-jeeves".
+#   app.kubernetes.io/name: alloy
+#   app.kubernetes.io/instance: alloy-jeeves
+#
+# !! VALIDATE AGAINST THE LIVE CLUSTER BEFORE RELYING ON THIS !!
+#   A wrong label silently drops traffic. Watch
+#   `hubble observe --namespace monitoring --pod alloy-jeeves --verdict DROPPED`
+#   while sending a synthetic OTLP payload from jeeves-prod. See CAVEATS below.
+# ==========================================================================
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: alloy-jeeves-isolation
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+      app.kubernetes.io/instance: alloy-jeeves
+
+  # ======================================================================
+  # INGRESS  (default-deny; only OTLP from the Jeeves namespaces)
+  # ======================================================================
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: jeeves-prod
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: jeeves-dev
+      toPorts:
+        - ports:
+            - port: "4317"   # OTLP gRPC
+              protocol: TCP
+            - port: "4318"   # OTLP HTTP
+              protocol: TCP
+
+  # ======================================================================
+  # EGRESS  (default-deny; DNS + the three telemetry backends only)
+  # ======================================================================
+  egress:
+    # 1) DNS to CoreDNS / kube-dns in kube-system.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # 2) Tempo (traces, OTLP gRPC) — same monitoring namespace.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: tempo
+
+    # 3) Loki gateway (logs, OTLP HTTP) — same monitoring namespace.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: loki
+            app.kubernetes.io/component: gateway
+
+    # 4) Mimir gateway (metrics, remote_write) — same monitoring namespace.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: mimir
+            app.kubernetes.io/component: gateway
+
+  # yamllint disable rule:comments-indentation
+  # ======================================================================
+  # CAVEATS — VERIFY THESE ON THE LIVE CLUSTER:
+  #   1. Gateway pod labels:
+  #        kubectl -n monitoring get pod -l app.kubernetes.io/instance=alloy-jeeves \
+  #          --show-labels
+  #   2. Jeeves namespaces exist and are named jeeves-prod / jeeves-dev.
+  #   3. kube-dns label (Talos/Cilium runs CoreDNS but normally keeps
+  #        k8s-app=kube-dns):
+  #        kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
+  #   4. Backend pod labels (tempo / loki-gateway / mimir-gateway):
+  #        kubectl -n monitoring get pods --show-labels | grep -E 'tempo|gateway'
+  #   5. Watch for drops while sending a synthetic OTLP payload:
+  #        hubble observe -n monitoring --pod alloy-jeeves --verdict DROPPED -f
+  # ======================================================================
+  # yamllint enable rule:comments-indentation
