@@ -30,6 +30,7 @@ loki:
       insecure: true
   compactor:
     retention_enabled: true
+    delete_request_store: s3
   limits_config:
     retention_period: 744h # 31d
     volume_enabled: true
