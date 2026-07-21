@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 data:
   admin-user.yaml: "---\nversion: 1\nmetadata:\n  name: admin-user\nentries:\n  - id: admin-user\n    model: authentik_core.user\n    state: present\n    identifiers:\n      email: !Env [AUTHENTIK_ADMIN_EMAIL, \"\"]\n    attrs:\n      username: arseni\n      name: Arseni\n      is_superuser: true\n      groups:\n        - !Find [authentik_core.group, [name, \"authentik Admins\"]]\n"
