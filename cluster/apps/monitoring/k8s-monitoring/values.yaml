@@ -32,8 +32,8 @@ clusterMetrics:
   # Cilium runs kubeProxyReplacement=true → there is NO kube-proxy to scrape.
   kubeProxy:
     enabled: false
-  # etcd is NOT supported by this chart — scraped via ServiceMonitor+Endpoints
-  # in cluster/apps/monitoring/observability/ instead.
+    # etcd is NOT supported by this chart — scraped via ServiceMonitor+Endpoints
+    # in cluster/apps/monitoring/observability/ instead.
 
 # ---- Host metrics (node-exporter) ----
 hostMetrics:
