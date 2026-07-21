@@ -1,8 +1,11 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: captain-core-bot
   namespace: captain-core
+  labels:
+    app.kubernetes.io/part-of: captain-core
 spec:
   replicas: 1
   selector:

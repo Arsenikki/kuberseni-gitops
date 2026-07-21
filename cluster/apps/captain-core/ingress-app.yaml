@@ -4,6 +4,8 @@ kind: Ingress
 metadata:
   name: captain-core-app
   namespace: captain-core
+  labels:
+    app.kubernetes.io/part-of: captain-core
   annotations:
     kubernetes.io/tls-acme: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
