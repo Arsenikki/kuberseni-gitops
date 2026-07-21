@@ -21,6 +21,33 @@
 
 ---
 
+## :world_map:&nbsp; Repository layout
+
+A newcomer's map of the tree:
+
+```text
+.
+├── cluster/                # Kubernetes GitOps tree (synced by Argo CD)
+│   ├── bootstrap/          # Helm values applied once during cluster bootstrap
+│   ├── argocd/             # app-of-apps entrypoint (root-app.yaml, apps/, projects/)
+│   └── apps/               # workload manifests, grouped by namespace
+├── infra/                  # infrastructure layer
+│   ├── terraform/          # OpenTofu — Talos VMs on Proxmox, OPNSense, TrueNAS
+│   ├── talos/              # Talhelper-managed Talos machine config
+│   ├── scripts/            # bootstrap / helper scripts
+│   └── Taskfile.yml        # go-task workflows
+├── .github/                # CI workflows, Renovate config, CODEOWNERS, yamllint config
+├── .githooks/              # git hooks (pre-push)
+├── prek.toml               # prek hook definitions
+├── .pre-commit-config.yaml # pre-commit / prek hook config
+├── .sops.yaml              # sops encryption rules
+├── .mise.toml              # mise-pinned tool versions
+├── CLAUDE.md               # agent/contributor guidance for this repo
+└── README.md               # this file
+```
+
+---
+
 ## :open_file_folder:&nbsp; Repository structure
 
 - **infra** directory contains the infrastructure layer:
