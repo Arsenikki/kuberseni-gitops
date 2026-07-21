@@ -4,6 +4,8 @@ kind: ConfigMap
 metadata:
   name: captain-core-config
   namespace: captain-core
+  labels:
+    app.kubernetes.io/part-of: captain-core
 data:
   LOCATION_ID: "a2T4J000001JJdrUAG"
   CLASS_NAME: "Reformer Pilates - Dynamic,Reformer Pilates - Signature"
