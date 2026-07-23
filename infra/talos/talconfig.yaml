@@ -2,7 +2,7 @@ clusterName: kuberseni
 # renovate: datasource=github-releases depName=siderolabs/talos
 talosVersion: v1.13.4
 # renovate: datasource=github-releases depName=kubernetes/kubernetes
-kubernetesVersion: v1.35.2
+kubernetesVersion: v1.36.2
 
 # Use standard installer (ghcr.io) for fast initial install from ISO.
 # Extensions are added via A/B upgrade after cluster is up: task talos:upgrade
