@@ -1,7 +1,8 @@
 # TrueNAS SCALE VM — primary NAS (migrated from CORE on 2026-06-14).
 #
-# Serves the 16TB ZFS pool "main" over NFS at 192.168.1.2 (static, set inside
-# TrueNAS — see network note below). The k8s media stack mounts the export
+# Serves the ZFS pool "main" over NFS at 192.168.1.2 (static, set inside
+# TrueNAS — see network note below). The pool is now a 2× 16TB mirror
+# (~14.5 TiB usable). The k8s media stack mounts the export
 # /mnt/main/nfs/vols/pvc-000f1e6c-... (see cluster/apps/media/plex/media-pvc.yaml).
 #
 # How the pool got here (Option B — pool import, data never copied):
@@ -9,6 +10,8 @@
 #     detached from VM 200 and attached to this VM as scsi1 (see lifecycle note below).
 #   - SCALE imported the pool, recreated the one NFS share, and took over IP .2.
 #   - CORE (VM 200) is kept stopped as a rollback option until decommissioned.
+#   - A second 16TB disk was subsequently added to pool "main" to form a mirror
+#     (single mirror-0 vdev across both 16TB disks).
 #
 # Network: this VM uses a STATIC 192.168.1.2 configured inside TrueNAS (not DHCP),
 # so the k8s media-pv (hardcoded server 192.168.1.2) needs no change. The OPNSense
