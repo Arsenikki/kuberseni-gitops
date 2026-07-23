@@ -12,3 +12,6 @@ data:
   DAYS_AHEAD: "8"
   APIM_KEY: "882ee8ab406042dd9da8045dc58874a3"
   BOOK_TIME: "07:00"
+  # "false" disables the daily scheduled login + auto-book jobs. The bot keeps
+  # running so manual Telegram commands and the 08:00 reminder still work.
+  AUTO_BOOK_ENABLED: "false"
