@@ -14,8 +14,6 @@ spec:
     repoURL: https://github.com/Arsenikki/kuberseni-gitops
     targetRevision: main
     path: cluster/apps/authentik/resources
-    directory:
-      exclude: "values.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: authentik

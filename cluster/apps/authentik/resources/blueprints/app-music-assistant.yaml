@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
 version: 1
 metadata:
@@ -10,20 +9,11 @@ entries:
       name: *app
     attrs:
       authorization_flow:
-        !Find [
-          authentik_flows.flow,
-          [slug, "default-provider-authorization-implicit-consent"],
-        ]
+        !Find [authentik_flows.flow, [slug, "default-provider-authorization-implicit-consent"]]
       signing_key:
-        !Find [
-          authentik_crypto.certificatekeypair,
-          [name, "authentik Self-signed Certificate"],
-        ]
+        !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
       invalidation_flow:
-        !Find [
-          authentik_flows.flow,
-          [slug, "default-provider-invalidation-flow"],
-        ]
+        !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
       mode: forward_single
       internal_host: http://music-assistant.home-automation.svc.cluster.local:8095
       external_host: https://musicassistant.arsenikki.casa

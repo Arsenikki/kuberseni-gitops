@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
 ---
 version: 1
 metadata:
@@ -15,7 +14,8 @@ entries:
         !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
       invalidation_flow:
         !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
-      mode: proxy
+      skip_path_regex: "^/api|^/feed|^/ping"
+      mode: forward_single
       internal_host: http://readarr.media.svc.cluster.local:8787
       external_host: https://readarr.arsenikki.casa
       access_token_validity: hours=1
@@ -27,6 +27,6 @@ entries:
     attrs:
       name: *app
       group: Apps
-      icon: https://avatars.githubusercontent.com/u/57811956?s=48&v=4
+      icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/readarr.png
       provider: !KeyOf provider
       policy_engine_mode: any

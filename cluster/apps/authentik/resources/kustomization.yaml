@@ -1,0 +1,41 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: authentik
+
+resources:
+  - namespace.yaml
+  - externalsecrets.yaml
+  - middleware.yaml
+
+# Authentik blueprints are maintained as clean, per-app YAML files under
+# blueprints/ and assembled into the `authentik-blueprints` ConfigMap here.
+# disableNameSuffixHash keeps the name stable (values.yaml + the reloader
+# annotation reference it by that exact name).
+configMapGenerator:
+  - name: authentik-blueprints
+    files:
+      - blueprints/admin-user.yaml
+      - blueprints/app-argocd.yaml
+      - blueprints/app-bazarr.yaml
+      - blueprints/app-grafana.yaml
+      - blueprints/app-home-assistant.yaml
+      - blueprints/app-homepage.yaml
+      - blueprints/app-lidarr.yaml
+      - blueprints/app-longhorn.yaml
+      - blueprints/app-music-assistant.yaml
+      - blueprints/app-nodered.yaml
+      - blueprints/app-overseerr.yaml
+      - blueprints/app-prowlarr.yaml
+      - blueprints/app-qbittorrent.yaml
+      - blueprints/app-radarr.yaml
+      - blueprints/app-readarr.yaml
+      - blueprints/app-sonarr.yaml
+      - blueprints/app-tautulli.yaml
+      - blueprints/app-whoami.yaml
+      - blueprints/app-zigbee2mqtt.yaml
+      - blueprints/embedded-outpost.yaml
+      - blueprints/source-github.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true

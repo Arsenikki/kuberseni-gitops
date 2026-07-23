@@ -1,0 +1,16 @@
+---
+version: 1
+metadata:
+  name: admin-user
+entries:
+  - id: admin-user
+    model: authentik_core.user
+    state: present
+    identifiers:
+      email: !Env [AUTHENTIK_ADMIN_EMAIL, ""]
+    attrs:
+      username: arseni
+      name: Arseni
+      is_superuser: true
+      groups:
+        - !Find [authentik_core.group, [name, "authentik Admins"]]
