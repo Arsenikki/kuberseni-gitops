@@ -20,7 +20,7 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: bot
-          image: ghcr.io/arsenikki/captain-core:v0.11.3
+          image: ghcr.io/arsenikki/captain-core:v0.12.0
           imagePullPolicy: IfNotPresent
           command: [".venv/bin/python", "bot.py"]
           env:
@@ -64,6 +64,12 @@ spec:
                 configMapKeyRef:
                   name: captain-core-config
                   key: BOOK_TIME
+                  optional: true
+            - name: AUTO_BOOK_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: captain-core-config
+                  key: AUTO_BOOK_ENABLED
                   optional: true
             - name: APIM_KEY
               valueFrom:
