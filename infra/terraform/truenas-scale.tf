@@ -9,6 +9,8 @@
 #     detached from VM 200 and attached to this VM as scsi1 (see lifecycle note below).
 #   - SCALE imported the pool, recreated the one NFS share, and took over IP .2.
 #   - CORE (VM 200) is kept stopped as a rollback option until decommissioned.
+#   - 2026-07-03: added a second identical 16TB disk (scsi2) and extended "main"
+#     from a single-disk vdev into a 2-way mirror for redundancy (see lifecycle note).
 #
 # Network: this VM uses a STATIC 192.168.1.2 configured inside TrueNAS (not DHCP),
 # so the k8s media-pv (hardcoded server 192.168.1.2) needs no change. The OPNSense
@@ -85,12 +87,18 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
     type = "l26"
   }
 
-  # The 16TB ZFS data pool ("main") is attached out-of-band at cutover via:
-  #   qm set 202 --scsi1 /dev/disk/by-id/ata-ST16000NM000J-2TW103_ZR55Q0MR,discard=on
-  # It is a raw device passthrough (the disk physically lives in the nas host and is
-  # moved from TrueNAS-Core VM 200 by pool export/import — the data is never copied).
+  # The ZFS data pool ("main") lives on raw-passthrough disks attached out-of-band.
+  # The disks physically live in the nas host; tofu never copies or manages their data.
+  # bpg's disk block only models datastore-backed volumes, so passthrough is done via qm:
+  #   scsi1 — original pool disk (imported from TrueNAS-Core VM 200 by pool export/import):
+  #     qm set 202 --scsi1 /dev/disk/by-id/ata-ST16000NM000J-2TW103_ZR55Q0MR,discard=on
+  #   scsi2 — mirror partner added 2026-07-03 to make "main" a 2-way mirror (redundancy):
+  #     qm set 202 --scsi2 /dev/disk/by-id/ata-ST16000NM002H-3KW133_ZYE0KJN1,discard=on
+  # Inside TrueNAS the passthrough disks show QEMU serials (drive-scsi1/drive-scsi2), not
+  # their physical serials; the scsi2 disk was wiped and attached to the existing vdev via
+  # Storage → main → Extend, which resilvers it into the mirror.
   # ignore_changes guarantees a future `terraform apply` can NEVER detach or recreate
-  # that disk, which would be catastrophic for 14TB of unbacked-up data.
+  # these disks, which would be catastrophic for ~14TB of unbacked-up data.
   lifecycle {
     ignore_changes = [disk]
   }
