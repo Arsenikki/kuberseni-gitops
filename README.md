@@ -16,7 +16,7 @@
 | Node             | CPU       | RAM       | Storage                             | Function                                   | Operating System |
 |------------------|-----------|-----------|-------------------------------------|--------------------------------------------|------------------|
 | Minisforum NBP5  | i5 13500H | 32GB DDR5 | 1TB   m.2                           | 1x Talos Master<br>1x Talos Worker (with iGPU) | Proxmox 8.x  |
-| Custom NAS build | N5105     | 32GB DDR4 | 256GB m.2<br>16TB  HDD<br>10TB  HDD | TrueNAS<br>1x Talos Master<br>1x Talos Worker  | Proxmox 8.x  |
+| Custom NAS build | N5105     | 32GB DDR4 | 256GB m.2 (boot)<br>2× 16TB HDD (ZFS mirror) | TrueNAS<br>1x Talos Master<br>1x Talos Worker  | Proxmox 8.x  |
 | Topton router    | N5105     | 16GB DDR4 | 512GB m.2                           | OPNSense<br>1x Talos Master                    | Proxmox 8.x  |
 
 ---
