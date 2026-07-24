@@ -20,6 +20,7 @@ export default defineConfig({
         { label: "Platform", items: ["gitops", "secrets", "applications"] },
         { label: "Automation", items: ["jeeves"] },
         { label: "Runbooks", items: [{ autogenerate: { directory: "runbooks" } }] },
+        { label: "Reference (generated)", items: [{ autogenerate: { directory: "generated" } }] },
       ],
     }),
   ],

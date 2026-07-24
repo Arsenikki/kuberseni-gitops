@@ -9,10 +9,12 @@ on:
     branches: [main]
     paths:
       - docs/**
+      - cluster/**
       - .github/workflows/docs-build.yaml
   pull_request:
     paths:
       - docs/**
+      - cluster/**
       - .github/workflows/docs-build.yaml
 
 permissions:
@@ -38,7 +40,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: docs
+          context: .
           file: docs/site/Dockerfile
           push: ${{ github.event_name == 'push' }}
           tags: |
