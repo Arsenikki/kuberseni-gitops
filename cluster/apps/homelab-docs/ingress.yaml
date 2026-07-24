@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homelab-docs
+  namespace: homelab-docs
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: docs.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homelab-docs
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - docs.arsenikki.casa
+      secretName: homelab-docs-tls
