@@ -18,7 +18,7 @@ volume:
     - name: data1
       type: "persistentVolumeClaim"
       storageClass: "longhorn"
-      size: "50Gi"
+      size: "80Gi"
       maxVolumes: 0
   idx:
     type: "persistentVolumeClaim"
