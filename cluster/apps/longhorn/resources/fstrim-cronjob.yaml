@@ -72,7 +72,7 @@ spec:
                       os.chroot("/proc/1/root")
                       os.chdir("/")
                       os.execv("/usr/bin/xfs_spaceman",
-                               ["/usr/bin/xfs_spaceman", "-c", "trim",
+                               ["/usr/bin/xfs_spaceman", "-c", "trim -f",
                                 "/var/mnt/longhorn-data"])
                       os._exit(1)
                   else:
