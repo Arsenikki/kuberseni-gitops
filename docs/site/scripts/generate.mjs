@@ -24,8 +24,12 @@ const repoRoot = resolve(scriptDir, "../../.."); // docs/site/scripts -> repo ro
 const clusterDir = join(repoRoot, "cluster");
 const outDir = resolve(scriptDir, "../src/content/docs/generated");
 
+// A Starlight "note" aside (renders as a styled callout). Must be Markdown, not a
+// JSX `{/* */}` comment — these files are .md, where JSX comments print literally.
 const BANNER =
-  "{/* AUTO-GENERATED from cluster/ manifests by docs/site/scripts/generate.mjs — do not edit by hand. */}";
+  ":::note[Auto-generated]\n" +
+  "Rendered from the `cluster/` manifests by `docs/site/scripts/generate.mjs` on every build — edit the manifests, not this page.\n" +
+  ":::";
 
 // Rebuild the generated tree from scratch every run.
 rmSync(outDir, { recursive: true, force: true });
