@@ -14,14 +14,26 @@ spec:
       labels:
         app: homelab-docs
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: docs
           # Built from docs/site by the docs-build workflow; content is docs/homelab.
+          # nginxinc/nginx-unprivileged serves on 8080 as UID 101 (non-root).
           image: ghcr.io/arsenikki/homelab-docs:latest
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
           readinessProbe:
             httpGet:
               path: /

@@ -14,7 +14,10 @@ COPY cluster ./cluster
 WORKDIR /app/docs/site
 RUN npm run build
 
-FROM nginx:1.27-alpine
+# Non-root nginx (serves on 8080 as UID 101) to satisfy the restricted PodSecurity profile.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+USER root
 COPY docs/site/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/docs/site/dist /usr/share/nginx/html
-EXPOSE 80
+USER 101
+EXPOSE 8080
