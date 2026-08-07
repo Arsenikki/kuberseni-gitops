@@ -32,7 +32,7 @@ loki:
     retention_enabled: true
     delete_request_store: s3
   limits_config:
-    retention_period: 336h # 14d
+    retention_period: 168h # 7d
     volume_enabled: true
     # OTLP ingestion (used by the alloy-jeeves gateway for Jeeves logs): pin ONLY
     # low-cardinality resource attributes as index labels; ignore_defaults=true
