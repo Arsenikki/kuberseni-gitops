@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/arsenikki/untappi-go:e2a96ac
+          image: ghcr.io/arsenikki/untappi-go:0.1.1
           imagePullPolicy: IfNotPresent
           command: ["/untappi", "worker"]
           env:
