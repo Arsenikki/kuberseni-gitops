@@ -1,0 +1,44 @@
+---
+# ArgoCD PreSync hook — runs DB migrations + seed before the api/worker roll out.
+# Deleted before it is recreated on each sync, and again once it succeeds.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: untappi-go-migrate
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: untappi-go-migrate
+        app.kubernetes.io/part-of: untappi-go
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ghcr.io/arsenikki/untappi-go:3984065
+          imagePullPolicy: IfNotPresent
+          command: ["/untappi", "seed"]
+          env:
+            # POSTGRES_PASSWORD must be declared BEFORE DATABASE_URL so the
+            # k8s $(VAR) expansion below can resolve it.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://untappi:$(POSTGRES_PASSWORD)@untappi-postgres:5432/untappi?sslmode=disable"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

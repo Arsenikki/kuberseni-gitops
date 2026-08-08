@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: untappi-go-worker
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+spec:
+  replicas: 1
+  # Recreate — never run two workers at once (would double-consume the queue).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: untappi-go-worker
+  template:
+    metadata:
+      labels:
+        app: untappi-go-worker
+        app.kubernetes.io/part-of: untappi-go
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/arsenikki/untappi-go:3984065
+          imagePullPolicy: IfNotPresent
+          command: ["/untappi", "worker"]
+          env:
+            # POSTGRES_PASSWORD must be declared BEFORE DATABASE_URL so the
+            # k8s $(VAR) expansion below can resolve it.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://untappi:$(POSTGRES_PASSWORD)@untappi-postgres:5432/untappi?sslmode=disable"
+            - name: NATS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: NATS_URL
+            - name: UNTAPPD_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: UNTAPPD_BASE_URL
+            - name: UNTAPPD_HOURLY_BUDGET
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: UNTAPPD_HOURLY_BUDGET
+            - name: HTTP_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: HTTP_ADDR
+            - name: UNTAPPD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: UNTAPPD_CLIENT_ID
+            - name: UNTAPPD_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: UNTAPPD_CLIENT_SECRET
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
