@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/arsenikki/untappi-go:e2a96ac
+          image: ghcr.io/arsenikki/untappi-go:0.1.0
           imagePullPolicy: IfNotPresent
           command: ["/untappi", "api"]
           env:
