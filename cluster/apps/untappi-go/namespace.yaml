@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go

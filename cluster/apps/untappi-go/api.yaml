@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: untappi-go-api
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: untappi-go-api
+  template:
+    metadata:
+      labels:
+        app: untappi-go-api
+        app.kubernetes.io/part-of: untappi-go
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/arsenikki/untappi-go:3984065
+          imagePullPolicy: IfNotPresent
+          command: ["/untappi", "api"]
+          env:
+            # POSTGRES_PASSWORD must be declared BEFORE DATABASE_URL so the
+            # k8s $(VAR) expansion below can resolve it.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://untappi:$(POSTGRES_PASSWORD)@untappi-postgres:5432/untappi?sslmode=disable"
+            - name: NATS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: NATS_URL
+            - name: UNTAPPD_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: UNTAPPD_BASE_URL
+            - name: UNTAPPD_HOURLY_BUDGET
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: UNTAPPD_HOURLY_BUDGET
+            - name: HTTP_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: untappi-go-config
+                  key: HTTP_ADDR
+            - name: UNTAPPD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: UNTAPPD_CLIENT_ID
+            - name: UNTAPPD_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: untappi-go-secrets
+                  key: UNTAPPD_CLIENT_SECRET
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: untappi-go-api
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+spec:
+  type: ClusterIP
+  selector:
+    app: untappi-go-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

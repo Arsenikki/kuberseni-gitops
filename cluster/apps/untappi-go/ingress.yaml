@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: untappi-go
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: untappi.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: untappi-go-api
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - untappi.arsenikki.casa
+      secretName: untappi-go-tls
