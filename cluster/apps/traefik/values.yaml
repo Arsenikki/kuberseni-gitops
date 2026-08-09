@@ -34,6 +34,9 @@ additionalArguments:
   - "--metrics.prometheus=true"
   - "--entryPoints.metrics.address=:9100"
   - "--metrics.prometheus.entryPoint=metrics"
+  - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+  - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+  - "--entryPoints.web.http.redirections.entryPoint.permanent=true"
 
 securityContext:
   capabilities:
