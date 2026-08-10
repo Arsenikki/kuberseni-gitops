@@ -21,7 +21,7 @@ sync-wave `5`). The ArgoCD `Application` lives at
 
 1. **Create the `untappi-go` 1Password item** in the **homelab** vault with a
    `postgres_password` field. This item does not exist yet and the
-   `ExternalSecret` (hence Postgres, api, worker and the migrate job) will not
+   `ExternalSecret` (hence Postgres, api and worker) will not
    populate without it.
 2. Confirm the **`untappd-api-creds`** 1Password item (homelab vault) exists with
    `client_id` and `client_secret` fields.
