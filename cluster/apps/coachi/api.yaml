@@ -1,0 +1,113 @@
+---
+# coachi API + embedded PWA. Serves the installable frontend and drives the
+# in-cluster Paseo daemon (coachi-paseo) to run coaching agents. Also runs the
+# scheduler (daily readiness / weekly review → Telegram).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coachi-api
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  # Single replica: it owns the coaching scheduler cron. Scale reads separately
+  # if ever needed, but keep exactly one scheduler.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coachi-api
+  template:
+    metadata:
+      labels:
+        app: coachi-api
+        app.kubernetes.io/part-of: coachi
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
+      containers:
+        - name: api
+          image: ghcr.io/arsenikki/coachi:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["/coachi", "serve"]
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://coachi:$(POSTGRES_PASSWORD)@coachi-postgres:5432/coachi?sslmode=disable"
+            - name: HTTP_ADDR
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: HTTP_ADDR } }
+            - name: ALLOWED_ORIGINS
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: ALLOWED_ORIGINS } }
+            - name: PASEO_HOST
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: PASEO_HOST } }
+            - name: PASEO_PORT
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: PASEO_PORT } }
+            - name: COACHING_CWD
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: COACHING_CWD } }
+            - name: COACH_PROVIDER
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: COACH_PROVIDER } }
+            - name: SCHEDULE_ENABLED
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_ENABLED } }
+            - name: SCHEDULE_DAILY_CRON
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_DAILY_CRON } }
+            - name: SCHEDULE_WEEKLY_CRON
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_WEEKLY_CRON } }
+            - name: SCHEDULE_TZ
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_TZ } }
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: TELEGRAM_BOT_TOKEN
+            - name: TELEGRAM_CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: TELEGRAM_CHAT_ID
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coachi-api
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  type: ClusterIP
+  selector:
+    app: coachi-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

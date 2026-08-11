@@ -1,0 +1,39 @@
+---
+# coachi serves personal health data — do NOT expose it publicly unauthenticated.
+# This ingress is intentionally INTERNAL (external-dns/is-public not set), so the
+# record is reachable over the LAN / Tailscale only. Before making it public,
+# put an auth layer in front — uncomment the Traefik forward-auth middleware
+# below (authentik) and set the correct middleware name, or front it with
+# Tailscale ingress. See README.md.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coachi
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Keep internal. To publish, set this "true" AND add auth (below) first.
+    external-dns/is-public: "false"
+    # Require login before reaching coachi (authentik forward-auth). Adjust the
+    # namespace/name to your deployed middleware, then uncomment:
+    # traefik.ingress.kubernetes.io/router.middlewares: authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: coachi.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coachi-api
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - coachi.arsenikki.casa
+      secretName: coachi-tls
