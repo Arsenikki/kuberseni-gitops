@@ -22,6 +22,8 @@ spec:
         app: coachi-paseo
         app.kubernetes.io/part-of: coachi
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

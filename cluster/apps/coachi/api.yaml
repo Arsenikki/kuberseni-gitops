@@ -22,6 +22,8 @@ spec:
         app: coachi-api
         app.kubernetes.io/part-of: coachi
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       initContainers:
         - name: wait-for-db
           image: postgres:16-alpine
