@@ -1,0 +1,102 @@
+---
+# Self-hosted Paseo daemon — runs the Claude coaching agents. Built from
+# coachi/Dockerfile.paseo (node + @getpaseo/cli + @anthropic-ai/claude-code +
+# the baked coaching-workspace). Runs as uid 1000 (`node`); the PVC is
+# chowned via fsGroup so the daemon can write its home under /data/paseo.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coachi-paseo
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  serviceName: coachi-paseo
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coachi-paseo
+  template:
+    metadata:
+      labels:
+        app: coachi-paseo
+        app.kubernetes.io/part-of: coachi
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: paseo
+          image: ghcr.io/arsenikki/coachi-paseo:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PASEO_HOME
+              value: /data/paseo
+            - name: COACHI_MCP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: coachi-config
+                  key: COACHI_MCP_URL
+            # Claude auth for the agents + Freddy MCP token (interpolated into
+            # the workspace .mcp.json by the agent process on this daemon).
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+            - name: FREDDY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: FREDDY_TOKEN
+          ports:
+            - containerPort: 6767
+              name: paseo
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data/paseo
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coachi-paseo
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  type: ClusterIP
+  selector:
+    app: coachi-paseo
+  ports:
+    - name: paseo
+      port: 6767
+      targetPort: 6767

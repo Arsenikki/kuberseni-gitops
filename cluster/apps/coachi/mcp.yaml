@@ -1,0 +1,84 @@
+---
+# coachi MCP server — the Paseo coaching agents read workouts/progress and write
+# feedback here. Runs the same coachi image as the API, with the `mcp` command.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coachi-mcp
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coachi-mcp
+  template:
+    metadata:
+      labels:
+        app: coachi-mcp
+        app.kubernetes.io/part-of: coachi
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
+      containers:
+        - name: mcp
+          image: ghcr.io/arsenikki/coachi:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["/coachi", "mcp"]
+          env:
+            # POSTGRES_PASSWORD must precede DATABASE_URL for the $(VAR) expansion.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://coachi:$(POSTGRES_PASSWORD)@coachi-postgres:5432/coachi?sslmode=disable"
+            - name: MCP_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: coachi-config
+                  key: MCP_ADDR
+          ports:
+            - containerPort: 9090
+              name: mcp
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9090
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coachi-mcp
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  type: ClusterIP
+  selector:
+    app: coachi-mcp
+  ports:
+    - name: mcp
+      port: 9090
+      targetPort: 9090

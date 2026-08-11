@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coachi-postgres
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  # Headless service — stable per-pod DNS for the StatefulSet.
+  clusterIP: None
+  selector:
+    app: coachi-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: coachi-postgres
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  serviceName: coachi-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coachi-postgres
+  template:
+    metadata:
+      labels:
+        app: coachi-postgres
+        app.kubernetes.io/part-of: coachi
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: coachi
+            - name: POSTGRES_DB
+              value: coachi
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: POSTGRES_PASSWORD
+            # initdb writes to a subdir so the mounted volume keeps its
+            # lost+found without breaking Postgres init.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "coachi", "-d", "coachi"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "coachi", "-d", "coachi"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi

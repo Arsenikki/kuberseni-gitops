@@ -1,0 +1,30 @@
+---
+# Non-secret runtime config shared by the coachi services. Secrets (Postgres
+# password, Claude token, Freddy token, Telegram creds) come from the
+# ExternalSecret `coachi-secrets`, not here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coachi-config
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+data:
+  HTTP_ADDR: ":8080"
+  MCP_ADDR: ":9090"
+  ALLOWED_ORIGINS: "*"
+  # The API drives the in-cluster Paseo daemon over TCP.
+  PASEO_HOST: "coachi-paseo"
+  PASEO_PORT: "6767"
+  COACH_PROVIDER: "claude/claude-opus-4-8"
+  # Path baked into the coachi-paseo image (Dockerfile.paseo COPYs the workspace
+  # here); the API passes it to the daemon as the agent cwd.
+  COACHING_CWD: "/opt/coaching-workspace"
+  # In-cluster URL of the coachi MCP server, interpolated into the workspace
+  # .mcp.json by the agent process running on the daemon.
+  COACHI_MCP_URL: "http://coachi-mcp:9090"
+  # Scheduled coaching (daily readiness 07:00, weekly review Sun 18:00, UK time).
+  SCHEDULE_ENABLED: "true"
+  SCHEDULE_DAILY_CRON: "0 7 * * *"
+  SCHEDULE_WEEKLY_CRON: "0 18 * * 0"
+  SCHEDULE_TZ: "Europe/London"
