@@ -22,13 +22,15 @@ spec:
         app: coachi-paseo
         app.kubernetes.io/part-of: coachi
     spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/coachi-paseo:0.1.0
+          image: ghcr.io/arsenikki/coachi-paseo:0.1.1
           imagePullPolicy: IfNotPresent
           env:
             - name: PASEO_HOME

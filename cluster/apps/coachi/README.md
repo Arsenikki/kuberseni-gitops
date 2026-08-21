@@ -47,6 +47,12 @@ Tags are pinned inline in `mcp.yaml` / `api.yaml` / `paseo.yaml` (never `latest`
 Bump them here on release. The coachi repo's GitHub Actions workflow builds and
 pushes both images on tag.
 
+The packages are **private**; the cluster pulls them via the `ghcr-credentials`
+image-pull secret (`ghcr-secret.yaml` — a dockerconfigjson ESO renders from the
+1Password `coachi` item fields `ghcr_username` + `ghcr_pat`, a `read:packages`
+PAT), referenced by `imagePullSecrets` on the mcp/paseo/api workloads (same
+pattern as captain-core). No need to make the GHCR packages public.
+
 ## Security — internet exposure
 
 `ingress.yaml` is **internal by default** (`external-dns/is-public: "false"`) —
