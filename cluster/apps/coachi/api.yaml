@@ -33,7 +33,7 @@ spec:
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/coachi:0.1.1
+          image: ghcr.io/arsenikki/coachi:0.1.2
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/coachi", "serve"]
           env:
@@ -64,6 +64,8 @@ spec:
               valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_WEEKLY_CRON } }
             - name: SCHEDULE_TZ
               valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_TZ } }
+            - name: FREDDY_REDIRECT_URL
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: FREDDY_REDIRECT_URL } }
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:

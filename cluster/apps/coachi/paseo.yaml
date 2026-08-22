@@ -30,7 +30,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/coachi-paseo:0.1.1
+          image: ghcr.io/arsenikki/coachi-paseo:0.1.2
           imagePullPolicy: IfNotPresent
           env:
             - name: PASEO_HOME
@@ -40,6 +40,11 @@ spec:
                 configMapKeyRef:
                   name: coachi-config
                   key: COACHI_MCP_URL
+            - name: FREDDY_PROXY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: coachi-config
+                  key: FREDDY_PROXY_URL
             # Claude auth for the agents + Freddy MCP token (interpolated into
             # the workspace .mcp.json by the agent process on this daemon).
             - name: CLAUDE_CODE_OAUTH_TOKEN
