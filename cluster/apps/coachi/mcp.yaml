@@ -32,7 +32,7 @@ spec:
         - name: mcp
           image: ghcr.io/arsenikki/coachi:0.1.1
           imagePullPolicy: IfNotPresent
-          command: ["/coachi", "mcp"]
+          command: ["/usr/local/bin/coachi", "mcp"]
           env:
             # POSTGRES_PASSWORD must precede DATABASE_URL for the $(VAR) expansion.
             - name: POSTGRES_PASSWORD
