@@ -31,3 +31,7 @@ data:
   # Freddy (Apple Health) in-app OAuth + MCP proxy.
   FREDDY_REDIRECT_URL: "https://coachi.arsenikki.casa/api/freddy/callback"
   FREDDY_PROXY_URL: "http://coachi-mcp:9090/freddy"
+  # SeaweedFS/S3 media storage (session photos/videos).
+  S3_ENDPOINT: "seaweedfs-s3.monitoring:8333"
+  S3_BUCKET: "coachi-media"
+  S3_USE_SSL: "false"
