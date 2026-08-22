@@ -33,7 +33,7 @@ spec:
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/coachi:0.1.4
+          image: ghcr.io/arsenikki/coachi:0.1.5
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/coachi", "serve"]
           env:
@@ -66,6 +66,22 @@ spec:
               valueFrom: { configMapKeyRef: { name: coachi-config, key: SCHEDULE_TZ } }
             - name: FREDDY_REDIRECT_URL
               valueFrom: { configMapKeyRef: { name: coachi-config, key: FREDDY_REDIRECT_URL } }
+            - name: S3_ENDPOINT
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: S3_ENDPOINT } }
+            - name: S3_BUCKET
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: S3_BUCKET } }
+            - name: S3_USE_SSL
+              valueFrom: { configMapKeyRef: { name: coachi-config, key: S3_USE_SSL } }
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: S3_ACCESS_KEY
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: S3_SECRET_KEY
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
