@@ -35,7 +35,7 @@ spec:
         - name: api
           image: ghcr.io/arsenikki/coachi:0.1.1
           imagePullPolicy: IfNotPresent
-          command: ["/coachi", "serve"]
+          command: ["/usr/local/bin/coachi", "serve"]
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
