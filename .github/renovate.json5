@@ -14,6 +14,12 @@
   "prConcurrentLimit": 0,
   "platformAutomerge": true,
   "osvVulnerabilityAlerts": true,
+  // Security fixes are fast-tracked automatically (vulnerabilityAlerts is on by
+  // default and bypasses the 3-day cooldown, schedule, and prConcurrentLimit);
+  // this just labels them "security" for visibility (addLabels appends).
+  "vulnerabilityAlerts": {
+    "addLabels": ["security"]
+  },
   // ArgoCD Application manifests reference Helm charts (chart + targetRevision)
   "argocd": {
     "managerFilePatterns": [
@@ -51,19 +57,31 @@
       "pinDigests": true,
       "matchUpdateTypes": ["minor", "patch", "digest"]
     },
+    // Auto merge container-image digest updates (same tag, re-pinned sha — the
+    // lowest-risk update type). Only affects digest-pinned images.
+    {
+      "description": ["Auto merge container image digest updates"],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
     // stability buffer — avoid landing a bad release on Saturday morning
     {
       "description": ["Wait 3 days before applying minor/patch updates"],
       "matchUpdateTypes": ["minor", "patch"],
       "minimumReleaseAge": "3 days"
     },
-    // group media stack patches to keep the PR count down
+    // group media stack patches to keep the PR count down, and auto merge them
+    // (low-stakes apps; still gated by the 3-day cooldown + PR CI checks)
     {
-      "description": ["Group media app patch/digest updates"],
+      "description": ["Group + auto merge media app patch/digest updates"],
       "matchFileNames": ["cluster/apps/media/**"],
       "matchUpdateTypes": ["patch", "digest"],
       "groupName": "media app patches",
-      "addLabels": ["group/media"]
+      "addLabels": ["group/media"],
+      "automerge": true,
+      "automergeType": "pr"
     },
     // commit message topics
     {
