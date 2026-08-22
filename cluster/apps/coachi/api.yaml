@@ -33,7 +33,7 @@ spec:
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/coachi:0.1.8
+          image: ghcr.io/arsenikki/coachi:0.1.9
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/coachi", "serve"]
           env:
