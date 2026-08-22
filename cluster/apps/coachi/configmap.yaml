@@ -28,3 +28,6 @@ data:
   SCHEDULE_DAILY_CRON: "0 7 * * *"
   SCHEDULE_WEEKLY_CRON: "0 18 * * 0"
   SCHEDULE_TZ: "Europe/London"
+  # Freddy (Apple Health) in-app OAuth + MCP proxy.
+  FREDDY_REDIRECT_URL: "https://coachi.arsenikki.casa/api/freddy/callback"
+  FREDDY_PROXY_URL: "http://coachi-mcp:9090/freddy"

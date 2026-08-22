@@ -23,7 +23,7 @@ PWA ──▶ coachi-api ──drives──▶ coachi-paseo (Claude agents)
 
 The API and daemon are mutually reachable in-cluster: the API dials
 `coachi-paseo:6767`; the agents on the daemon call `http://coachi-mcp:9090`
-(from `COACHI_MCP_URL`) and `https://freddy.coach/mcp/$FREDDY_TOKEN`.
+(from `COACHI_MCP_URL`) and Apple Health via the in-app OAuth proxy (`FREDDY_PROXY_URL` -> `coachi-mcp/freddy`, which injects the token stored by the Connect flow).
 
 ## Secrets — 1Password item `coachi` (vault `homelab`)
 
