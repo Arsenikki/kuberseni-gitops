@@ -30,7 +30,7 @@ spec:
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: mcp
-          image: ghcr.io/arsenikki/coachi:0.1.13
+          image: ghcr.io/arsenikki/coachi:0.1.15
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/coachi", "mcp"]
           env:
