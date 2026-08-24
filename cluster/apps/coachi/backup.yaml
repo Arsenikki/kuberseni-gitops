@@ -1,0 +1,92 @@
+---
+# Nightly logical backup of the coachi Postgres to SeaweedFS S3 (the same
+# observability store used for media), gzipped under the backups/ prefix with
+# 30-day retention. The DB volume has no Longhorn snapshots or off-cluster copy,
+# so this is the safety net against accidental row deletion / app bugs (a real
+# incident: test sessions were deleted with no way to recover them).
+#
+# Restore: `mc cp store/coachi-media/backups/coachi-<ts>.sql.gz .` then
+# `gunzip -c coachi-<ts>.sql.gz | psql -h coachi-postgres -U coachi -d coachi`.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coachi-db-backup
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  schedule: "0 3 * * *" # daily at 03:00 UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/part-of: coachi
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: work
+              emptyDir: {}
+          # pg_dump runs first (init); a failure here fails the pod BEFORE any
+          # upload, so a truncated dump can never be published (no pipe = set -e
+          # catches pg_dump's own exit code).
+          initContainers:
+            - name: dump
+              image: postgres:16-alpine
+              command: ["/bin/sh", "-eu", "-c"]
+              args:
+                - |
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  pg_dump -h coachi-postgres -U coachi -d coachi \
+                    --no-owner --no-privileges -f "/work/coachi-${ts}.sql"
+                  gzip -9 "/work/coachi-${ts}.sql"
+                  echo "wrote /work/coachi-${ts}.sql.gz ($(wc -c < "/work/coachi-${ts}.sql.gz") bytes)"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: coachi-secrets
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+          containers:
+            - name: upload
+              image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+              command: ["/bin/sh", "-eu", "-c"]
+              args:
+                - |
+                  mc alias set store "http://${S3_ENDPOINT}" "$S3_ACCESS_KEY" "$S3_SECRET_KEY"
+                  mc cp /work/coachi-*.sql.gz "store/${S3_BUCKET}/backups/"
+                  mc rm --recursive --force --older-than 30d "store/${S3_BUCKET}/backups/" || true
+                  echo "backups now:"; mc ls "store/${S3_BUCKET}/backups/" | tail -5
+              env:
+                - name: S3_ENDPOINT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: coachi-config
+                      key: S3_ENDPOINT
+                - name: S3_BUCKET
+                  valueFrom:
+                    configMapKeyRef:
+                      name: coachi-config
+                      key: S3_BUCKET
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: coachi-secrets
+                      key: S3_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: coachi-secrets
+                      key: S3_SECRET_KEY
+              volumeMounts:
+                - name: work
+                  mountPath: /work
