@@ -1,0 +1,74 @@
+---
+# Descheduler — rebalances the cluster after a node recovers or gets lopsided.
+#
+# Context: a power cut took down the minipc host (worker-01); Kubernetes moved
+# all its pods onto worker-02 (the weak 4-core NAS host) and never moved them
+# back when minipc returned, overloading worker-02 until containerd wedged and
+# Authentik (and every authentik-protected app) went down. This CronJob evicts
+# pods off over-utilized nodes on a schedule so the scheduler can spread them
+# back onto a recovered node.
+#
+# Safety: it ONLY evicts *stateless* pods. PVC-backed pods (StatefulSets) are
+# protected via podProtections, so Longhorn volumes never detach/attach as a
+# result of descheduling (this cluster has thin Longhorn redundancy). nodeFit
+# ensures a pod is only evicted when it can actually land somewhere better —
+# so it stays a no-op while a node is cordoned.
+kind: CronJob
+schedule: "*/30 * * * *"
+suspend: false
+
+# Modest footprint — this only runs briefly every 30 minutes.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
+deschedulerPolicy:
+  # Cap churn per run.
+  maxNoOfPodsToEvictPerNode: 3
+  profiles:
+    - name: default
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            # Only evict a pod if it can actually be scheduled elsewhere.
+            nodeFit: true
+            # Never evict stateful workloads (avoids Longhorn volume churn).
+            podProtections:
+              extraEnabled:
+                - "PodsWithPVC"
+        - name: RemoveDuplicates
+        - name: RemovePodsHavingTooManyRestarts
+          args:
+            podRestartThreshold: 100
+            includingInitContainers: true
+        - name: RemovePodsViolatingNodeTaints
+        - name: RemovePodsViolatingNodeAffinity
+          args:
+            nodeAffinityType:
+              - requiredDuringSchedulingIgnoredDuringExecution
+        - name: RemovePodsViolatingInterPodAntiAffinity
+        - name: LowNodeUtilization
+          args:
+            thresholds:
+              cpu: 20
+              memory: 20
+              pods: 20
+            targetThresholds:
+              cpu: 50
+              memory: 50
+              pods: 50
+      plugins:
+        balance:
+          enabled:
+            - RemoveDuplicates
+            - LowNodeUtilization
+        deschedule:
+          enabled:
+            - RemovePodsHavingTooManyRestarts
+            - RemovePodsViolatingNodeTaints
+            - RemovePodsViolatingNodeAffinity
+            - RemovePodsViolatingInterPodAntiAffinity
