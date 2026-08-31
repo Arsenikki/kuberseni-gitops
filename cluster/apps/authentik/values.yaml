@@ -1,5 +1,10 @@
 ---
 global:
+  # Give Authentik high scheduling priority so it is placed first and can
+  # preempt non-essential pods under node pressure. In the 2026-08-31 power-cut
+  # incident Authentik (BestEffort, no requests) got starved off a wedged node
+  # and every SSO-protected app 500'd. Propagates to server + worker.
+  priorityClassName: kuberseni-critical
   # Non-secret PostgreSQL connection params must be set explicitly when using existingSecret
   # (chart skips auto-configuring them in that mode)
   env:
@@ -23,6 +28,12 @@ blueprints:
     - authentik-blueprints
 
 server:
+  # Requests move the server from BestEffort to Burstable QoS so the scheduler
+  # accounts for it and it is not the first pod starved/evicted under pressure.
+  resources:
+    requests:
+      cpu: 150m
+      memory: 512Mi
   ingress:
     enabled: true
     hosts:
@@ -36,6 +47,11 @@ server:
           - authentik.arsenikki.casa
 
 worker:
+  # Burstable QoS + accounted requests (see server.resources rationale).
+  resources:
+    requests:
+      cpu: 150m
+      memory: 512Mi
   podAnnotations:
     configmap.reloader.stakater.com/reload: "authentik-blueprints"
 

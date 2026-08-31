@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: priority-classes
+  namespace: argocd
+  annotations:
+    # Sync early so the PriorityClasses exist before any app references them
+    # (a pod referencing a missing PriorityClass is rejected by the API).
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/priority-classes
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

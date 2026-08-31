@@ -1,0 +1,31 @@
+---
+# Homelab PriorityClasses.
+#
+# Under node pressure the scheduler evicts/avoids lower-priority pods first and
+# lets higher-priority pods preempt them. Without these, everything runs at the
+# default priority (0) and critical infra can be starved by batch/media work —
+# which is what happened in the 2026-08-31 power-cut incident (Authentik got
+# squeezed off a wedged node and every SSO-protected app 500'd).
+#
+# Values sit well below the built-in system-cluster-critical (2000000000) so
+# control-plane components always win.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: kuberseni-critical
+value: 1000000
+globalDefault: false
+description: >-
+  Critical homelab infrastructure (e.g. Authentik SSO) that must keep running
+  and may preempt lower-priority workloads under node pressure.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: kuberseni-low
+value: -10
+globalDefault: false
+preemptionPolicy: Never
+description: >-
+  Non-essential workloads (batch, media, experiments) that should yield first
+  under node pressure and never preempt other pods.
