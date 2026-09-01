@@ -1,0 +1,77 @@
+---
+image:
+  repository: ghcr.io/advplyr/audiobookshelf
+  tag: 2.36.0
+
+env:
+  TZ: Europe/London
+  # Listens on :80 by default; leave PORT unset. TZ keeps backup/log stamps sane.
+
+service:
+  main:
+    ports:
+      http:
+        port: 80
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    # NO authentik-forward-auth here on purpose: an SSO proxy in front of ABS
+    # breaks the mobile apps, OPDS and the API/BookBridge clients (they can't
+    # complete the browser login; the app hits /ping, gets a 302, shows empty).
+    # ABS has its own built-in auth (and native OIDC if you want SSO later).
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: audiobookshelf.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: audiobookshelf-tls
+        hosts:
+          - audiobookshelf.arsenikki.casa
+
+# Embedded single-writer SQLite in /config — never run >1 replica, and use
+# Recreate so a rollout never has two pods contending for the RWO config PVC.
+controller:
+  strategy: Recreate
+
+# ABS does NOT honour PUID/PGID — pin the UID here. 568 + group 10000 matches
+# the rest of the media stack so the shared NFS media-pvc is writable.
+podSecurityContext:
+  runAsUser: 568
+  runAsGroup: 568
+  fsGroup: 568
+  fsGroupChangePolicy: "OnRootMismatch"
+  supplementalGroups: [10000]
+
+persistence:
+  # DB + settings (source of truth). Small, durable, single-writer.
+  config:
+    enabled: true
+    existingClaim: audiobookshelf-config
+  # Cover/author art, cached metadata, internal backups. Grows with library.
+  metadata:
+    enabled: true
+    mountPath: /metadata
+    existingClaim: audiobookshelf-metadata
+  # Library scoped to the EXISTING `books` subfolder only (Readarr's root),
+  # mounted READ-ONLY. ABS cannot see movies/series/music/downloads and cannot
+  # modify what Readarr manages. Inside the container this appears as /data;
+  # organise e.g. /data/audiobooks and /data/ebooks and add them as ABS
+  # libraries. Progress/covers live in /config + /metadata, so read-only is fine.
+  media:
+    enabled: true
+    mountPath: /data
+    existingClaim: media-pvc
+    subPath: books
+    readOnly: true
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 256M
+  limits:
+    memory: 1Gi

@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bookbridge-data
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # DB is tiny; the bulk is transient audio_cache + transcripts during
+      # alignment. Expand the Longhorn volume later if it fills.
+      storage: 15Gi
+  storageClassName: longhorn
