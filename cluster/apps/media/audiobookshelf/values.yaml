@@ -57,17 +57,18 @@ persistence:
     enabled: true
     mountPath: /metadata
     existingClaim: audiobookshelf-metadata
-  # Library scoped to the EXISTING `books` subfolder only (Readarr's root),
-  # mounted READ-ONLY. ABS cannot see movies/series/music/downloads and cannot
-  # modify what Readarr manages. Inside the container this appears as /data;
-  # organise e.g. /data/audiobooks and /data/ebooks and add them as ABS
-  # libraries. Progress/covers live in /config + /metadata, so read-only is fine.
+  # Library scoped to the EXISTING `books` subfolder only (Readarr's root).
+  # `subPath: books` keeps ABS isolated from movies/series/music/downloads.
+  # Read-WRITE is required: ABS's ebook-upload feature does `mkdir <item>` in the
+  # library root, and a read-only mount made a failed upload throw an unhandled
+  # rejection that crashed the whole process (exit 1, crash loop). Writes are
+  # confined to the books subfolder. Inside the container this appears as /data;
+  # organise e.g. /data/audiobooks and /data/ebooks and add them as ABS libraries.
   media:
     enabled: true
     mountPath: /data
     existingClaim: media-pvc
     subPath: books
-    readOnly: true
 
 resources:
   requests:
