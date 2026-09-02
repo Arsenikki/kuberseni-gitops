@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: abs-opds
+  namespace: argocd
+  annotations:
+    # After audiobookshelf (wave 5) so the ABS Service exists to point at.
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  # Two sources only: the app-template chart + this repo as the $values ref.
+  # There are no extra raw manifests (the bridge is stateless — no PVC/secret).
+  sources:
+    - repoURL: https://bjw-s-labs.github.io/helm-charts
+      chart: app-template
+      targetRevision: 1.5.1
+      helm:
+        valueFiles:
+          - $values/cluster/apps/media/abs-opds/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

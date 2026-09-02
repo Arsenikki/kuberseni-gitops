@@ -1,0 +1,53 @@
+---
+image:
+  # NOTE: the image tag has NO leading 'v' — ghcr .../abs-opds:v2.0.5 does NOT
+  # exist (404); the git tag is v2.0.5 but the image tag is 2.0.5.
+  repository: ghcr.io/vito0912/abs-opds
+  tag: "2.0.5"
+
+env:
+  TZ: Europe/London
+  NODE_ENV: production
+  # Reach Audiobookshelf over its in-cluster Service (ABS listens on :80).
+  # No trailing slash and no /api suffix — the bridge appends /api and /login.
+  ABS_URL: http://audiobookshelf.media.svc.cluster.local
+  # Proxy ABS cover images through this bridge so the Kindle doesn't need to
+  # reach ABS's internal URL for thumbnails.
+  USE_PROXY: "true"
+  # EPUBs only — keep audiobooks out of the OPDS catalog.
+  SHOW_AUDIOBOOKS: "false"
+
+service:
+  main:
+    ports:
+      http:
+        port: 3010
+
+ingress:
+  main:
+    enabled: true
+    ingressClassName: traefik
+    # No authentik-forward-auth: the bridge does its OWN HTTP Basic auth, and
+    # KOReader (which embeds credentials in the OPDS URL) cannot pass an SSO
+    # login. TLS is important here because the ABS credentials ride in the URL
+    # userinfo — keep this HTTPS-only.
+    annotations:
+      kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: abs-opds.arsenikki.casa
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: abs-opds-tls
+        hosts:
+          - abs-opds.arsenikki.casa
+
+# Fully stateless — only in-memory caches (library items + short-lived tokens).
+# No PVC; safe to restart/reschedule (a restart just re-warms the cache).
+resources:
+  requests:
+    cpu: 10m
+    memory: 64M
+  limits:
+    memory: 256M
