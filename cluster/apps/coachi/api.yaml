@@ -33,7 +33,7 @@ spec:
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/coachi:0.1.21
+          image: ghcr.io/arsenikki/coachi:0.1.22
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/coachi", "serve"]
           env:
@@ -92,6 +92,13 @@ spec:
                 secretKeyRef:
                   name: coachi-secrets
                   key: TELEGRAM_CHAT_ID
+            # Static bearer token for the DIY Apple Health ingest (/api/health/*).
+            # Set → those endpoints activate; the iOS Shortcut posts with it.
+            - name: HEALTH_INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: coachi-secrets
+                  key: HEALTH_INGEST_TOKEN
           ports:
             - containerPort: 8080
               name: http
