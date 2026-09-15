@@ -5,7 +5,7 @@ controller:
 
 image:
   repository: nodered/node-red
-  tag: 4.1.11
+  tag: 5.0.1
 
 env:
   TZ: "Europe/London"
