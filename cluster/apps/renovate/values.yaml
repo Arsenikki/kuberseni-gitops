@@ -8,7 +8,7 @@
 # only). Repo config comes from this repo's existing .github/renovate.json5.
 image:
   repository: ghcr.io/mend/renovate-ce
-  tag: "14.8.0"
+  tag: "15.0.0"
 
 renovate:
   # You must accept Mend's ToS (https://www.mend.io/terms-of-service/) — 'y'.
