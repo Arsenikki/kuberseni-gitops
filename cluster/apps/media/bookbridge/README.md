@@ -23,7 +23,8 @@ position through its built-in kosync endpoint.
 | `externalsecret.yaml` | `ExternalSecret` → secret `bookbridge-secret` (`BOOKBRIDGE_SECRET_KEY`) via the `onepassword` ClusterSecretStore |
 
 The EPUB library is the shared `media-pvc` scoped to `subPath: books`,
-**read-only** — same isolation as ABS.
+**read-only** (BookBridge only reads ebooks; ABS mounts the same `books` folder
+read-write for uploads).
 
 ## Manual prerequisites (before syncing)
 
