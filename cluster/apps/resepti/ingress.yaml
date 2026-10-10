@@ -1,0 +1,37 @@
+---
+# resepti web UI. Protected by Authentik forward-auth (Traefik middleware), so
+# only logged-in household members reach it. Kept internal (external-dns/is-public
+# false) by default — reachable over LAN/Tailscale; cert-manager still issues a
+# real Let's Encrypt cert (DNS-01) so the PWA has the HTTPS secure-context it
+# needs for the mic / Web Speech API on the kitchen tablet. To publish on the
+# public internet, set is-public "true" (auth still enforced by the middleware).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: resepti
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "false"
+    # Require Authentik login before reaching resepti.
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: resepti.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: resepti-api
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - resepti.arsenikki.casa
+      secretName: resepti-tls

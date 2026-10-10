@@ -1,0 +1,103 @@
+---
+# Self-hosted Paseo daemon — runs the resepti recipe agents (import + cooking
+# assistant). Built from resepti/Dockerfile.paseo (node + @getpaseo/cli +
+# @anthropic-ai/claude-code + the baked recipe-workspace). Runs as uid 1000
+# (`node`); the PVC is chowned via fsGroup so the daemon can write its home.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: resepti-paseo
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  serviceName: resepti-paseo
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resepti-paseo
+  template:
+    metadata:
+      labels:
+        app: resepti-paseo
+        app.kubernetes.io/part-of: resepti
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: paseo
+          image: ghcr.io/arsenikki/resepti-paseo:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PASEO_HOME
+              value: /data/paseo
+            - name: RECIPE_CWD
+              valueFrom:
+                configMapKeyRef:
+                  name: resepti-config
+                  key: RECIPE_CWD
+            - name: RESEPTI_MCP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: resepti-config
+                  key: RESEPTI_MCP_URL
+            # Claude auth for the agents (also used by Claude Code on this daemon).
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: resepti-secrets
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+          ports:
+            - containerPort: 6767
+              name: paseo
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data/paseo
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resepti-paseo
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  type: ClusterIP
+  selector:
+    app: resepti-paseo
+  ports:
+    - name: paseo
+      port: 6767
+      targetPort: 6767

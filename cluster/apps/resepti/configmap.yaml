@@ -1,0 +1,31 @@
+---
+# Non-secret runtime config shared by the resepti services. Secrets (Postgres
+# password, Claude token, S3 creds) come from the ExternalSecret `resepti-secrets`.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resepti-config
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+data:
+  HTTP_ADDR: ":8080"
+  MCP_ADDR: ":9090"
+  ALLOWED_ORIGINS: "*"
+  PUBLIC_BASE_URL: "https://resepti.arsenikki.casa"
+  # The API drives the in-cluster Paseo daemon over TCP.
+  PASEO_HOST: "resepti-paseo"
+  PASEO_PORT: "6767"
+  # Path baked into the resepti-paseo image (Dockerfile.paseo COPYs the workspace
+  # here); the API passes it to the daemon as the agent cwd.
+  RECIPE_CWD: "/opt/recipe-workspace"
+  # In-cluster URL of the resepti MCP server, interpolated into the workspace
+  # .mcp.json by the agent process running on the daemon.
+  RESEPTI_MCP_URL: "http://resepti-mcp:9090"
+  # Agent models: a capable model for import+review, a fast one for voice Q&A.
+  IMPORT_PROVIDER: "claude/claude-opus-4-8"
+  ASSISTANT_PROVIDER: "claude/claude-haiku-4-5"
+  # SeaweedFS/S3 media storage (recipe photos).
+  S3_ENDPOINT: "seaweedfs-s3.monitoring:8333"
+  S3_BUCKET: "resepti-media"
+  S3_USE_SSL: "false"

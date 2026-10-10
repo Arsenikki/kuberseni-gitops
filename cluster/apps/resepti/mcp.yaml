@@ -1,0 +1,86 @@
+---
+# resepti MCP server — the Paseo recipe agents read/write the cookbook here. Runs
+# the same resepti image as the API, with the `mcp` command.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resepti-mcp
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resepti-mcp
+  template:
+    metadata:
+      labels:
+        app: resepti-mcp
+        app.kubernetes.io/part-of: resepti
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h resepti-postgres -U resepti -d resepti; do echo waiting for db; sleep 2; done"
+      containers:
+        - name: mcp
+          image: ghcr.io/arsenikki/resepti:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/resepti", "mcp"]
+          env:
+            # POSTGRES_PASSWORD must precede DATABASE_URL for the $(VAR) expansion.
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resepti-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "postgres://resepti:$(POSTGRES_PASSWORD)@resepti-postgres:5432/resepti?sslmode=disable"
+            - name: MCP_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: resepti-config
+                  key: MCP_ADDR
+          ports:
+            - containerPort: 9090
+              name: mcp
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9090
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resepti-mcp
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  type: ClusterIP
+  selector:
+    app: resepti-mcp
+  ports:
+    - name: mcp
+      port: 9090
+      targetPort: 9090
