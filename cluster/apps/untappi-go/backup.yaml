@@ -1,0 +1,113 @@
+---
+# Nightly logical backup of the untappi PostGIS database to SeaweedFS S3, gzipped
+# under the shared backups/ prefix (backups/untappi/) with 30-day retention.
+# Mirrors the coachi backup pattern — until now untappi had NO backup at all, so
+# a dropped row / bad migration / lost PVC was unrecoverable.
+#
+# Lands in the same coachi-media/backups/ tree that the `backup` app recursively
+# replicates offsite to Google Drive, so these dumps go off-cluster for free.
+#
+# Restore: `mc cp store/coachi-media/backups/untappi/untappi-<ts>.sql.gz .` then
+# `gunzip -c untappi-<ts>.sql.gz | psql -h untappi-postgres -U untappi -d untappi`
+# (the target DB must have the postgis extension available — the postgis image does).
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: untappi-backup-s3
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: untappi-backup-s3
+    creationPolicy: Owner
+  data:
+    - secretKey: S3_ACCESS_KEY
+      remoteRef:
+        key: "seaweedfs-s3"
+        property: access_key
+    - secretKey: S3_SECRET_KEY
+      remoteRef:
+        key: "seaweedfs-s3"
+        property: secret_key
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: untappi-db-backup
+  namespace: untappi-go
+  labels:
+    app.kubernetes.io/part-of: untappi-go
+spec:
+  schedule: "30 3 * * *" # daily 03:30 UTC (after coachi 03:00, before offsite copy 05:00)
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/part-of: untappi-go
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: work
+              emptyDir: {}
+          # pg_dump runs first (init); a failure here fails the pod BEFORE any
+          # upload, so a truncated dump can never be published.
+          initContainers:
+            - name: dump
+              image: postgres:16-alpine
+              command: ["/bin/sh", "-eu", "-c"]
+              args:
+                - |
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  pg_dump -h untappi-postgres -U untappi -d untappi \
+                    --no-owner --no-privileges -f "/work/untappi-${ts}.sql"
+                  gzip -9 "/work/untappi-${ts}.sql"
+                  echo "wrote /work/untappi-${ts}.sql.gz ($(wc -c < "/work/untappi-${ts}.sql.gz") bytes)"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: untappi-go-secrets
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+          containers:
+            - name: upload
+              image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+              command: ["/bin/sh", "-eu", "-c"]
+              args:
+                - |
+                  mc alias set store "http://${S3_ENDPOINT}" "$S3_ACCESS_KEY" "$S3_SECRET_KEY"
+                  mc cp /work/untappi-*.sql.gz "store/${S3_BUCKET}/backups/untappi/"
+                  mc rm --recursive --force --older-than 30d "store/${S3_BUCKET}/backups/untappi/" || true
+                  echo "backups now:"; mc ls "store/${S3_BUCKET}/backups/untappi/" | tail -5
+              env:
+                - name: S3_ENDPOINT
+                  value: "seaweedfs-s3.monitoring:8333"
+                - name: S3_BUCKET
+                  value: "coachi-media"
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: untappi-backup-s3
+                      key: S3_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: untappi-backup-s3
+                      key: S3_SECRET_KEY
+              volumeMounts:
+                - name: work
+                  mountPath: /work
