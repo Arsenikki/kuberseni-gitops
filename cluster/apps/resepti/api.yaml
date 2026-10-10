@@ -31,7 +31,7 @@ spec:
             - "until pg_isready -h resepti-postgres -U resepti -d resepti; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/resepti:0.1.0
+          image: ghcr.io/arsenikki/resepti:0.1.1
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/resepti", "serve"]
           env:
