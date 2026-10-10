@@ -1,0 +1,86 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resepti-postgres
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  clusterIP: None # headless — stable per-pod DNS for the StatefulSet
+  selector:
+    app: resepti-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: resepti-postgres
+  namespace: resepti
+  labels:
+    app.kubernetes.io/part-of: resepti
+spec:
+  serviceName: resepti-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resepti-postgres
+  template:
+    metadata:
+      labels:
+        app: resepti-postgres
+        app.kubernetes.io/part-of: resepti
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: resepti
+            - name: POSTGRES_DB
+              value: resepti
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resepti-secrets
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: postgres
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "resepti", "-d", "resepti"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "resepti", "-d", "resepti"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
