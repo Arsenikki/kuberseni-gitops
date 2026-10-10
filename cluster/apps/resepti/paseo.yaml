@@ -30,7 +30,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/resepti-paseo:0.1.0
+          image: ghcr.io/arsenikki/resepti-paseo:0.1.2
           imagePullPolicy: IfNotPresent
           env:
             - name: PASEO_HOME
