@@ -225,6 +225,44 @@ extraObjects:
             key: "Jeeves Agent"
             property: github_app_private_key
 
+  # Repository credential so ArgoCD can pull the PRIVATE flock repo, via the same
+  # paseo-homelab GitHub App (flock is already in that installation). Reuses the
+  # "Jeeves Agent" 1Password item — no new secret needed.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: flock-repo
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: flock-repo
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            type: git
+            url: https://github.com/Arsenikki/flock
+      data:
+        - secretKey: githubAppID
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_id
+        - secretKey: githubAppInstallationID
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_installation_id
+        - secretKey: githubAppPrivateKey
+          remoteRef:
+            key: "Jeeves Agent"
+            property: github_app_private_key
+
 # Run ArgoCD components on control-plane nodes
 controller:
   nodeSelector:

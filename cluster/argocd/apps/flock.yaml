@@ -1,0 +1,37 @@
+---
+# flock — a standalone realtime kanban board (github.com/Arsenikki/flock), a flock
+# of AI agents swarming tickets. Source + deploy manifests live in a SEPARATE
+# (private) repo, rendered with kustomize (path "deploy"). Isolated/additive: its
+# own namespace `flock` and its own ingress host flock.arsenikki.casa. No auth in
+# v1 (private LAN/Tailscale only; authentik SSO is a planned follow-up). Wave 6 —
+# after ESO/1Password + Longhorn, like jeeves.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: flock
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+    # The source repo is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
+    # ephemeral ArgoCD with no repo creds) cannot list its refs and fails the
+    # check. Skip this app in the preview; the live cluster's ArgoCD has the
+    # repo credential (flock-repo ExternalSecret) and renders it normally.
+    argocd-diff-preview/ignore: "true"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/flock
+    targetRevision: main
+    path: deploy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: flock
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
