@@ -1,0 +1,13 @@
+# CNPG Barman Cloud Plugin (chart plugin-barman-cloud 0.8.1 -> appVersion v0.15.1).
+# This is the CNPG-I replacement for the in-tree spec.backup.barmanObjectStore
+# (deprecated since operator 1.26, removed in 1.31) — so we start plugin-only.
+# MUST run in the same namespace as the operator (cnpg-system).
+# TLS between plugin and operator uses cert-manager (already installed cluster-wide),
+# which the chart wires up automatically — nothing to configure here.
+# Defaults are sufficient; keep a small, explicit resource budget.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
