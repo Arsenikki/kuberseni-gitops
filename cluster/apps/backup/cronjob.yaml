@@ -1,0 +1,100 @@
+---
+# Tier-2 offsite backup: replicate the in-cluster SeaweedFS backup buckets to
+# Google Drive (client-side encrypted via rclone crypt). Tier 1 (the pg_dump ->
+# SeaweedFS CronJobs) stays the primary, hot-restore copy; this is the cold,
+# off-cluster copy that survives losing the whole cluster.
+#
+# Why a single rclone job instead of per-app Drive integration: Google Drive is
+# not S3 and every backup tool only reaches it via rclone. Funnelling all offsite
+# traffic through one job isolates Drive's foot-guns (750 GB/day upload cap,
+# ~2 files/sec throttling, OAuth token churn) to one place.
+#
+# `copy` (never `sync`) so a misconfigured/compromised run can never delete the
+# offsite history. Files accumulate on Drive (longer offsite retention than the
+# 30-day SeaweedFS window); at tens of MB/day that is negligible.
+#
+# Restore: `rclone --config <conf> copy gdrive-crypt:coachi-media/backups ./restore`
+# then feed the .sql.gz back into psql (see coachi backup.yaml). Test periodically.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: offsite-backup-gdrive
+  namespace: backup
+  labels:
+    app.kubernetes.io/part-of: backup
+spec:
+  schedule: "0 5 * * *" # daily 05:00 UTC, after coachi dump (03:00) + seaweedfs vacuum (04:00)
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/part-of: backup
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumes:
+            # rclone.conf rendered by the ExternalSecret (read-only mount).
+            - name: config
+              secret:
+                secretName: rclone-config
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+            # Writable scratch: HOME, TMPDIR, and a working copy of the config so
+            # rclone can persist its refreshed OAuth access-token for the run.
+            - name: cache
+              emptyDir: {}
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.75.2
+              command: ["/bin/sh", "-eu", "-c"]
+              args:
+                - |
+                  cp /config/rclone.conf /cache/rclone.conf
+                  # Recursive mirror of the shared backups/ prefix: ANY app that drops
+                  # a dump under coachi-media/backups/ (coachi, untappi, etcd-snapshot…)
+                  # is replicated offsite automatically — no change needed here.
+                  rclone --config /cache/rclone.conf copy \
+                    seaweedfs:coachi-media/backups gdrive-crypt:coachi-media/backups \
+                    --drive-stop-on-upload-limit \
+                    --transfers 4 --checkers 8 \
+                    --drive-chunk-size 64M \
+                    --immutable \
+                    --stats-one-line --stats 1m --log-level INFO
+                  echo "offsite size now:"
+                  rclone --config /cache/rclone.conf size gdrive-crypt:coachi-media/backups
+              env:
+                - name: HOME
+                  value: /cache
+                - name: TMPDIR
+                  value: /cache
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
