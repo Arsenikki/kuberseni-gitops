@@ -18,11 +18,11 @@ Images: `ghcr.io/arsenikki/resepti` (API+MCP) and `ghcr.io/arsenikki/resepti-pas
 
 ## One-time setup
 
-1. **1Password** (vault `homelab`) — create item **`resepti`** with ONE field:
-   - `postgres_password` — any strong value
-   The Claude token is reused from the existing **`Jeeves Agent`** item, and the
-   **`github-packages-ro`** + **`seaweedfs-s3`** items are reused as-is — so this
-   one Postgres password is the only new secret.
+1. **1Password** — nothing to create; every secret is reused from existing items:
+   Postgres ← **`coachi`**/postgres_password, Claude ← **`Jeeves Agent`**/claude_code_oauth_token,
+   GHCR pull ← **`github-packages-ro`**, S3 ← **`seaweedfs-s3`**.
+   ⚠️ Postgres is shared with coachi's DB password by request — if that item is
+   rotated, update resepti's secret + DB together.
 
 2. **SeaweedFS bucket** — the app auto-creates `resepti-media` on first start if
    the S3 creds allow it; otherwise create it once.
