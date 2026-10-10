@@ -30,6 +30,7 @@ configMapGenerator:
       - blueprints/app-qbittorrent.yaml
       - blueprints/app-radarr.yaml
       - blueprints/app-readarr.yaml
+      - blueprints/app-resepti.yaml
       - blueprints/app-sonarr.yaml
       - blueprints/app-tautulli.yaml
       - blueprints/app-whoami.yaml
