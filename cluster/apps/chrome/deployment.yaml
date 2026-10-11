@@ -100,10 +100,21 @@ spec:
             tcpSocket: { port: 3000 }
             initialDelaySeconds: 10
             periodSeconds: 15
+          # Liveness checks CDP (127.0.0.1:9222), NOT the stream (:3000): the
+          # Selkies stream server stays up even when the BROWSER process dies, so
+          # a :3000 probe never notices a dead browser (that's why the opener went
+          # dead "once it worked"). If chromium dies, CDP stops answering -> this
+          # fails -> the container restarts -> autostart -> wrapped-chromium
+          # override -> browser is back WITH extensions + CDP. Self-healing.
+          # exec (not tcpSocket) because CDP binds loopback-only; generous delays
+          # so a slow cold start is never mistaken for a crash.
           livenessProbe:
-            tcpSocket: { port: 3000 }
-            initialDelaySeconds: 30
+            exec:
+              command: ["sh", "-c", "curl -sf http://127.0.0.1:9222/json/version >/dev/null"]
+            initialDelaySeconds: 120
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
         # Opener sidecar: tiny dependency-free HTTP server (script in opener.yaml)
         # that turns GET /open?token=&url= into a CDP "open tab" on 127.0.0.1:9222.
         # Hardened (non-root, read-only rootfs, drop-all caps) — unlike the s6
