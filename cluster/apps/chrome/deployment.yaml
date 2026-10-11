@@ -71,19 +71,14 @@ spec:
             - { name: SELKIES_FILE_TRANSFERS, value: "" }
             # --- close the IPv6 egress bypass at the container level too ---
             - { name: DISABLE_IPV6, value: "true" }
-            # --- load ONLY the reviewed, PVC-pinned extensions: Bypass Paywalls
-            #     Clean (/config/bpc) + uBlock Origin Lite MV3 (/config/ubol).
-            #     --disable-extensions-except allowlists exactly these two.
-            #     --remote-debugging-port=9222 binds CDP to 127.0.0.1 only (same
-            #     pod) so the opener sidecar can open tabs; never network-exposed.
-            #     --user-data-dir=/config/cdp-profile is REQUIRED: Chrome 136+
-            #     silently ignores --remote-debugging-port when the profile is the
-            #     DEFAULT dir (a security hardening). The Selkies wrapper passes a
-            #     bare (default) --user-data-dir, but appends CHROME_CLI LAST and
-            #     "last --user-data-dir wins", so this non-default dir re-enables
-            #     CDP. Extensions still load (they're path-based, not profile-based). ---
+            # --- The browser launch flags (both extensions, the CDP debug port,
+            #     and the non-default profile required for CDP on Chrome 136+) are
+            #     hardcoded in the wrapped-chromium OVERRIDE (launch-fix.yaml),
+            #     mounted below. That makes them persist across EVERY launch path
+            #     (autostart AND relaunches), not just when CHROME_CLI is passed.
+            #     CHROME_CLI now only supplies the start page. ---
             - name: CHROME_CLI
-              value: "--remote-debugging-port=9222 --user-data-dir=/config/cdp-profile --disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
+              value: "https://www.google.com"
           ports:
             - { containerPort: 3000, name: http, protocol: TCP }
           resources:
@@ -96,6 +91,9 @@ spec:
           volumeMounts:
             - { name: config, mountPath: /config }
             - { name: dshm, mountPath: /dev/shm }
+            # Override the Selkies launcher so extensions + CDP persist across
+            # relaunches (see launch-fix.yaml).
+            - { name: launch-fix, mountPath: /usr/bin/wrapped-chromium, subPath: wrapped-chromium, readOnly: true }
           # TCP probes (not httpGet): the HTTP endpoint requires basic auth, so an
           # httpGet probe would 401 and flap.
           readinessProbe:
@@ -148,6 +146,10 @@ spec:
         - name: opener-script
           configMap:
             name: chrome-opener-script
+        - name: launch-fix
+          configMap:
+            name: chrome-launch-fix
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: Service

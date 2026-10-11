@@ -1,0 +1,56 @@
+---
+# ==========================================================================
+# Override of the Selkies "wrapped-chromium" launcher
+# ==========================================================================
+# WHY: the stock /usr/bin/wrapped-chromium only applies our flags when they're
+# passed as $CHROME_CLI. The desktop AUTOSTART does that, but RELAUNCHES (the
+# right-click menu item, a crash, or any Selkies re-open) call `wrapped-chromium`
+# with NO args — so the browser came back with NO extensions and NO debug port.
+# Symptom: BPC/uBOL + the opener "worked once, then failed" after any relaunch.
+#
+# FIX: mount this hardened wrapper over /usr/bin/wrapped-chromium (subPath) so
+# EVERY launch path hardcodes the profile + CDP debug port + both extensions.
+# Keep this in sync with the upstream wrapper's base flags if the image changes.
+#
+# Mounted read-only+exec on the chromium container (see deployment.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrome-launch-fix
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+data:
+  wrapped-chromium: |
+    #!/bin/bash
+    # Hardened override — see launch-fix.yaml. Mirrors the stock wrapper's base
+    # flags and ADDS a non-default profile (--user-data-dir, required for CDP on
+    # Chrome 136+), the CDP debug port, and the two reviewed extensions.
+    BIN=/usr/bin/chromium
+
+    # Clean OUR profile's stale singleton lock on a fresh start (the stock wrapper
+    # cleaned the default dir, which we no longer use).
+    if ! pgrep chromium > /dev/null; then
+      rm -f /config/cdp-profile/Singleton*
+    fi
+
+    if [ "${PIXELFLUX_WAYLAND,,}" == "true" ]; then
+      WAYLAND="--ozone-platform=wayland"
+    fi
+    if [ "${PELORUS,,}" == "true" ]; then
+      ACCESSIBILITY="--force-renderer-accessibility"
+    fi
+
+    ${BIN} \
+      --no-sandbox \
+      --password-store=basic \
+      --simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT' \
+      --start-maximized \
+      --test-type \
+      --user-data-dir=/config/cdp-profile \
+      --remote-debugging-port=9222 \
+      --disable-extensions-except=/config/bpc,/config/ubol \
+      --load-extension=/config/bpc,/config/ubol \
+      ${WAYLAND} \
+      ${ACCESSIBILITY} \
+       "$@" > /dev/null 2>&1
