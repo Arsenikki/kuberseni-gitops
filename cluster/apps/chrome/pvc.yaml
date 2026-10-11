@@ -1,0 +1,21 @@
+---
+# Persistent Chromium profile + the unpacked Bypass Paywalls Clean extension
+# (/config/bpc). Survives restarts so you don't re-copy BPC every time.
+#
+# NOTE: this PVC accumulates browsing history/cache even though you never log in.
+# It is intentionally NOT labelled for any Longhorn recurring/offsite backup job
+# — keep it that way so your reading history never rides to the Google Drive tier.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chrome-config
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

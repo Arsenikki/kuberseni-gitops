@@ -1,0 +1,119 @@
+---
+# linuxserver/chromium (Selkies): a remote Chromium streamed over WebSocket on
+# :3000, with Bypass Paywalls Clean (BPC) loaded as an unpacked extension so
+# paywalled articles render. Reach it at https://chrome.arsenikki.casa (internal
+# only) behind Authentik forward-auth.
+#
+# SECURITY MODEL (full threat model + checklist in README.md):
+#   - This pod is an interactive, OUTBOUND-CAPABLE browser foothold sitting next
+#     to Proxmox/TrueNAS/ArgoCD/Postgres. The real boundary is the egress
+#     CiliumNetworkPolicy (networkpolicy.yaml — WHICH YOU MUST VALIDATE) plus
+#     internal-only ingress + Authentik + a real basic-auth password.
+#   - Trust the IMAGE, not the extension: image pinned by tag (never :latest per
+#     repo rules); BPC is reviewed + pinned manually into the PVC, loaded via
+#     --disable-extensions-except so ONLY BPC can ever run.
+#   - Do not add SYS_ADMIN or --no-sandbox. Keep Chromium's own sandbox; seccomp
+#     must be Unconfined for it to start (compensated by network isolation).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chrome
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # single RWO PVC — a RollingUpdate would deadlock on the volume
+  selector:
+    matchLabels:
+      app: chrome
+  template:
+    metadata:
+      labels:
+        app: chrome
+        app.kubernetes.io/part-of: chrome
+    spec:
+      # A browser pod has no business talking to the kube API — drop the token.
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000          # make the /config PVC writable by the abc (PUID 1000) user
+        # Chromium's sandbox needs seccomp Unconfined to start. This is the
+        # documented requirement for this image; network isolation compensates.
+        seccompProfile:
+          type: Unconfined
+      containers:
+        - name: chromium
+          image: lscr.io/linuxserver/chromium:d2f5e718-ls58
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PUID, value: "1000" }
+            - { name: PGID, value: "1000" }
+            - { name: TZ, value: "Europe/London" }
+            - { name: TITLE, value: "chrome.arsenikki.casa" }
+            # --- auth (LAST gate behind Authentik): real creds from 1Password ---
+            - name: CUSTOM_USER
+              valueFrom: { secretKeyRef: { name: chrome-auth, key: CUSTOM_USER } }
+            - name: PASSWORD
+              valueFrom: { secretKeyRef: { name: chrome-auth, key: PASSWORD } }
+            # --- CSWSH fix: only THIS origin may open the streaming WebSocket ---
+            - { name: SELKIES_ALLOWED_ORIGINS, value: "https://chrome.arsenikki.casa" }
+            # --- hardening: no in-session terminal/sudo; clipboard out-only; no transfers ---
+            - { name: HARDEN_DESKTOP, value: "true" }
+            - { name: DISABLE_SUDO, value: "true" }
+            - { name: DISABLE_TERMINALS, value: "true" }
+            - { name: SELKIES_ENABLE_CLIPBOARD, value: "out" }
+            - { name: SELKIES_FILE_TRANSFERS, value: "" }
+            # --- close the IPv6 egress bypass at the container level too ---
+            - { name: DISABLE_IPV6, value: "true" }
+            # --- load ONLY Bypass Paywalls Clean (reviewed + pinned in the PVC) ---
+            - name: CHROME_CLI
+              value: "--disable-extensions-except=/config/bpc --load-extension=/config/bpc https://www.google.com"
+          ports:
+            - { containerPort: 3000, name: http, protocol: TCP }
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi          # must cover Chromium + the 1Gi RAM-backed /dev/shm
+          volumeMounts:
+            - { name: config, mountPath: /config }
+            - { name: dshm, mountPath: /dev/shm }
+          # TCP probes (not httpGet): the HTTP endpoint requires basic auth, so an
+          # httpGet probe would 401 and flap.
+          readinessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: chrome-config
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  # ClusterIP ONLY — never NodePort/LoadBalancer. Only Traefik may reach :3000
+  # (enforced by the ingress rule in networkpolicy.yaml).
+  type: ClusterIP
+  selector:
+    app: chrome
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

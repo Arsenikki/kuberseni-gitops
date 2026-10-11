@@ -1,0 +1,42 @@
+---
+# chrome.arsenikki.casa — INTERNAL ONLY.
+#
+# external-dns/is-public: "false" => the DNS record resolves on the LAN / Tailscale
+# only and is NOT published to the public internet. The security review was
+# unambiguous: do NOT expose this remote browser to the internet. Authentik
+# forward-auth is defense-in-depth ON TOP of internal-only, not a substitute.
+#
+# (cert still issues fine: letsencrypt-prod uses Cloudflare DNS-01, which works
+#  for an internal host — same pattern as coachi.)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chrome
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # INTERNAL ONLY — do not flip to "true" without re-reading README.md security.
+    external-dns/is-public: "false"
+    # Require an Authentik login before anything reaches Selkies (covers the
+    # WebSocket upgrade too, since that's an HTTP GET).
+    traefik.ingress.kubernetes.io/router.middlewares: authentik-forward-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: chrome.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chrome
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - chrome.arsenikki.casa
+      secretName: chrome-tls
