@@ -27,12 +27,14 @@ controls above. Trust the **image** (pinned by tag), not the **extension** (BPC
 is unsigned JS from a Russian git host, so it's reviewed + pinned by hand and
 loaded with `--disable-extensions-except` so only BPC can run).
 
-## Prerequisites (do these first)
+## Auth
 
-1. **1Password item.** Create item **`chrome`** in the `homelab` vault with:
-   - `username` — any value (e.g. `arseni`)
-   - `password` — a **long random string** (the last gate if Authentik is ever
-     bypassed; never `abc`). Until this exists the ExternalSecret is NotReady.
+**Authentik forward-auth only.** The Selkies basic-auth (CUSTOM_USER/PASSWORD) is
+intentionally NOT set — the backend is unreachable except via Traefik, which
+enforces Authentik (Service is ClusterIP-only; the CiliumNetworkPolicy ingress
+admits `:3000` from the Traefik pod only). Registration lives in the Authentik
+`app-chrome` blueprint. Tradeoff: no fallback gate if forward-auth is bypassed;
+accepted for a single-user, internal-only app.
 
 ## One-time: install BPC into the PVC
 
