@@ -1,0 +1,109 @@
+---
+# ==========================================================================
+# CiliumNetworkPolicy: chrome (remote Chromium) ingress + egress lockdown
+# ==========================================================================
+# WHY THIS IS THE LOAD-BEARING CONTROL
+#   This pod is a full, outbound-capable browser that will fetch ANY URL it is
+#   handed — by you, by a hostile ad/page, or by a compromised BPC extension.
+#   Without egress restriction it can reach Proxmox, TrueNAS, OPNSense, ArgoCD,
+#   Postgres, the kube-apiserver and 169.254.169.254 — i.e. pivot into the whole
+#   homelab. The security review ranked this the #1 risk and the "no-login"
+#   constraint does NOTHING to reduce it. This policy is the backstop.
+#
+# CILIUM SEMANTICS (Cilium here is 1.19.4 — past CVE-2024-47825 CIDR-deny bypass)
+#   - Selecting this endpoint with ingress+egress makes it DEFAULT-DENY both ways;
+#     only the allows below are permitted. So cluster pods/services/apiserver are
+#     already unreachable — we only allow kube-dns + the outside "world".
+#   - "world" in Cilium = everything OUTSIDE the cluster, which INCLUDES your LAN
+#     (Proxmox/TrueNAS/router on RFC1918). So allowing "world" alone is NOT safe;
+#     the egressDeny block carves the private ranges back out. Deny wins in Cilium.
+#   - IPv6 is also disabled inside the container (DISABLE_IPV6=true); the v6
+#     denies below are a second layer.
+#
+# !! YOU MUST VALIDATE THIS ON THE LIVE CLUSTER BEFORE TRUSTING IT !!
+#   A wrong label or a CIDR-vs-identity quirk can silently leave the LAN
+#   reachable while the policy reads correct and ArgoCD shows Synced. Validation
+#   commands are in the CAVEATS block at the bottom (and README.md).
+# ==========================================================================
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: chrome-isolation
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  endpointSelector:
+    matchLabels:
+      app: chrome
+
+  # ---- INGRESS: only the Traefik ingress controller may reach Selkies ------
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik
+            app.kubernetes.io/name: traefik
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+
+  # ---- EGRESS: DNS + the public internet only -----------------------------
+  egress:
+    # 1) DNS to CoreDNS (identity-based; required so sites can be resolved).
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - { port: "53", protocol: UDP }
+            - { port: "53", protocol: TCP }
+          rules:
+            dns:
+              - matchPattern: "*"
+    # 2) The outside world (news sites). NB: "world" also matches LAN IPs, which
+    #    are then carved out by egressDeny below.
+    - toEntities:
+        - world
+
+  # ---- EGRESS DENY (wins over the allow above) ----------------------------
+  egressDeny:
+    # Private IPv4 + link-local(169.254, incl. metadata) + CGNAT(100.64, Tailscale).
+    # 127/8 is deliberately NOT denied — it's pod-local loopback the app needs.
+    - toCIDR:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16
+        - 100.64.0.0/10
+    # IPv6 ULA + link-local (Tailscale v6 fd7a:115c:a1e0::/48 is inside fc00::/7).
+    - toCIDR:
+        - fc00::/7
+        - fe80::/10
+    # Cluster node / control-plane identities. We deny these explicitly but do
+    # NOT deny the whole "cluster" entity — that would also block kube-dns and
+    # break DNS resolution.
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+# ==========================================================================
+# CAVEATS — VALIDATE ON THE LIVE CLUSTER (do not trust the YAML):
+#   1. Pod label:
+#        kubectl -n chrome get pod -l app=chrome \
+#          -o jsonpath='{.items[0].metadata.labels}'
+#   2. Traefik labels (confirm namespace "traefik" + app.kubernetes.io/name):
+#        kubectl -n traefik get pods --show-labels
+#   3. kube-dns label (Talos/Cilium run CoreDNS but keep k8s-app=kube-dns):
+#        kubectl -n kube-system get pods -l k8s-app=kube-dns --show-labels
+#   4. From INSIDE the pod (kubectl -n chrome exec deploy/chrome -- sh -c '...'):
+#        curl -m5 http://<router/Proxmox/TrueNAS LAN IP>   -> MUST fail/timeout
+#        curl -m5 http://<any ClusterIP, e.g. argocd svc>  -> MUST fail
+#        curl -m5 -k https://<kube-apiserver host>:6443    -> MUST fail
+#        curl -m5 https://example.com                      -> MUST succeed
+#        getent hosts example.com                          -> MUST resolve
+#   5. Watch drops live while testing:
+#        hubble observe -n chrome --pod chrome --verdict DROPPED -f
+#   Re-run after every Cilium upgrade.
+# ==========================================================================
