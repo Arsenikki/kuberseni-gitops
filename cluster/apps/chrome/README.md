@@ -57,12 +57,36 @@ kubectl -n chrome rollout restart deploy/chrome
 
 Verify at `chrome://extensions` inside the remote browser that BPC is enabled.
 
-## Updating BPC (manual, by choice)
+## One-time: install uBlock Origin Lite (ad-blocking) into the PVC
 
-Unpacked extensions don't auto-update. When a site stops being unpaywalled,
-repeat the one-time steps (re-download, **diff against the current `/config/bpc`
-before copying** — this is your supply-chain checkpoint), copy, `rollout
-restart`. Pin to a reviewed commit/release rather than blindly grabbing master.
+BPC strips the paywall but not ads, so we also load **uBlock Origin Lite** (uBOL)
+— MV3, since Chromium 154 has removed MV2 so classic uBlock Origin can't run.
+Official source: gorhill's `uBlockOrigin/uBOL-home` releases (the `.chromium.zip`).
+
+```bash
+# 1. Download the latest reviewed uBOL chromium build (MV3)
+URL=$(gh api repos/uBlockOrigin/uBOL-home/releases/latest \
+  --jq '.assets[] | select(.name|test("chromium\\.zip$")) | .browser_download_url')
+curl -fsSL -o ubol.zip "$URL" && mkdir ubol && unzip -q ubol.zip -d ubol
+
+# 2. Copy into /config/ubol, then restart to load it (loaded via CHROME_CLI)
+POD=$(kubectl -n chrome get pod -l app=chrome -o jsonpath='{.items[0].metadata.name}')
+kubectl -n chrome cp ubol "$POD:/config/ubol"
+kubectl -n chrome rollout restart deploy/chrome
+```
+
+uBOL blocks most ads out of the box via network (DNR) filtering with no setup.
+For best results (hiding leftover ad containers), open uBOL's popup in the remote
+browser once and raise the filtering mode to **Optimal** or **Complete** (grants
+broad site access for cosmetic filtering). Both extensions are allowlisted in the
+Deployment's `CHROME_CLI` (`--disable-extensions-except=/config/bpc,/config/ubol`).
+
+## Updating the extensions (manual, by choice)
+
+Unpacked extensions don't auto-update. When a site stops being unpaywalled (BPC)
+or ads creep back (uBOL), repeat the relevant one-time steps — re-download, **diff
+against the current `/config/<ext>` before copying** (your supply-chain
+checkpoint), copy, `rollout restart`. Pin to a reviewed release, not blind latest.
 
 ## ✅ Validate the egress lockdown (do not skip)
 
