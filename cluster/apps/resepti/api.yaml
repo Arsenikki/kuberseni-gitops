@@ -31,7 +31,7 @@ spec:
             - "until pg_isready -h resepti-postgres -U resepti -d resepti; do echo waiting for db; sleep 2; done"
       containers:
         - name: api
-          image: ghcr.io/arsenikki/resepti:0.1.2
+          image: ghcr.io/arsenikki/resepti:0.1.4
           imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/resepti", "serve"]
           env:
@@ -56,6 +56,8 @@ spec:
               valueFrom: { configMapKeyRef: { name: resepti-config, key: RECIPE_CWD } }
             - name: IMPORT_PROVIDER
               valueFrom: { configMapKeyRef: { name: resepti-config, key: IMPORT_PROVIDER } }
+            - name: IMPORT_EFFORT
+              valueFrom: { configMapKeyRef: { name: resepti-config, key: IMPORT_EFFORT } }
             - name: ASSISTANT_PROVIDER
               valueFrom: { configMapKeyRef: { name: resepti-config, key: ASSISTANT_PROVIDER } }
             - name: S3_ENDPOINT
