@@ -51,11 +51,13 @@ spec:
             - { name: PGID, value: "1000" }
             - { name: TZ, value: "Europe/London" }
             - { name: TITLE, value: "chrome.arsenikki.casa" }
-            # --- auth (LAST gate behind Authentik): real creds from 1Password ---
-            - name: CUSTOM_USER
-              valueFrom: { secretKeyRef: { name: chrome-auth, key: CUSTOM_USER } }
-            - name: PASSWORD
-              valueFrom: { secretKeyRef: { name: chrome-auth, key: PASSWORD } }
+            # --- auth: Authentik forward-auth ONLY ---
+            # No Selkies basic-auth: CUSTOM_USER/PASSWORD are intentionally unset
+            # (unset => the Selkies endpoint has no basic-auth prompt). This is safe
+            # because the backend is unreachable except via Traefik -> Authentik:
+            # the Service is ClusterIP-only and the CiliumNetworkPolicy ingress rule
+            # only admits :3000 from the Traefik pod. Tradeoff: no second gate if
+            # forward-auth is ever bypassed; accepted for a single-user internal app.
             # --- CSWSH fix: only THIS origin may open the streaming WebSocket ---
             - { name: SELKIES_ALLOWED_ORIGINS, value: "https://chrome.arsenikki.casa" }
             # --- hardening: no in-session terminal/sudo; clipboard out-only; no transfers ---
