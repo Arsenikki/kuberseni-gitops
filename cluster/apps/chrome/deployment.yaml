@@ -60,11 +60,14 @@ spec:
             # forward-auth is ever bypassed; accepted for a single-user internal app.
             # --- CSWSH fix: only THIS origin may open the streaming WebSocket ---
             - { name: SELKIES_ALLOWED_ORIGINS, value: "https://chrome.arsenikki.casa" }
-            # --- hardening: no in-session terminal/sudo; clipboard out-only; no transfers ---
+            # --- hardening: no in-session terminal/sudo; no file transfers ---
             - { name: HARDEN_DESKTOP, value: "true" }
             - { name: DISABLE_SUDO, value: "true" }
             - { name: DISABLE_TERMINALS, value: "true" }
-            - { name: SELKIES_ENABLE_CLIPBOARD, value: "out" }
+            # Clipboard both-ways so you can paste INTO the remote browser (copy
+            # URLs/text in). Low risk given auth + egress lockdown; needs HTTPS
+            # (satisfied) and granting the site clipboard permission in-browser.
+            - { name: SELKIES_ENABLE_CLIPBOARD, value: "true" }
             - { name: SELKIES_FILE_TRANSFERS, value: "" }
             # --- close the IPv6 egress bypass at the container level too ---
             - { name: DISABLE_IPV6, value: "true" }
