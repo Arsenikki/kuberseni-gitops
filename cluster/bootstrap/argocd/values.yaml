@@ -265,6 +265,16 @@ extraObjects:
 
 # Run ArgoCD components on control-plane nodes
 controller:
+  # 2026-10-11 incident: with NO resource requests set, the controller was
+  # OOM/SIGKILLed (exit 137) under load and crashlooped, halting ALL syncs.
+  # Requests give it guaranteed memory + QoS priority so it's not the first
+  # victim under node pressure. No memory LIMIT on purpose — a blind cgroup cap
+  # (metrics-server isn't installed to size one) risks a worse OOM-crashloop;
+  # add a limit once usage is measurable. Numbers are a starting point.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
   tolerations:
@@ -272,6 +282,20 @@ controller:
       operator: Exists
 
 repoServer:
+  # 2026-10-11 incident: repo-server was liveness-probe-killed (context deadline
+  # exceeded on /healthz, ~494x over 41d) while rendering manifests for ~70 apps,
+  # starving the controller and cascading into the sync outage. Relax the probe
+  # so a slow render isn't treated as a failure, run 2 replicas to spread load,
+  # and set a resource floor.
+  replicas: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  livenessProbe:
+    timeoutSeconds: 10
+    periodSeconds: 30
+    failureThreshold: 6
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""
   tolerations:
