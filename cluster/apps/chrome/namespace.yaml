@@ -2,16 +2,19 @@
 # Dedicated namespace so the egress CiliumNetworkPolicy has a clean blast-radius
 # boundary (keep this pod away from Postgres/ArgoCD/etc).
 #
-# PSA "baseline": the linuxserver/chromium image starts as root (s6 init drops to
-# PUID 1000) and REQUIRES seccomp Unconfined for Chromium's sandbox. Both are
-# allowed under baseline but FORBIDDEN under restricted, so pin baseline
-# explicitly in case the cluster default ever tightens to restricted.
+# PSA "privileged": the linuxserver/chromium image needs seccomp Unconfined for
+# Chromium's own sandbox to start, and this cluster's PSA *baseline* forbids
+# Unconfined (and SYS_ADMIN, the only alternative). Keeping the Chromium sandbox
+# is the secure choice — far better than running --no-sandbox — so we allow the
+# Unconfined profile here. Same pattern as the longhorn/monitoring namespaces.
+# NB: the pod itself is NOT privileged (no privileged/hostNetwork/hostPath/added
+# caps, SA token dropped); the real boundary is the egress NetworkPolicy.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: chrome
   labels:
     app.kubernetes.io/part-of: chrome
-    pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/warn: baseline
-    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: privileged

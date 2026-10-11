@@ -51,6 +51,10 @@ spec:
   # ---- EGRESS: DNS + the public internet only -----------------------------
   egress:
     # 1) DNS to CoreDNS (identity-based; required so sites can be resolved).
+    #    L4 only — this cluster has NO Cilium L7 proxy, so an L7 `rules: dns:`
+    #    block would make the whole policy Invalid (and therefore unenforced).
+    #    We don't need FQDN policy anyway: the LAN carve-out below is IP-based
+    #    (toCIDR), which is rebinding-proof regardless of what DNS returns.
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -59,9 +63,6 @@ spec:
         - ports:
             - { port: "53", protocol: UDP }
             - { port: "53", protocol: TCP }
-          rules:
-            dns:
-              - matchPattern: "*"
     # 2) The outside world (news sites). NB: "world" also matches LAN IPs, which
     #    are then carved out by egressDeny below.
     - toEntities:
