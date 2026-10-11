@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_hardware_mapping_usb" "zigbee_dongle" {
 }
 
 # PCI resource mapping for worker-01's Intel Iris Xe iGPU (full passthrough).
-# Same setup as the old k3s cluster: host runs with nomodeset, VM owns the GPU.
+# Host runs with nomodeset, VM owns the GPU.
 resource "proxmox_virtual_environment_hardware_mapping_pci" "minipc_igpu" {
   name    = "minipc-igpu"
   comment = "Intel Raptor Lake-P Iris Xe (minipc) for worker-01 / Plex transcoding"
