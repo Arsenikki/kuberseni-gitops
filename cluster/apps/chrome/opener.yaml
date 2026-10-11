@@ -1,0 +1,142 @@
+---
+# ==========================================================================
+# "Opener" — one-tap send-a-URL-to-the-BPC-browser endpoint
+# ==========================================================================
+# GET https://opener.arsenikki.casa/open?token=<T>&url=<ENCODED_ARTICLE_URL>
+#   -> validates the token
+#   -> tells the already-running Chromium (BPC + uBOL) to open <url> as a new tab
+#      via its localhost DevTools endpoint (CDP /json/new)
+#   -> 302-redirects the caller to https://chrome.arsenikki.casa to view it
+#
+# So the iOS Shortcut / Mac bookmarklet is a single "open this URL" — no POST,
+# no headers, no CORS. Auth = Tailscale-only (external-dns/is-public:false) + the
+# token in the query (the token stops a malicious page from CSRF-ing tab-opens;
+# NOT behind Authentik because an automated GET can't do interactive SSO).
+#
+# The opener runs as a tiny sidecar in the chrome pod (see deployment.yaml) so it
+# can reach Chromium's CDP on 127.0.0.1:9222 (never network-exposed).
+# ==========================================================================
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: chrome-opener
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: chrome-opener
+    creationPolicy: Owner
+  data:
+    # 1Password item "chrome-opener" (vault homelab), field "password".
+    - secretKey: token
+      remoteRef:
+        key: "chrome-opener"
+        property: password
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrome-opener-script
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+data:
+  opener.py: |
+    #!/usr/bin/env python3
+    # Minimal, dependency-free opener. See opener.yaml header for the flow.
+    import os, urllib.parse, urllib.request, http.server, socketserver
+
+    TOKEN = os.environ.get("OPENER_TOKEN", "")
+    CDP = os.environ.get("CDP_URL", "http://127.0.0.1:9222")
+    VIEWER = os.environ.get("VIEWER_URL", "https://chrome.arsenikki.casa")
+    PORT = int(os.environ.get("PORT", "9000"))
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def _text(self, code, msg):
+            self.send_response(code)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(msg.encode())
+
+        def do_GET(self):
+            p = urllib.parse.urlparse(self.path)
+            if p.path == "/healthz":
+                return self._text(200, "ok")
+            if p.path != "/open":
+                return self._text(404, "not found")
+            q = urllib.parse.parse_qs(p.query)
+            token = (q.get("token") or [""])[0]
+            url = (q.get("url") or [""])[0]
+            if not TOKEN or token != TOKEN:
+                return self._text(403, "forbidden")
+            if not url.startswith(("http://", "https://")):
+                return self._text(400, "bad or missing url (must be http/https, URL-encoded)")
+            try:
+                # CDP opens everything after /json/new? as the target URL (raw).
+                req = urllib.request.Request(CDP + "/json/new?" + url, method="PUT")
+                urllib.request.urlopen(req, timeout=5).read()
+            except Exception as e:
+                return self._text(502, "opener could not reach the browser: %s" % e)
+            self.send_response(302)
+            self.send_header("Location", VIEWER)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass  # quiet
+
+    if __name__ == "__main__":
+        socketserver.TCPServer.allow_reuse_address = True
+        with socketserver.ThreadingTCPServer(("0.0.0.0", PORT), H) as s:
+            s.serve_forever()
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-opener
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+spec:
+  type: ClusterIP
+  selector:
+    app: chrome          # the opener is a sidecar in the chrome pod
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chrome-opener
+  namespace: chrome
+  labels:
+    app.kubernetes.io/part-of: chrome
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # INTERNAL ONLY (Tailscale/LAN). Intentionally NO authentik middleware:
+    # the one-tap GET is token-gated (automation can't do interactive SSO).
+    external-dns/is-public: "false"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: opener.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chrome-opener
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - opener.arsenikki.casa
+      secretName: chrome-opener-tls

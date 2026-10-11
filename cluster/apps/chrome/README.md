@@ -36,6 +36,30 @@ admits `:3000` from the Traefik pod only). Registration lives in the Authentik
 `app-chrome` blueprint. Tradeoff: no fallback gate if forward-auth is bypassed;
 accepted for a single-user, internal-only app.
 
+## One-tap "Open unpaywalled" opener (iOS + Mac)
+
+Instead of navigating here and pasting a URL, push the current page in one tap.
+`opener.arsenikki.casa` (Tailscale-only, token-gated — a sidecar in this pod)
+opens the URL in this browser via Chromium's localhost CDP, then 302-redirects you
+to the viewer:
+
+    https://opener.arsenikki.casa/open?token=<TOKEN>&url=<URL-ENCODED-ARTICLE>
+
+Token = 1Password item `chrome-opener` (field `password`). The article URL **must
+be URL-encoded** (it's a query param). Needs Tailscale up + internal DNS.
+
+**iOS Shortcut "Open unpaywalled"** (Details → Show in Share Sheet → accept URLs):
+1. *(Share Sheet input)* — Receive URLs
+2. **URL Encode** → Shortcut Input
+3. **Text**: `https://opener.arsenikki.casa/open?token=<TOKEN>&url=` + the *URL-Encoded* variable
+4. **Open URLs** → that Text
+
+**Mac bookmarklet** (Bookmark → Edit → paste into the *URL* field; don't paste in the address bar):
+
+    javascript:location.href='https://opener.arsenikki.casa/open?token=<TOKEN>&url='+encodeURIComponent(location.href);
+
+The token in the URL is the CSRF/abuse gate — keep the Shortcut/bookmarklet private.
+
 ## One-time: install BPC into the PVC
 
 The PVC starts empty, so Chromium first boots with no extension. Populate it:

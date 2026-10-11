@@ -73,9 +73,11 @@ spec:
             - { name: DISABLE_IPV6, value: "true" }
             # --- load ONLY the reviewed, PVC-pinned extensions: Bypass Paywalls
             #     Clean (/config/bpc) + uBlock Origin Lite MV3 (/config/ubol).
-            #     --disable-extensions-except allowlists exactly these two. ---
+            #     --disable-extensions-except allowlists exactly these two.
+            #     --remote-debugging-port=9222 binds CDP to 127.0.0.1 only (same
+            #     pod) so the opener sidecar can open tabs; never network-exposed. ---
             - name: CHROME_CLI
-              value: "--disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
+              value: "--remote-debugging-port=9222 --disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
           ports:
             - { containerPort: 3000, name: http, protocol: TCP }
           resources:
@@ -98,6 +100,37 @@ spec:
             tcpSocket: { port: 3000 }
             initialDelaySeconds: 30
             periodSeconds: 30
+        # Opener sidecar: tiny dependency-free HTTP server (script in opener.yaml)
+        # that turns GET /open?token=&url= into a CDP "open tab" on 127.0.0.1:9222.
+        # Hardened (non-root, read-only rootfs, drop-all caps) — unlike the s6
+        # chromium container it has no such constraints.
+        - name: opener
+          image: python:3.13-slim
+          command: ["python3", "/opener/opener.py"]
+          env:
+            - name: OPENER_TOKEN
+              valueFrom: { secretKeyRef: { name: chrome-opener, key: token } }
+            - { name: VIEWER_URL, value: "https://chrome.arsenikki.casa" }
+            - { name: PYTHONDONTWRITEBYTECODE, value: "1" }
+            - { name: PYTHONUNBUFFERED, value: "1" }
+          ports:
+            - { containerPort: 9000, name: opener, protocol: TCP }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 96Mi }
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile: { type: RuntimeDefault }
+            capabilities: { drop: ["ALL"] }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 9000 }
+            initialDelaySeconds: 3
+            periodSeconds: 15
+          volumeMounts:
+            - { name: opener-script, mountPath: /opener, readOnly: true }
       volumes:
         - name: config
           persistentVolumeClaim:
@@ -106,6 +139,9 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 1Gi
+        - name: opener-script
+          configMap:
+            name: chrome-opener-script
 ---
 apiVersion: v1
 kind: Service
