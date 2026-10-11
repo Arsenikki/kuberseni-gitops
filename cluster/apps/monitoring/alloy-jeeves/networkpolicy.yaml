@@ -56,6 +56,8 @@ spec:
   # ======================================================================
   egress:
     # 1) DNS to CoreDNS / kube-dns in kube-system.
+    #    L4 ONLY: no Cilium L7 proxy on this cluster, so an L7 `rules: dns:` block
+    #    makes the WHOLE policy Invalid + UNENFORCED (it silently was for ~84d).
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -66,9 +68,6 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-          rules:
-            dns:
-              - matchPattern: "*"
 
     # 2) Tempo (traces, OTLP gRPC) — same monitoring namespace.
     - toEndpoints:
