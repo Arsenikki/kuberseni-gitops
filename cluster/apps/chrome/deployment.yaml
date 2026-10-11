@@ -75,9 +75,15 @@ spec:
             #     Clean (/config/bpc) + uBlock Origin Lite MV3 (/config/ubol).
             #     --disable-extensions-except allowlists exactly these two.
             #     --remote-debugging-port=9222 binds CDP to 127.0.0.1 only (same
-            #     pod) so the opener sidecar can open tabs; never network-exposed. ---
+            #     pod) so the opener sidecar can open tabs; never network-exposed.
+            #     --user-data-dir=/config/cdp-profile is REQUIRED: Chrome 136+
+            #     silently ignores --remote-debugging-port when the profile is the
+            #     DEFAULT dir (a security hardening). The Selkies wrapper passes a
+            #     bare (default) --user-data-dir, but appends CHROME_CLI LAST and
+            #     "last --user-data-dir wins", so this non-default dir re-enables
+            #     CDP. Extensions still load (they're path-based, not profile-based). ---
             - name: CHROME_CLI
-              value: "--remote-debugging-port=9222 --disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
+              value: "--remote-debugging-port=9222 --user-data-dir=/config/cdp-profile --disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
           ports:
             - { containerPort: 3000, name: http, protocol: TCP }
           resources:
