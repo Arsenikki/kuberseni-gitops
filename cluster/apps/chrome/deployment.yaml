@@ -9,9 +9,9 @@
 #     to Proxmox/TrueNAS/ArgoCD/Postgres. The real boundary is the egress
 #     CiliumNetworkPolicy (networkpolicy.yaml — WHICH YOU MUST VALIDATE) plus
 #     internal-only ingress + Authentik + a real basic-auth password.
-#   - Trust the IMAGE, not the extension: image pinned by tag (never :latest per
-#     repo rules); BPC is reviewed + pinned manually into the PVC, loaded via
-#     --disable-extensions-except so ONLY BPC can ever run.
+#   - Trust the IMAGE, not the extensions: image pinned by tag (never :latest per
+#     repo rules); BPC + uBlock Origin Lite are reviewed + pinned manually into
+#     the PVC, loaded via --disable-extensions-except so ONLY those two can run.
 #   - Do not add SYS_ADMIN or --no-sandbox. Keep Chromium's own sandbox; seccomp
 #     must be Unconfined for it to start (compensated by network isolation).
 apiVersion: apps/v1
@@ -71,9 +71,11 @@ spec:
             - { name: SELKIES_FILE_TRANSFERS, value: "" }
             # --- close the IPv6 egress bypass at the container level too ---
             - { name: DISABLE_IPV6, value: "true" }
-            # --- load ONLY Bypass Paywalls Clean (reviewed + pinned in the PVC) ---
+            # --- load ONLY the reviewed, PVC-pinned extensions: Bypass Paywalls
+            #     Clean (/config/bpc) + uBlock Origin Lite MV3 (/config/ubol).
+            #     --disable-extensions-except allowlists exactly these two. ---
             - name: CHROME_CLI
-              value: "--disable-extensions-except=/config/bpc --load-extension=/config/bpc https://www.google.com"
+              value: "--disable-extensions-except=/config/bpc,/config/ubol --load-extension=/config/bpc,/config/ubol https://www.google.com"
           ports:
             - { containerPort: 3000, name: http, protocol: TCP }
           resources:
