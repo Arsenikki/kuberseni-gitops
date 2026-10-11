@@ -28,6 +28,7 @@ spec:
     - https://charts.external-secrets.io
     - https://kubernetes-sigs.github.io/external-dns/
     - https://kubernetes-sigs.github.io/descheduler/
+    - https://kubernetes-sigs.github.io/metrics-server/
     - https://prometheus-community.github.io/helm-charts
     - https://grafana.github.io/helm-charts
     - https://seaweedfs.github.io/seaweedfs/helm
