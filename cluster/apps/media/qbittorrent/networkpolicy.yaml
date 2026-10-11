@@ -79,9 +79,9 @@ spec:
     # 1) DNS to CoreDNS / kube-dns in kube-system. Required so the VPN
     #    sidecar can resolve the WireGuard endpoint and torrent trackers,
     #    and so the app can resolve in-cluster peers it IS allowed to reach.
-    #    toFQDNs-based policy would need this DNS rule as its visibility hook;
-    #    we keep DNS open broadly (no FQDN allowlist) on purpose so VPN +
-    #    torrent name resolution is never the thing that breaks.
+    #    L4 ONLY: this cluster has no Cilium L7 proxy, so an L7 `rules: dns:`
+    #    block makes the WHOLE policy Invalid + UNENFORCED (it silently was for
+    #    ~118d). The ingress/egress identity+entity rules still do the isolation.
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -92,9 +92,6 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-          rules:
-            dns:
-              - matchPattern: "*"
 
     # 2) INTERNET / outside-cluster egress.
     #    "world" is the Cilium reserved entity for everything OUTSIDE the
