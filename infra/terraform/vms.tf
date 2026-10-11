@@ -16,7 +16,11 @@ locals {
   worker_vms = {
     # extra_disk_size: additional disk for Longhorn storage (0 = use main disk only)
     # gpu_mapping: PCI hardware mapping name for iGPU passthrough (null = no GPU)
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 10, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
+    # cores=14: minipc is a 16-thread host running only ~20% busy; worker-01 (14) +
+    # control-plane-02 (2) + paseo-homelab (6) overcommits vCPU, but real CPU use is
+    # low and this gives k8s enough allocatable CPU to end the scheduling pressure.
+    # RAM stays at 20 GiB — minipc memory is ~full, so cores (not RAM) are the lever.
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 14, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
     # worker-02: 100GB Longhorn data disk on local-lvm (NAS has 106GB free).
     # 16 GiB (was 24): nas is only 32 GiB and also hosts TrueNAS(16) + cp-03(6); the
     # 24 GiB alloc drove host OOM-kills of this VM, which only ever used ~11.5 GiB.
