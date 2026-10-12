@@ -51,8 +51,6 @@ data:
       --remote-debugging-port=9222 \
       --disable-extensions-except=/config/bpc,/config/ubol \
       --load-extension=/config/bpc,/config/ubol \
-      --ignore-gpu-blocklist \
-      --enable-features=VaapiVideoDecoder,VaapiVideoEncoder \
       ${WAYLAND} \
       ${ACCESSIBILITY} \
        "$@" > /dev/null 2>&1
