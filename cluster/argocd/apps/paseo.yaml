@@ -1,0 +1,29 @@
+---
+# paseo-homelab — two shared Paseo daemons: `paseo-apps` (the app agents) and
+# `paseo-debug` (your personal/debug toolkit). Portable `paseo-homelab` image
+# (paseo 0.11.x + Claude Code + Antigravity/agy). Wave 6 — after ESO/1Password
+# (Claude token + ghcr pull) and Longhorn (the PVCs).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paseo
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/paseo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paseo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
