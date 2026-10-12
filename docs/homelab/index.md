@@ -57,6 +57,7 @@ flowchart TD
 - **[Applications](/applications/)** — the apps under `cluster/apps/` (media, home-automation, monitoring, authentik, captain-core, …).
 - **[Secrets](/secrets/)** — External Secrets Operator, 1Password Connect, sops.
 - **[Jeeves](/jeeves/)** — the autonomous maintenance system: how to file tickets, the lifecycle, and the merge gate.
+- **[Paseo](/paseo/)** — the AI agent runtime: the personal-vs-apps split, how to upgrade to 0.11.x, and the AI-Pro/Claude auth model.
 - **[Runbooks](/runbooks/)** — operational procedures (bootstrap, tofu apply, ArgoCD, common gotchas).
 
 ## Handing work to Jeeves
