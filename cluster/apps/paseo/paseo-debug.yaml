@@ -67,11 +67,11 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            - name: AGY_TOKEN_JSON
+            - name: AGY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: paseo-agy
-                  key: AGY_TOKEN_JSON
+                  key: AGY_TOKEN
                   optional: true
           ports:
             - containerPort: 6767

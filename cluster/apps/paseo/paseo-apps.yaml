@@ -44,13 +44,13 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            # AI-Pro (agy/antigravity) token, seeded into the keyring at startup.
+            # AI-Pro (agy/antigravity) token file, seeded by the entrypoint.
             # Optional: the daemon runs without it (claude only) until it's seeded.
-            - name: AGY_TOKEN_JSON
+            - name: AGY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: paseo-agy
-                  key: AGY_TOKEN_JSON
+                  key: AGY_TOKEN
                   optional: true
           ports:
             - containerPort: 6767
