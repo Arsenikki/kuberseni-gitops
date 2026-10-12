@@ -1,13 +1,5 @@
 ---
-# Advertise the single worker-01 Intel Iris Xe iGPU as 2 schedulable units so
-# BOTH Plex (hardware transcode) and chrome (Selkies HW render + VA-API stream
-# encode) can request it. This is scheduling OVERCOMMIT, not partitioning — the
-# physical media engine is time-sliced by the driver; it does NOT reduce Plex's
-# share. Plex stays primary (chrome runs at a modest 30fps/low bitrate so it
-# takes a small slice). Bumping this re-rolls the plugin DaemonSet (brief
-# de/re-advertise) but does NOT evict the running Plex pod — still, merge during
-# a quiet Plex moment.
-sharedDevNum: 2
+sharedDevNum: 1
 logLevel: 2
 resourceManager: false
 enableMonitoring: true
