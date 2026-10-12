@@ -38,6 +38,13 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000          # make the /config PVC writable by the abc (PUID 1000) user
+        fsGroupChangePolicy: OnRootMismatch   # avoid a slow recursive chown on the PVC each start
+        # Intel iGPU access: /dev/dri/renderD128 is root:render — add the render(110)
+        # + video(44) gids as supplementary groups or VA-API silently falls back to
+        # software. Same gids Plex uses successfully on worker-01.
+        supplementalGroups:
+          - 44    # video
+          - 110   # render
         # Chromium's sandbox needs seccomp Unconfined to start. This is the
         # documented requirement for this image; network isolation compensates.
         seccompProfile:
@@ -71,6 +78,15 @@ spec:
             - { name: SELKIES_FILE_TRANSFERS, value: "" }
             # --- close the IPv6 egress bypass at the container level too ---
             - { name: DISABLE_IPV6, value: "true" }
+            # --- Intel iGPU: hardware page render (DRINODE) + hardware VA-API H264
+            #     STREAM encode (DRI_NODE); same device => zero-copy. Replaces the
+            #     software Pixman render + software x264 encode (the "mediocre" cause).
+            #     The encoder auto-selects VA-API on an i915 node. Modest 30fps/6Mbps
+            #     keeps chrome's slice of the SHARED iGPU small so Plex stays primary. ---
+            - { name: DRINODE, value: "/dev/dri/renderD128" }
+            - { name: DRI_NODE, value: "/dev/dri/renderD128" }
+            - { name: SELKIES_FRAMERATE, value: "30" }
+            - { name: SELKIES_VIDEO_BITRATE, value: "6000" }
             # --- The browser launch flags (both extensions, the CDP debug port,
             #     and the non-default profile required for CDP on Chrome 136+) are
             #     hardcoded in the wrapped-chromium OVERRIDE (launch-fix.yaml),
@@ -85,9 +101,11 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
+              gpu.intel.com/i915: 1   # grants the iGPU AND pins to worker-01 (only node advertising it)
             limits:
               cpu: "2"
               memory: 3Gi          # must cover Chromium + the 1Gi RAM-backed /dev/shm
+              gpu.intel.com/i915: 1   # must equal the request (extended resources can't overcommit)
           volumeMounts:
             - { name: config, mountPath: /config }
             - { name: dshm, mountPath: /dev/shm }
