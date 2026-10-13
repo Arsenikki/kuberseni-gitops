@@ -1,0 +1,28 @@
+---
+# paseo-apps — the shared Paseo daemon for the homelab app agents (resepti, coachi,
+# untappi, …). Portable `paseo-homelab` image. Its own app so it upgrades/syncs/rolls
+# back independently of paseo-generic. Wave 6 — after ESO/1Password + Longhorn.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paseo-apps
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/paseo-apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paseo-apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,104 @@
+---
+# paseo-apps — the shared Paseo daemon for the homelab app agents (resepti, coachi,
+# untappi, …). Built from the portable `paseo-homelab` image (paseo 0.11.x + Claude
+# Code + Antigravity/agy). Apps drive it over the paseo CLI pointed at the
+# `paseo-apps` service; each app runs agents in its own workspace + MCP.
+#
+# Providers: `claude` (CLAUDE_CODE_OAUTH_TOKEN, work token) for MCP-tool agents;
+# `antigravity` (AI Pro) once AGY_TOKEN_JSON is seeded (optional — see secrets.yaml).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: paseo-apps
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  serviceName: paseo-apps
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paseo-apps
+  template:
+    metadata:
+      labels:
+        app: paseo-apps
+        app.kubernetes.io/part-of: paseo-homelab
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: paseo
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2
+          imagePullPolicy: Always
+          env:
+            - name: PASEO_HOME
+              value: /data/paseo
+            # Claude Code auth (claude provider) — reuse the shared work token.
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+            # AI-Pro (agy/antigravity) token file, seeded by the entrypoint.
+            # Optional: the daemon runs without it (claude only) until it's seeded.
+            - name: AGY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-agy
+                  key: AGY_TOKEN
+                  optional: true
+          ports:
+            - containerPort: 6767
+              name: paseo
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data/paseo
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paseo-apps
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  type: ClusterIP
+  selector:
+    app: paseo-apps
+  ports:
+    - name: paseo
+      port: 6767
+      targetPort: 6767

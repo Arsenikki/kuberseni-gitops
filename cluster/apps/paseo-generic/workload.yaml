@@ -1,0 +1,120 @@
+---
+# paseo-generic — your personal/general Paseo daemon — chat, cluster debugging, ad-hoc (the `:tools` image variant:
+# + kubectl, jq, gh, yq, 1Password CLI, dig/nc/tcpdump/htop). Reach it over the
+# tailnet / port-forward and drive ad-hoc agents to poke at the cluster. Runs the
+# same providers as paseo-apps (claude + AI-Pro antigravity).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paseo-generic
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+---
+# Cluster access for this agent. Defaults to READ-ONLY (`view`) — safe for an
+# autonomous agent. Bump to `edit` (modify workloads) or `cluster-admin` (full, incl.
+# fixing things) by changing roleRef.name if you want it able to act, not just look.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: paseo-generic-view
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: paseo-generic
+    namespace: paseo-generic
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: paseo-generic
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  serviceName: paseo-generic
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paseo-generic
+  template:
+    metadata:
+      labels:
+        app: paseo-generic
+        app.kubernetes.io/part-of: paseo-homelab
+    spec:
+      serviceAccountName: paseo-generic
+      imagePullSecrets:
+        - name: ghcr-credentials
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: paseo
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2
+          imagePullPolicy: Always
+          env:
+            - name: PASEO_HOME
+              value: /data/paseo
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: CLAUDE_CODE_OAUTH_TOKEN
+            - name: AGY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-agy
+                  key: AGY_TOKEN
+                  optional: true
+          ports:
+            - containerPort: 6767
+              name: paseo
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 1536Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data/paseo
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paseo-generic
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  type: ClusterIP
+  selector:
+    app: paseo-generic
+  ports:
+    - name: paseo
+      port: 6767
+      targetPort: 6767

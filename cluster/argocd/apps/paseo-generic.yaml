@@ -1,0 +1,28 @@
+---
+# paseo-generic — your personal/general Paseo daemon (chat, cluster debugging, ad-hoc),
+# with a serviceAccount for in-cluster kubectl. Portable `paseo-homelab` image. Its own
+# app so it upgrades/syncs/rolls back independently of paseo-apps. Wave 6.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paseo-generic
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/paseo-generic
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paseo-generic
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
