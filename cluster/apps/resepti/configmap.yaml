@@ -27,6 +27,11 @@ data:
   IMPORT_PROVIDER: "antigravity/gemini-3.8-flash-high"
   IMPORT_EFFORT: "low"
   ASSISTANT_PROVIDER: "antigravity/gemini-3.8-flash-low"
+  # Agent execution mode. antigravity's only mode is "full-access" (the Claude
+  # default "bypassPermissions" is rejected: AGENT_CREATE_FAILED). The agy sandbox
+  # (AGY_FORCE_SANDBOX on paseo-apps) still blocks shell regardless of this.
+  IMPORT_MODE: "full-access"
+  ASSISTANT_MODE: "full-access"
   # SeaweedFS/S3 media storage (recipe photos).
   S3_ENDPOINT: "seaweedfs-s3.monitoring:8333"
   S3_BUCKET: "resepti-media"
