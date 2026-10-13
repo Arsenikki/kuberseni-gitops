@@ -13,19 +13,20 @@ data:
   MCP_ADDR: ":9090"
   ALLOWED_ORIGINS: "*"
   PUBLIC_BASE_URL: "https://resepti.arsenikki.casa"
-  # The API drives the in-cluster Paseo daemon over TCP.
-  PASEO_HOST: "resepti-paseo"
+  # The API drives the shared paseo-apps daemon over TCP (cross-namespace).
+  PASEO_HOST: "paseo-apps.paseo-apps.svc.cluster.local"
   PASEO_PORT: "6767"
-  # Path baked into the resepti-paseo image (Dockerfile.paseo COPYs the workspace
-  # here); the API passes it to the daemon as the agent cwd.
-  RECIPE_CWD: "/opt/recipe-workspace"
+  # Agent cwd on paseo-apps: the resepti workspace mounted there from the
+  # resepti-workspace ConfigMap (.mcp.json + CLAUDE.md/GEMINI.md + settings.json).
+  RECIPE_CWD: "/workspaces/resepti"
   # In-cluster URL of the resepti MCP server, interpolated into the workspace
   # .mcp.json by the agent process running on the daemon.
   RESEPTI_MCP_URL: "http://resepti-mcp:9090"
-  # Agent models: a capable model for import+review, a fast one for voice Q&A.
-  IMPORT_PROVIDER: "claude/claude-sonnet-5"
+  # Agents run on AI-Pro/Gemini via paseo-apps' antigravity provider (sandboxed:
+  # MCP + WebFetch, no shell). A capable model for import+review, a fast one for voice.
+  IMPORT_PROVIDER: "antigravity/gemini-3.8-flash-high"
   IMPORT_EFFORT: "low"
-  ASSISTANT_PROVIDER: "claude/claude-haiku-4-5"
+  ASSISTANT_PROVIDER: "antigravity/gemini-3.8-flash-low"
   # SeaweedFS/S3 media storage (recipe photos).
   S3_ENDPOINT: "seaweedfs-s3.monitoring:8333"
   S3_BUCKET: "resepti-media"
