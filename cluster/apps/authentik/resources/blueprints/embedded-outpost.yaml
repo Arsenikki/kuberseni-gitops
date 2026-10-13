@@ -84,6 +84,11 @@ entries:
       identifiers:
         name: chrome
       required: true
+  - model: authentik_blueprints.metaapplyblueprint
+    attrs:
+      identifiers:
+        name: flock
+      required: true
 
   # Configure the embedded outpost with all proxy providers
   - model: authentik_outposts.outpost
@@ -108,6 +113,7 @@ entries:
         - !Find [authentik_providers_proxy.proxyprovider, [name, "homepage"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "resepti"]]
         - !Find [authentik_providers_proxy.proxyprovider, [name, "chrome"]]
+        - !Find [authentik_providers_proxy.proxyprovider, [name, "flock"]]
       config:
         authentik_host: https://authentik.arsenikki.casa
         kubernetes_ingress_annotations:

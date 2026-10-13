@@ -1,0 +1,38 @@
+---
+# Flock — the Jeeves kanban board. Forward-auth protects the HUMAN-facing ingress
+# (flock.arsenikki.casa), including the REST API — so the unauthenticated
+# merge-policy controls (PATCH /projects/{name}/autoMerge) can no longer be hit by
+# anyone on the LAN/Tailscale. Jeeves's own API calls use the in-cluster service
+# (flock.flock.svc.cluster.local:8099), which does NOT go through the ingress, so
+# the control plane is unaffected. No skip_path_regex: /api is intentionally
+# protected too.
+version: 1
+metadata:
+  name: &app flock
+entries:
+  - id: provider
+    model: authentik_providers_proxy.proxyprovider
+    identifiers:
+      name: *app
+    attrs:
+      authorization_flow:
+        !Find [authentik_flows.flow, [slug, "default-provider-authorization-implicit-consent"]]
+      signing_key:
+        !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
+      invalidation_flow:
+        !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
+      mode: forward_single
+      internal_host: http://flock.flock.svc.cluster.local:8099
+      external_host: https://flock.arsenikki.casa
+      access_token_validity: hours=1
+
+  - id: application
+    model: authentik_core.application
+    identifiers:
+      slug: *app
+    attrs:
+      name: *app
+      group: Apps
+      icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/planka.png
+      provider: !KeyOf provider
+      policy_engine_mode: any
