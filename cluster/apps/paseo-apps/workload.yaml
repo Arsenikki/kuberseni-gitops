@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-2
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-3
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -62,6 +62,12 @@ spec:
             # shell/exec. (paseo-generic leaves this unset so its debug shell is full.)
             - name: AGY_FORCE_SANDBOX
               value: "1"
+            # Daemon Host-header allowlist: the 0.11.x daemon 403s a TCP client whose
+            # Host isn't listed (this is NOT auth — no password). In-cluster apps dial
+            # the Service FQDN, so it must be allowed. The entrypoint also adds loopback
+            # + the pod hostname automatically.
+            - name: PASEO_HOSTNAMES
+              value: "paseo-apps.paseo-apps.svc.cluster.local,paseo-apps,paseo-apps.paseo-apps"
           ports:
             - containerPort: 6767
               name: paseo
