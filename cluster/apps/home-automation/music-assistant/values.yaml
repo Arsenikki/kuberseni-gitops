@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/music-assistant/server
-          tag: 2.9.8           # pin an explicit tag so Renovate can track it — never `latest`
+          tag: 2.10.6          # pin an explicit tag so Renovate can track it — never `latest`
           pullPolicy: IfNotPresent
         env:
           TZ: Europe/London
