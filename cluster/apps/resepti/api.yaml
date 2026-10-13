@@ -58,8 +58,12 @@ spec:
               valueFrom: { configMapKeyRef: { name: resepti-config, key: IMPORT_PROVIDER } }
             - name: IMPORT_EFFORT
               valueFrom: { configMapKeyRef: { name: resepti-config, key: IMPORT_EFFORT } }
+            - name: IMPORT_MODE
+              valueFrom: { configMapKeyRef: { name: resepti-config, key: IMPORT_MODE } }
             - name: ASSISTANT_PROVIDER
               valueFrom: { configMapKeyRef: { name: resepti-config, key: ASSISTANT_PROVIDER } }
+            - name: ASSISTANT_MODE
+              valueFrom: { configMapKeyRef: { name: resepti-config, key: ASSISTANT_MODE } }
             - name: S3_ENDPOINT
               valueFrom: { configMapKeyRef: { name: resepti-config, key: S3_ENDPOINT } }
             - name: S3_BUCKET
