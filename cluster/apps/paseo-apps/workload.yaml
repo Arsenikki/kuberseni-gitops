@@ -52,6 +52,9 @@ spec:
                   name: paseo-agy
                   key: AGY_TOKEN
                   optional: true
+            # resepti workspace: the cross-namespace URL its .mcp.json resolves.
+            - name: RESEPTI_MCP_URL
+              value: http://resepti-mcp.resepti.svc.cluster.local:9090
           ports:
             - containerPort: 6767
               name: paseo
@@ -76,6 +79,27 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data/paseo
+            # resepti agent workspace (read-only, from the resepti-workspace ConfigMap)
+            - name: resepti-workspace
+              mountPath: /workspaces/resepti/.mcp.json
+              subPath: mcp.json
+              readOnly: true
+            - name: resepti-workspace
+              mountPath: /workspaces/resepti/CLAUDE.md
+              subPath: CLAUDE.md
+              readOnly: true
+            - name: resepti-workspace
+              mountPath: /workspaces/resepti/GEMINI.md
+              subPath: GEMINI.md
+              readOnly: true
+            - name: resepti-workspace
+              mountPath: /workspaces/resepti/.claude/settings.json
+              subPath: settings.json
+              readOnly: true
+      volumes:
+        - name: resepti-workspace
+          configMap:
+            name: resepti-workspace
   volumeClaimTemplates:
     - metadata:
         name: data
