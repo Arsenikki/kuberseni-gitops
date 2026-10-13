@@ -67,3 +67,11 @@ persistence:
     existingClaim: music-assistant-data
     globalMounts:
       - path: /data
+  # Local music library (Lidarr-managed), read-only. After this syncs, add a
+  # "Filesystem" music provider in the MA UI pointing at /media/music to index it.
+  music:
+    enabled: true
+    existingClaim: music-library
+    globalMounts:
+      - path: /media/music
+        readOnly: true
