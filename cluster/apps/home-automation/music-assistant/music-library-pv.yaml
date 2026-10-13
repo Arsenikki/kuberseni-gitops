@@ -1,0 +1,37 @@
+---
+# Read-only view of the Lidarr-managed music library for Music Assistant's
+# Filesystem music provider. The library is the `music/` subfolder of the shared
+# TrueNAS NFS export; `media-pvc` itself lives in the `media` namespace, so MA
+# (home-automation) can't reference it directly. This is a separate PV/PVC bound
+# to the same export, scoped to `music/` and mounted read-only. Files are
+# world-readable (0644), so the root MA pod reads them even under NFS root-squash.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: music-library-pv
+spec:
+  capacity:
+    storage: 14000Gi # nominal; NFS capacity is not enforced
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: 192.168.1.2
+    path: /mnt/main/nfs/vols/pvc-000f1e6c-bf36-4259-9108-0a8f52666cc4/music
+  mountOptions:
+    - nfsvers=4
+    - ro
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: music-library
+  namespace: home-automation
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 14000Gi
+  volumeName: music-library-pv
+  storageClassName: ""
