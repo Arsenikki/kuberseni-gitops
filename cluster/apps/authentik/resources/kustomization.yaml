@@ -19,6 +19,7 @@ configMapGenerator:
       - blueprints/app-argocd.yaml
       - blueprints/app-bazarr.yaml
       - blueprints/app-chrome.yaml
+      - blueprints/app-flock.yaml
       - blueprints/app-grafana.yaml
       - blueprints/app-home-assistant.yaml
       - blueprints/app-homepage.yaml
