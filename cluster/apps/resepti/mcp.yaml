@@ -8,6 +8,8 @@ metadata:
   namespace: resepti
   labels:
     app.kubernetes.io/part-of: resepti
+  annotations:
+    reloader.stakater.com/auto: "true" # restart on resepti-config / resepti-secrets change
 spec:
   replicas: 1
   selector:
