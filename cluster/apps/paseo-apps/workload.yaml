@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-2
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -53,8 +53,15 @@ spec:
                   key: AGY_TOKEN
                   optional: true
             # resepti workspace: the cross-namespace URL its .mcp.json resolves.
+            # The entrypoint also registers this as a native agy MCP server
+            # (RESEPTI_MCP_URL -> `resepti`) so antigravity agents get real tools.
             - name: RESEPTI_MCP_URL
               value: http://resepti-mcp.resepti.svc.cluster.local:9090
+            # Lock agy to --sandbox on this shared app instance: untrusted-input app
+            # agents (e.g. the resepti importer) get MCP + WebFetch but no arbitrary
+            # shell/exec. (paseo-generic leaves this unset so its debug shell is full.)
+            - name: AGY_FORCE_SANDBOX
+              value: "1"
           ports:
             - containerPort: 6767
               name: paseo
