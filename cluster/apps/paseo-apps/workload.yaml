@@ -79,10 +79,15 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
+            # agy/antigravity agents are memory-heavy (the agy.real binary alone is
+            # ~214MB resident + node runtime + model/streaming context on top of the
+            # paseo daemon). 1Gi OOMKilled the pod under agent load; 3Gi gives a single
+            # agent comfortable headroom and room for a 2nd concurrent agent once
+            # another app shares this instance. Worker nodes have 16-20Gi (vms.tf).
             limits:
               cpu: "2"
-              memory: 1Gi
+              memory: 3Gi
           volumeMounts:
             - name: data
               mountPath: /data/paseo
