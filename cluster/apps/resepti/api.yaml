@@ -1,6 +1,6 @@
 ---
 # resepti API + embedded PWA. Serves the installable frontend and drives the
-# in-cluster Paseo daemon (resepti-paseo) to run the import + cooking-assistant
+# shared paseo-apps daemon (AI-Pro/Gemini) to run the import + cooking-assistant
 # agents.
 apiVersion: apps/v1
 kind: Deployment
