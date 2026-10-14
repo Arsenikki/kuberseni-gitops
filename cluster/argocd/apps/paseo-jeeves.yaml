@@ -1,0 +1,30 @@
+---
+# paseo-jeeves — the THIRD paseo tier: Jeeves's autonomous full-shell coding daemon
+# (jeeves-paseo image: paseo 0.11.x + Claude Code + git + the jeeves git-credential
+# helper + token-broker/repo-sync sidecars). Its own app so it upgrades/syncs/rolls
+# back independently of paseo-apps (sandboxed MCP apps) and paseo-generic (personal
+# debug). Wave 6 — after ESO/1Password + Longhorn. See docs/homelab/paseo.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paseo-jeeves
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  source:
+    repoURL: https://github.com/Arsenikki/kuberseni-gitops
+    targetRevision: main
+    path: cluster/apps/paseo-jeeves
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paseo-jeeves
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
