@@ -1,0 +1,171 @@
+---
+# Jeeves's own Paseo daemon, consolidated INTO the paseo-apps namespace but kept as a
+# SEPARATE StatefulSet (not a tenant of the shared paseo-apps-0 pod). Jeeves is the
+# full-shell exception: its coding agents need bash/git/edit/push, repo-centric git
+# worktrees, a daemon PASSWORD (0.11.x enforces password + host-allowlist together),
+# and the GitHub-App token-broker — none of which belong on the sandboxed, MCP-only
+# shared daemon. See docs/homelab/paseo.md "Jeeves — the full-shell exception".
+#
+# Three containers (mirrors the jeeves repo deploy/base/paseo.yaml, #68 PEM isolation):
+#   - paseo        : the 0.11.x daemon that runs Claude Code agents in worktrees
+#   - token-broker : holds the App private key, mints short-lived tokens on a unix
+#                    socket, so the durable key NEVER enters the agent container
+#   - repo-sync    : keeps base clones of the managed repos on the PVC for worktrees
+#
+# Blast-radius decision: deliberately NO homelab infra creds (kubeconfig/talos/opnsense)
+# and NO cluster-reader ServiceAccount here — infra-investigation tickets are not run on
+# the shared apps node. automountServiceAccountToken:false keeps the pod API-identity-free.
+apiVersion: v1
+kind: Service
+metadata:
+  name: jeeves-paseo
+  namespace: paseo-apps
+  labels:
+    app: jeeves-paseo
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  type: ClusterIP
+  selector:
+    app: jeeves-paseo
+  ports:
+    - name: daemon
+      port: 6767
+      targetPort: 6767
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: jeeves-paseo
+  namespace: paseo-apps
+  labels:
+    app: jeeves-paseo
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  serviceName: jeeves-paseo
+  replicas: 1 # singleton daemon — do not scale
+  selector:
+    matchLabels:
+      app: jeeves-paseo
+  template:
+    metadata:
+      labels:
+        app: jeeves-paseo
+        app.kubernetes.io/part-of: paseo-homelab
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      automountServiceAccountToken: false # no in-pod k8s API identity (no infra access here)
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1000 # make the PVC writable by uid 1000 (all containers)
+      containers:
+        # The Paseo 0.11.x daemon (runs Claude Code agents in worktrees).
+        - name: paseo
+          image: ghcr.io/arsenikki/jeeves-paseo:be4e5a8910e41462cc6c24964b6f41c5b279bd65
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 6767, name: daemon }
+          envFrom:
+            - secretRef: { name: jeeves-gh-app, optional: true } # GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID
+          env:
+            - name: PASEO_HOME
+              value: /data/paseo
+            # 0.11.x Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
+            # dials this Service's FQDN, so those names must be allow-listed. The
+            # entrypoint always adds loopback + the pod hostname.
+            - name: PASEO_HOSTNAMES
+              value: jeeves-paseo,jeeves-paseo.paseo-apps,jeeves-paseo.paseo-apps.svc.cluster.local
+            # git auth goes through the token-broker sidecar over a unix socket —
+            # `jeeves git-credential` fetches short-lived App tokens from it. The App
+            # private key is NOT in this container (#68).
+            - name: JEEVES_TOKEN_BROKER_SOCKET
+              value: /run/jeeves/token-broker.sock
+            - name: PASEO_PASSWORD
+              valueFrom: { secretKeyRef: { name: jeeves-secrets, key: PASEO_PASSWORD } }
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom: { secretKeyRef: { name: jeeves-secrets, key: CLAUDE_CODE_OAUTH_TOKEN } }
+            # Persist Claude Code's session transcripts on the PVC (survive restarts).
+            - name: CLAUDE_CONFIG_DIR
+              value: /data/paseo/claude
+          readinessProbe:
+            tcpSocket: { port: 6767 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: 6767 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          volumeMounts:
+            - { name: data, mountPath: /data/paseo }
+            - { name: broker-sock, mountPath: /run/jeeves } # shared token-broker socket dir
+            # Seed Claude Code's user settings.json so the agent runs non-interactively.
+            - { name: claude-settings, mountPath: /data/paseo/claude/settings.json, subPath: settings.json, readOnly: true }
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "2", memory: 3Gi }
+        # Token broker (#68): holds the GitHub App private key and mints short-lived
+        # installation tokens on a unix socket, so the durable key lives ONLY here.
+        - name: token-broker
+          image: ghcr.io/arsenikki/jeeves:be4e5a8910e41462cc6c24964b6f41c5b279bd65
+          imagePullPolicy: IfNotPresent
+          command: ["jeeves", "token-broker"]
+          envFrom:
+            - secretRef: { name: jeeves-gh-app, optional: true }
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: GITHUB_APP_KEY_FILE
+              value: /etc/jeeves-ghapp/private-key.pem
+            - name: JEEVES_TOKEN_BROKER_SOCKET
+              value: /run/jeeves/token-broker.sock
+          volumeMounts:
+            - { name: ghapp, mountPath: /etc/jeeves-ghapp, readOnly: true }
+            - { name: broker-sock, mountPath: /run/jeeves }
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { cpu: 100m, memory: 64Mi }
+        # Keeps base clones of managed repos on the PVC for worktrees. Hot-reloads
+        # repos.yaml each cycle from the STABLE-named jeeves-repos volume, so editing
+        # the repo list does NOT roll this pod (which would kill in-flight agents).
+        - name: repo-sync
+          image: ghcr.io/arsenikki/jeeves:be4e5a8910e41462cc6c24964b6f41c5b279bd65
+          imagePullPolicy: IfNotPresent
+          command: ["jeeves", "repo-sync"]
+          envFrom:
+            - secretRef: { name: jeeves-gh-app, optional: true }
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: REPOS_PATH
+              value: /etc/jeeves-repos/repos.yaml
+            - name: GITHUB_APP_KEY_FILE
+              value: /etc/jeeves-ghapp/private-key.pem
+          volumeMounts:
+            - { name: data, mountPath: /data/paseo }
+            - { name: repos, mountPath: /etc/jeeves-repos, readOnly: true }
+            - { name: ghapp, mountPath: /etc/jeeves-ghapp, readOnly: true }
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { cpu: 500m, memory: 128Mi }
+      volumes:
+        - name: repos
+          configMap: { name: jeeves-repos } # stable-named → edits don't roll the daemon
+        - name: claude-settings
+          configMap: { name: jeeves-claude-settings }
+        - name: ghapp
+          secret:
+            secretName: jeeves-gh-app
+            optional: true
+            items:
+              - { key: private-key.pem, path: private-key.pem }
+        - name: broker-sock
+          emptyDir: {} # shared token-broker↔paseo socket dir (pod-local, not networked)
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi

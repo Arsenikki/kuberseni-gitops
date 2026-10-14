@@ -1,0 +1,98 @@
+---
+# Claude Code user settings seeded into the daemon's CLAUDE_CONFIG_DIR so agents run
+# NON-INTERACTIVELY (auto-approve the tools they explore with instead of raising a
+# permission prompt that would stall the run). Mirror of the jeeves repo
+# deploy/base/files/claude-settings.json.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jeeves-claude-settings
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+data:
+  settings.json: |
+    {
+      "permissions": {
+        "allow": ["Bash", "WebFetch", "WebSearch"]
+      }
+    }
+---
+# Repo registry for the repo-sync sidecar: which repos to keep base-cloned on the PVC
+# (at the local_path each declares) for agent worktrees. Stable-named (no hash) so
+# edits hot-reload without rolling the daemon. Mirror of the jeeves repo
+# deploy/base/files/repos.yaml — keep in lockstep with it.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jeeves-repos
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+data:
+  repos.yaml: |
+    # Repo registry — the only place repo-specific data lives. A repo is eligible for
+    # autonomous merge only if it declares a real quality gate (pre-commit and/or
+    # required CI checks); otherwise Jeeves still opens PRs but every merge is
+    # human-reviewed.
+    defaults:
+      default_base: main
+      risk_ceiling: low
+      pr_identity: bot
+
+    repos:
+      - full_name: Arsenikki/kuberseni-gitops
+        local_path: /data/paseo/repos/kuberseni-gitops
+        default_base: main
+        conventions: /data/paseo/repos/kuberseni-gitops/CLAUDE.md
+        risk_ceiling: low
+        pre_commit_tool: prek
+        pre_commit: prek.toml
+        required_checks: ["yaml", "Render ArgoCD diff"]
+        eligible: true
+        verify:
+          - { name: yamllint, cmd: "yamllint -c .github/yamllint.config.yaml ./cluster/", required: true }
+
+      - full_name: Arsenikki/jeeves
+        local_path: /data/paseo/repos/jeeves
+        default_base: main
+        conventions: /data/paseo/repos/jeeves/CLAUDE.md
+        risk_ceiling: low
+        eligible: true
+        pre_commit_tool: prek
+        pre_commit: .pre-commit-config.yaml
+        required_checks: ["prek"]
+        no_automerge_paths:
+          - "internal/services/autonomygate/**"
+          - "internal/paseo/**"
+          - "internal/ghapp/**"
+          - "internal/nats/**"
+          - "internal/registry/**"
+          - "internal/config/**"
+          - "internal/state/**"
+          - "internal/github/**"
+          - "internal/model/**"
+          - "cmd/jeeves/**"
+          - "deploy/**"
+          - ".github/**"
+
+      - full_name: Arsenikki/captain-core
+        local_path: /data/paseo/repos/captain-core
+        default_base: main
+        conventions: /data/paseo/repos/captain-core/CLAUDE.md
+        risk_ceiling: low
+        eligible: false
+
+      - full_name: Arsenikki/bazzite-chromebook-cx3402cva
+        local_path: /data/paseo/repos/bazzite-chromebook-cx3402cva
+        default_base: main
+        risk_ceiling: low
+        eligible: false
+
+      - full_name: Arsenikki/flock
+        local_path: /data/paseo/repos/flock
+        default_base: main
+        conventions: /data/paseo/repos/flock/CLAUDE.md
+        risk_ceiling: low
+        required_checks: ["build · vet · test · fmt", "docker build"]
+        eligible: false
