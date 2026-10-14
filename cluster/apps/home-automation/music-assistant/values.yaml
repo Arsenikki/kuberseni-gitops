@@ -23,6 +23,21 @@ controllers:
             # Cap so a leak restarts only MA, not the node that also hosts Home Assistant.
             memory: 1Gi
 
+# Host networking so the AirPlay provider can do mDNS discovery + AirPlay 2 PTP
+# sync on the LAN. This is MA's documented requirement for AirPlay/Cast/Sonos —
+# on the pod network they are undiscoverable and AirPlay has NO manual-IP
+# fallback (unlike Sendspin). Mirrors home-assistant, which already runs
+# hostNetwork in this namespace (PSA is already `privileged`).
+# Pinned to worker-02 so the Published IP that AirPlay devices dial back to
+# (the node LAN IP 192.168.1.45) stays stable, and the Longhorn data stays local.
+# The LoadBalancer below keeps the stable 192.168.1.223 for web/Snapcast clients
+# (Spotify callback, Companion App) regardless of the node.
+defaultPodOptions:
+  hostNetwork: true
+  dnsPolicy: ClusterFirstWithHostNet
+  nodeSelector:
+    kubernetes.io/hostname: worker-02
+
 service:
   main:
     controller: main
