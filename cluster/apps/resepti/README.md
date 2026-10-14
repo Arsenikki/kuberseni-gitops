@@ -12,9 +12,8 @@ Authentik forward-auth.
 | `resepti-postgres`  | StatefulSet | Postgres 16 (Longhorn PVC)                               |
 | `resepti-api`       | Deployment  | API + embedded PWA; drives the Paseo daemon             |
 | `resepti-mcp`       | Deployment  | resepti MCP server the agents call (read/write cookbook)|
-| `resepti-paseo`     | StatefulSet | Paseo daemon + Claude Code + baked recipe-workspace     |
 
-Images: `ghcr.io/arsenikki/resepti` (API+MCP) and `ghcr.io/arsenikki/resepti-paseo`.
+Images: `ghcr.io/arsenikki/resepti` (API+MCP).
 
 ## One-time setup
 
