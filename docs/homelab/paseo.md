@@ -1,6 +1,6 @@
 ---
 title: Paseo — AI Agent Runtime
-description: The two-instance paseo topology (personal VM + shared apps runtime), how to upgrade it, and how to keep the two separated.
+description: The two-instance paseo topology (personal VM + shared apps runtime), how to upgrade it, how to keep the two separated, and how Jeeves consolidates onto the apps runtime as its own full-shell daemon.
 ---
 
 **Paseo** is the daemon that actually runs the AI coding agents. Everything in the
@@ -33,11 +33,15 @@ vs the shared work-Claude token).
 | **`paseo-homelab`** (Proxmox VM 300, minipc) | VM, `systemd paseo.service`, tailnet `…:6767` | **personal / debug** | your login |
 | `resepti-paseo-0` | k8s pod (resepti ns) | resepti | Claude token |
 | `coachi-paseo-0` | k8s pod (coachi ns) | coachi | Claude token |
-| `jeeves-paseo` | k8s container (jeeves) | jeeves | Claude token |
+| `jeeves-paseo` | k8s StatefulSet (jeeves ns) | jeeves **prod** | Claude token + password + GH App |
+| `jeeves-dev` | k8s StatefulSet (jeeves-dev ns) | jeeves **dev** | Claude token + password + GH App |
 
-So today each app ships **its own** in-cluster paseo container, and the VM is a
-separate personal one. The plan collapses the per-app containers into **one shared
-apps paseo**, and keeps the VM as the personal one.
+So today each app ships **its own** in-cluster paseo container (jeeves runs *two* — a
+prod `jeeves-paseo` and a dev `jeeves-dev`), and the VM is a separate personal one. The
+plan collapses the per-app containers into the shared **`paseo-apps`** namespace and
+keeps the VM as the personal one. resepti/coachi/untappi fold into **one shared daemon
+pod**; **Jeeves consolidates into the same namespace but as its own StatefulSet** — it's
+the full-shell exception (see below), not a tenant of the shared pod.
 
 ## Target architecture
 
@@ -47,20 +51,53 @@ flowchart LR
   subgraph Proxmox
     P1["Personal paseo<br/>VM 300, paseo 0.11.x<br/>agy + AI Pro"]
   end
-  subgraph k8s[Kubernetes]
-    P2["Shared apps paseo<br/>container, paseo 0.11.x<br/>Claude token + PVC"]
+  subgraph k8s["Kubernetes — paseo-apps namespace"]
+    P2["Shared apps paseo<br/>sandboxed MCP, paseo 0.11.x<br/>Claude token + PVC"]
     R[resepti-api] --> P2
     C[coachi-api] --> P2
-    J[jeeves agent-runner] --> P2
     U[untappi] --> P2
     P2 --> RM[(resepti MCP)]
     P2 --> CM[(coachi MCP)]
+    PJ["Jeeves paseo (own StatefulSet)<br/>full shell + git worktrees<br/>token-broker + repo-sync<br/>Claude token + password + GH App"]
+    J[jeeves agent-runner] --> PJ
+    PJ --> GH[(GitHub repos)]
   end
 ```
 
-Each app drives the **same** apps-paseo but in **its own workspace/project** (own
-`cwd`, own `CLAUDE.md`/`GEMINI.md`, own MCP server). paseo supports many
-projects/agents in one daemon, so one shared daemon is enough.
+resepti/coachi/untappi drive the **same** shared apps-paseo, each in **its own
+workspace/project** (own `cwd`, own `CLAUDE.md`/`GEMINI.md`, own MCP server) — paseo
+runs many projects/agents in one daemon, so one shared daemon is enough for the
+sandboxed, MCP-only app agents. **Jeeves is the exception:** its coding agents need a
+full shell (bash/git/edit/push), repo worktrees, and the GitHub App token-broker, so it
+runs as its **own StatefulSet** in the same `paseo-apps` namespace rather than as a
+tenant of the shared pod (see *Jeeves — the full-shell exception* below).
+
+## Jeeves — the full-shell exception
+
+Jeeves consolidates into the `paseo-apps` namespace, but it does **not** share the app
+agents' daemon. Its agents are the opposite of the resepti/coachi "boring, safe" model,
+so it keeps its **own StatefulSet** (adopting the portable image + GitOps model, but
+with its own workspace, sidecars, and auth):
+
+| | shared apps paseo (resepti/coachi/untappi) | Jeeves |
+|---|---|---|
+| Agent model | **sandboxed, MCP-only** (`settings.json` denies `Bash`/`Edit`/`Write`) | **full shell** — bash, git, edit, commit, push |
+| Workspace | static ConfigMap (`/workspaces/<app>/` + `.mcp.json`) | repo-centric git **worktrees** off a repo-sync'd PVC |
+| Daemon auth | none — Host-header allowlist (`PASEO_HOSTNAMES`), *not* a password | **`PASEO_PASSWORD`** (a jeeves invariant: always inject `--host`+password) |
+| Sidecars | none | **token-broker** (mints short-lived GitHub App tokens over a unix socket — the App PEM never enters the agent container) + **repo-sync** (base clones) |
+| Extra secrets | Claude token only | + GitHub App PEM, `jeeves-repos` configMap, read-only infra creds (kubeconfig/talos/opnsense) |
+
+A literal single-pod merge would force the shared daemon to allow a full shell and to
+hold the GitHub App PEM — defeating the "keep it boring" isolation the whole split
+exists for. So "move Jeeves to paseo-apps" means **same namespace + image family +
+GitOps management, separate StatefulSet** — for both the prod (`jeeves-paseo`) and dev
+(`jeeves-dev`) instances.
+
+> **Reconcile before cutover:** Jeeves's paseo client always injects `--host`+password,
+> but the 0.11.x `paseo-homelab` daemon has *no* password (host-allowlist only). Settle
+> the auth story (a password-enabled daemon build, or teach the client the allowlist
+> mode) and confirm Jeeves's argv works against a 0.11.x daemon **before** repointing —
+> it's the load-bearing unknown of the migration.
 
 ## Decision: is the apps paseo a VM or a container?
 
@@ -152,11 +189,18 @@ re-check each app's smoke test.
    yours). ← the one `agy` login is the gating step.
 2. Build a **shared apps-paseo container** on 0.11.2 with a PVC, Claude token, and a
    workspace/project per app (each app's `cwd` + MCP).
-3. Repoint apps one at a time via `PASEO_HOST` (resepti/coachi already support
-   `PASEO_HOST/PORT/SSL/PASSWORD`): **resepti → coachi → untappi** (jeeves last, or
-   keep its own — it's the heaviest/most isolated).
-4. Decommission `resepti-paseo-0` + `coachi-paseo-0` pods (also frees worker-node CPU).
-5. Keep **Claude for tool agents**; move tool-free ones (resepti assistant) to Gemini.
+3. Repoint the MCP apps one at a time via `PASEO_HOST` (resepti/coachi already support
+   `PASEO_HOST/PORT/SSL/PASSWORD`): **resepti → coachi → untappi** into the shared
+   daemon.
+4. **Consolidate Jeeves into the `paseo-apps` namespace as its own StatefulSet** (not
+   the shared pod — see *Jeeves — the full-shell exception*). First settle the
+   paseo-client/password spike, then stand up the Jeeves daemon (daemon container +
+   token-broker + repo-sync sidecars + GitHub App PEM + `jeeves-repos`), repoint **dev**
+   (`jeeves-dev`) and soak on the Flock card loop, then **prod** (`jeeves-paseo`).
+5. Decommission the old per-app daemons — `resepti-paseo-0`, `coachi-paseo-0`, and the
+   embedded `jeeves-paseo`/`jeeves-dev` StatefulSets — once each is cut over and soaked
+   (also frees worker-node CPU).
+6. Keep **Claude for tool agents**; move tool-free ones (resepti assistant) to Gemini.
 
 ## Keep-the-separation checklist
 - **Different credentials:** personal = your AI-Pro `agy` login; apps = the shared
