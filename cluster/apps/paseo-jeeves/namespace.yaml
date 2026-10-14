@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
