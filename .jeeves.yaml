@@ -1,0 +1,12 @@
+# Jeeves per-repo policy. Replaces this repo's entry in the old central repos.yaml
+# (removed in jeeves#175 — the GitHub App installation is now the access boundary and
+# per-repo policy lives with the repo). Opts into autonomous merge behind a real gate.
+eligible: true
+pre_commit_tool: prek
+pre_commit: prek.toml
+# Both gh checks must be green before an auto-merge.
+required_checks: ["yaml", "Render ArgoCD diff"]
+verify:
+  - { name: yamllint, cmd: "yamllint -c .github/yamllint.config.yaml ./cluster/", required: true }
+# No no_automerge_paths: cluster/** stays advisor-judged so routine Renovate bumps keep
+# auto-merging, while the review advisor holds genuinely high-blast-radius infra.
