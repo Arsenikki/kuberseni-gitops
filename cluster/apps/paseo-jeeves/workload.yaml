@@ -81,7 +81,7 @@ spec:
             # dials this Service's FQDN, so those names must be allow-listed. The
             # entrypoint always adds loopback + the pod hostname.
             - name: PASEO_HOSTNAMES
-              value: paseo-jeeves,paseo-jeeves.paseo-jeeves,paseo-jeeves.paseo-jeeves.svc.cluster.local
+              value: paseo-jeeves,paseo-jeeves.paseo-jeeves,paseo-jeeves.paseo-jeeves.svc.cluster.local,paseo-jeeves.arsenikki.casa
             # git auth goes through the token-broker sidecar over a unix socket —
             # `jeeves git-credential` fetches short-lived App tokens from it. The App
             # private key is NOT in this container (#68).

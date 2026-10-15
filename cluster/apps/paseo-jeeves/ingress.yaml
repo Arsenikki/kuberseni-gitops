@@ -1,0 +1,43 @@
+---
+# paseo-jeeves daemon ingress — reach the coding daemon's WebSocket control plane
+# (:6767, path /ws) over TLS with a stable hostname instead of a port-forward.
+#
+# INTERNAL ONLY. This is a full-shell coding daemon — do NOT expose it publicly.
+# `external-dns/is-public: "false"` keeps the record LAN/Tailscale-only (the real
+# gate is the OPNSense WAN firewall — confirm it does not forward this host).
+#
+# Auth is the daemon PASSWORD (already set on this tier via PASEO_PASSWORD) plus the
+# 0.11.x Host-header allow-list (the ingress host is appended to PASEO_HOSTNAMES in
+# workload.yaml). Do NOT add an authentik forward-auth middleware: it 302-redirects,
+# which the non-browser paseo WebSocket client cannot follow — it would break every
+# client. Connect with:
+#   paseo --host "tcp://paseo-jeeves.arsenikki.casa:443?ssl=true&password=<pw>"
+# (the CLI dials wss://…/ws; Traefik terminates TLS and proxies the WS upgrade).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paseo-jeeves
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "false"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: paseo-jeeves.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paseo-jeeves
+                port:
+                  number: 6767
+  tls:
+    - hosts:
+        - paseo-jeeves.arsenikki.casa
+      secretName: paseo-jeeves-tls
