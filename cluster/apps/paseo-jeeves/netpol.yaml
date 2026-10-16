@@ -1,0 +1,53 @@
+---
+# Egress containment for the paseo-jeeves daemon. It runs bypassPermissions coding
+# agents driven by UNTRUSTED GitHub issue/alert content, with a full shell. The autonomy
+# ceiling (propose + human PR review + risk gate) is the primary containment; this is
+# defense-in-depth at the network layer.
+#
+# GAP THIS CLOSES: the original containment (jeeves/deploy/base/paseo-netpol.yaml) selects
+# `app: jeeves, service: paseo`, but the migrated daemon is labelled `app: paseo-jeeves` in
+# this namespace, so it matched NOTHING — the daemon has been running with unrestricted
+# egress since the paseo-jeeves migration. This ports the proven rules with the correct
+# selector. (Standard NetworkPolicy = the enforced backstop; a tighter Cilium `toFQDNs`
+# allow-list is a follow-up that must roll out in audit mode first — some CNPs in this
+# cluster have silently shown VALID=False.)
+#
+# Blocks the high-value pivot targets (other namespaces, the LAN, the cluster pod/service
+# ranges, and the 169.254 link-local metadata endpoint) while allowing the internet egress
+# a build legitimately needs: git/GitHub, the Anthropic API, and package registries.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paseo-jeeves-egress
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  podSelector:
+    matchLabels: { app: paseo-jeeves }
+  policyTypes: [Egress]
+  egress:
+    # DNS resolution (kube-dns lives in kube-system).
+    - to: []
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # Same-namespace pods only (Cilium enforces by pod identity, so this holds even
+    # though those pods sit in the 10.0.0.0/8 range the internet rule below excludes).
+    - to:
+        - podSelector: {}
+    # The public internet for git/GitHub, the Anthropic API, and package registries
+    # (coding agents must fetch dependencies) — but NOT the cluster pod/service ranges,
+    # the private LAN, or 169.254.0.0/16 link-local (cloud metadata). This blocks lateral
+    # movement + metadata-credential theft without breaking builds.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 80 }
