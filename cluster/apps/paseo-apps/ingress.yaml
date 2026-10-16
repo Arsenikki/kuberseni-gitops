@@ -1,0 +1,45 @@
+---
+# paseo-apps daemon ingress — reach the shared app-agent daemon's WebSocket control
+# plane (:6767, path /ws) over TLS with a stable hostname, for driving it manually from
+# a laptop in addition to the in-cluster app clients (resepti, …) that dial the Service.
+#
+# INTERNAL ONLY. `external-dns/is-public: "false"` keeps the DNS record LAN/Tailscale-only
+# (the real gate is the OPNSense WAN firewall — confirm it does not forward this host).
+# Lower blast radius than paseo-jeeves/paseo-generic: this tier's agents are SANDBOXED
+# (AGY_FORCE_SANDBOX=1, settings deny Bash/Edit/Write — MCP tools only, no arbitrary shell).
+#
+# Auth is the daemon PASSWORD (PASEO_PASSWORD, already set on this tier via #757 — the
+# same value in-cluster clients use) PLUS the 0.11.x Host-header allow-list (this ingress
+# host is appended to PASEO_HOSTNAMES in workload.yaml). Do NOT add an authentik
+# forward-auth middleware: it 302-redirects, which the non-browser paseo WebSocket client
+# cannot follow — it would break every client. Connect with:
+#   paseo --host "tcp://paseo-apps.arsenikki.casa:443?ssl=true&password=<pw>"
+# (the CLI dials wss://…/ws; Traefik terminates TLS and proxies the WS upgrade).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paseo-apps
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "false"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: paseo-apps.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paseo-apps
+                port:
+                  number: 6767
+  tls:
+    - hosts:
+        - paseo-apps.arsenikki.casa
+      secretName: paseo-apps-tls

@@ -76,8 +76,11 @@ spec:
             # auth above — a client must satisfy BOTH (allow-listed Host AND password).
             # In-cluster apps dial the Service FQDN, so it must be allowed. The
             # entrypoint also adds loopback + the pod hostname automatically.
+            # In-cluster apps dial the Service FQDN; paseo-apps.arsenikki.casa is the
+            # ingress host for manual (tailnet) access. The entrypoint also adds loopback
+            # + the pod hostname automatically.
             - name: PASEO_HOSTNAMES
-              value: "paseo-apps.paseo-apps.svc.cluster.local,paseo-apps,paseo-apps.paseo-apps"
+              value: "paseo-apps.paseo-apps.svc.cluster.local,paseo-apps,paseo-apps.paseo-apps,paseo-apps.arsenikki.casa"
           ports:
             - containerPort: 6767
               name: paseo
