@@ -113,7 +113,7 @@ spec:
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker
-          image: ghcr.io/arsenikki/jeeves:be4e5a8910e41462cc6c24964b6f41c5b279bd65
+          image: ghcr.io/arsenikki/jeeves:v1.40.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "token-broker"]
           envFrom:
@@ -131,11 +131,12 @@ spec:
           resources:
             requests: { cpu: 10m, memory: 24Mi }
             limits: { cpu: 100m, memory: 64Mi }
-        # Keeps base clones of managed repos on the PVC for worktrees. Hot-reloads
-        # repos.yaml each cycle from the STABLE-named jeeves-repos volume, so editing
-        # the repo list does NOT roll this pod (which would kill in-flight agents).
+        # Keeps base clones on the PVC for worktrees. Discovery is the GitHub App
+        # installation (jeeves#175): repo-sync lists the installation's repos via the
+        # App token and clones each under /data/paseo/repos/<name> — no repos.yaml, no
+        # allowlist. Image bumped to v1.40.0 (the App-install repo-sync).
         - name: repo-sync
-          image: ghcr.io/arsenikki/jeeves:be4e5a8910e41462cc6c24964b6f41c5b279bd65
+          image: ghcr.io/arsenikki/jeeves:v1.40.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "repo-sync"]
           envFrom:
@@ -143,20 +144,15 @@ spec:
           env:
             - name: LOG_LEVEL
               value: info
-            - name: REPOS_PATH
-              value: /etc/jeeves-repos/repos.yaml
             - name: GITHUB_APP_KEY_FILE
               value: /etc/jeeves-ghapp/private-key.pem
           volumeMounts:
             - { name: data, mountPath: /data/paseo }
-            - { name: repos, mountPath: /etc/jeeves-repos, readOnly: true }
             - { name: ghapp, mountPath: /etc/jeeves-ghapp, readOnly: true }
           resources:
             requests: { cpu: 25m, memory: 32Mi }
             limits: { cpu: 500m, memory: 128Mi }
       volumes:
-        - name: repos
-          configMap: { name: jeeves-repos } # stable-named → edits don't roll the daemon
         - name: claude-settings
           configMap: { name: jeeves-claude-settings }
         - name: ghapp
