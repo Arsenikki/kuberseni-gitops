@@ -1,0 +1,46 @@
+---
+# paseo-generic daemon ingress — reach your personal/debug coding daemon's WebSocket
+# control plane (:6767, path /ws) over TLS with a stable hostname instead of a
+# port-forward (the "reach it over the tailnet" path the workload comment intends).
+#
+# INTERNAL ONLY. This is a FULL-SHELL daemon AND it carries a cluster-read (`view`)
+# ServiceAccount — a higher blast radius than the sandboxed paseo-apps tier. Keep it
+# off the public internet: `external-dns/is-public: "false"` keeps the DNS record
+# LAN/Tailscale-only, and the real gate is the OPNSense WAN firewall — confirm it does
+# not forward this host.
+#
+# Auth is the daemon PASSWORD (PASEO_PASSWORD, wired in workload.yaml + secrets.yaml)
+# PLUS the 0.11.x Host-header allow-list (this ingress host is added to PASEO_HOSTNAMES
+# in workload.yaml) — a client must satisfy BOTH. Do NOT add an authentik forward-auth
+# middleware: it 302-redirects, which the non-browser paseo WebSocket client cannot
+# follow — it would break every client. Connect with:
+#   paseo --host "tcp://paseo-generic.arsenikki.casa:443?ssl=true&password=<pw>"
+# (the CLI dials wss://…/ws; Traefik terminates TLS and proxies the WS upgrade).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: paseo-generic
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns/is-public: "false"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: paseo-generic.arsenikki.casa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: paseo-generic
+                port:
+                  number: 6767
+  tls:
+    - hosts:
+        - paseo-generic.arsenikki.casa
+      secretName: paseo-generic-tls
