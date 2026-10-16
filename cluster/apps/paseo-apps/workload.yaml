@@ -44,6 +44,15 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
+            # Daemon bearer auth. The 0.11.2 daemon bcrypts PASEO_PASSWORD from env
+            # (env takes precedence over any persisted hash), so this alone enables
+            # auth — no entrypoint/image change. Every client (resepti-api) must send
+            # the same value; both read it from the paseo-apps-password 1Password item.
+            - name: PASEO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: PASEO_PASSWORD
             # AI-Pro (agy/antigravity) token file, seeded by the entrypoint.
             # Optional: the daemon runs without it (claude only) until it's seeded.
             - name: AGY_TOKEN
@@ -63,9 +72,10 @@ spec:
             - name: AGY_FORCE_SANDBOX
               value: "1"
             # Daemon Host-header allowlist: the 0.11.x daemon 403s a TCP client whose
-            # Host isn't listed (this is NOT auth — no password). In-cluster apps dial
-            # the Service FQDN, so it must be allowed. The entrypoint also adds loopback
-            # + the pod hostname automatically.
+            # Host isn't listed. This is a SEPARATE layer from the PASEO_PASSWORD bearer
+            # auth above — a client must satisfy BOTH (allow-listed Host AND password).
+            # In-cluster apps dial the Service FQDN, so it must be allowed. The
+            # entrypoint also adds loopback + the pod hostname automatically.
             - name: PASEO_HOSTNAMES
               value: "paseo-apps.paseo-apps.svc.cluster.local,paseo-apps,paseo-apps.paseo-apps"
           ports:
