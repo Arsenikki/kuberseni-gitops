@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-3
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-5
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
