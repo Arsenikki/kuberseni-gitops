@@ -52,6 +52,14 @@ spec:
               valueFrom: { configMapKeyRef: { name: resepti-config, key: PASEO_HOST } }
             - name: PASEO_PORT
               valueFrom: { configMapKeyRef: { name: resepti-config, key: PASEO_PORT } }
+            # Bearer password for the (now auth-enabled) paseo-apps daemon. resepti's
+            # paseo client reads PASEO_PASSWORD and URL-encodes it into the --host it
+            # dials; must equal the daemon's PASEO_PASSWORD (same 1Password source).
+            - name: PASEO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resepti-secrets
+                  key: PASEO_PASSWORD
             - name: RECIPE_CWD
               valueFrom: { configMapKeyRef: { name: resepti-config, key: RECIPE_CWD } }
             - name: IMPORT_PROVIDER
