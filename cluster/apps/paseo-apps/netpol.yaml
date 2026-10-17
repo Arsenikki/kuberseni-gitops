@@ -1,0 +1,49 @@
+---
+# Egress containment for the paseo-apps daemon (shared, SANDBOXED MCP-only app agents —
+# resepti, coachi, untappi, …). Lower risk than jeeves (AGY_FORCE_SANDBOX + settings deny
+# Bash/Edit/Write, so no arbitrary shell), but still driven by untrusted app input (e.g.
+# the resepti importer WebFetches arbitrary recipe URLs), so block the LAN / cluster
+# ranges / cloud-metadata while allowing what the app agents legitimately need.
+#
+# Same gap as paseo-jeeves (netpol selector was never ported to the new ns). Standard
+# NetworkPolicy backstop; a tighter Cilium toFQDNs allow-list is a follow-up (audit mode).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paseo-apps-egress
+  namespace: paseo-apps
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  podSelector:
+    matchLabels: { app: paseo-apps }
+  policyTypes: [Egress]
+  egress:
+    # DNS resolution.
+    - to: []
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # Same-namespace pods.
+    - to:
+        - podSelector: {}
+    # resepti MCP server (cross-namespace) — the app agents' real tools. Without this the
+    # resepti importer loses mcp__resepti and the netpol would break recipe imports.
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: resepti }
+      ports:
+        - { protocol: TCP, port: 9090 }
+    # Internet for the Anthropic API (claude), Google/Antigravity (agy), and WebFetch —
+    # but NOT the LAN, cluster pod/service ranges, or 169.254 link-local metadata.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 80 }
