@@ -30,6 +30,7 @@ spec:
     - https://prometheus-community.github.io/helm-charts
     - https://grafana.github.io/helm-charts
     - https://seaweedfs.github.io/seaweedfs/helm
+    - https://cloudnative-pg.github.io/charts
     - https://oauth2-proxy.github.io/manifests
     - https://mend.github.io/renovate-ce-ee
   destinations:
