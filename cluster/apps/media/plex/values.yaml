@@ -1,7 +1,7 @@
 ---
 image:
   repository: ghcr.io/home-operations/plex
-  tag: 1.43.2.10687
+  tag: 1.43.4.10903
 
 env:
   TZ: "Europe/London"
