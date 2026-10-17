@@ -12,6 +12,51 @@ workspace with that app's MCP tools.
 This page is the handover for **how paseo is deployed, how to upgrade it, and the
 three-tier split we run** (and the rule for which tier a new agent belongs to).
 
+## ✅ Status + antigravity gotchas (resepti cutover complete, 2026-10)
+
+> This dated block reflects **what's actually deployed** and what was learned the hard
+> way. It **supersedes** the "antigravity can't call MCP", "all on paseo 0.2.5", and
+> "agy keyring problem" passages further down — those are now historical.
+
+**Live:** `paseo-apps` runs `ghcr.io/arsenikki/paseo-homelab:0.11.2-3` (ns `paseo-apps`,
+Longhorn PVC, egress-locked via `netpol.yaml`). **resepti is fully cut over** — its recipe
+**import** *and* **cooking assistant** both run on **AI-Pro/Gemini**
+(`antigravity/gemini-3.8-flash-high` / `-low`) through paseo-apps, **sandboxed**, calling
+the `resepti` MCP. The old `resepti-paseo` (0.2.x) is **retired**. coachi/untappi are
+**not yet** migrated. (Driver: the Claude work-quota was exhausted during this work, which
+made moving resepti's AI to personal AI-Pro/Gemini necessary, not just preferred.)
+
+**antigravity + MCP DOES work** (opposite of the older note below). The paseo-homelab
+image is what makes it work:
+- **Native MCP** — the entrypoint registers each `FOO_MCP_URL` env as an `agy` MCP server
+  (`agy mcp add`), so antigravity agents get real `mcp__<name>` tools. paseo does **not**
+  auto-wire a project `.mcp.json` into `agy`; without this the agent improvises with `curl`.
+- **agy auth = file-storage, NOT keyring** — `GEMINI_FORCE_FILE_STORAGE=true` + `TZ=UTC`
+  store a reusable token at `~/.gemini/antigravity-cli/antigravity-oauth-token` (seeded
+  from the `AGY_TOKEN` / `paseo-agy` secret). The "keyring problem" below is **solved** —
+  no keyring, works headless in a container.
+
+**The antigravity provider's conventions differ from Claude — each cost a debug round:**
+
+| | Claude | **antigravity** |
+|---|---|---|
+| **Connection auth** | — | **Host-header allowlist**, NOT a password. The 0.11.x daemon on `0.0.0.0` returns **403 (`DAEMON_UNREACHABLE`)** to any TCP client whose `Host` isn't in `daemon.hostnames`; loopback always works. **This was the entire "resepti can't reach paseo-apps" blocker** — fixed with `PASEO_HOSTNAMES=<svc FQDN>` (the image writes `daemon.hostnames`). No relay/pairing/cloud needed in-cluster. A daemon *password* also exists and is **independent** (jeeves uses it); apps don't need it. |
+| **Mode** | `bypassPermissions` | **`full-access`** (else `AGENT_CREATE_FAILED: Invalid mode`). |
+| **Reasoning effort** | `--thinking <id>` | **encoded in the model ID** (`…-flash-high`/`-low`); sending `--thinking` → `AGENT_CREATE_FAILED: effort is selected through the model ID`. The client must omit it. |
+| **Tool lockdown** | `.claude/settings.json` deny-list | **ignored** — use `AGY_FORCE_SANDBOX=1` (image wraps `agy --sandbox`): blocks arbitrary shell/exec (`fork/exec … operation not permitted`) while MCP + WebFetch still work. |
+
+**⚠️ Before coachi/untappi join paseo-apps: solve per-app MCP isolation.** `agy`'s MCP
+registry is **global per daemon home**, so a 2nd app's agents would see the 1st's MCP
+tools. Fix = a per-run `HOME` per app (separate `~/.gemini`) via paseo `--env`. Harmless
+while only resepti is there.
+
+**Images:** `paseo-homelab` (daemon image, repo `Arsenikki/paseo-homelab`, tag ==
+bundled paseo version `[-build-rev]`) · `resepti` (API+MCP+PWA; drives paseo-apps via the
+`paseo` CLI **0.11.x bundled in it** — the old 0.2.5 client is protocol-incompatible →
+403). resepti's antigravity knobs live in `cluster/apps/resepti/configmap.yaml`
+(`IMPORT_PROVIDER`/`ASSISTANT_PROVIDER`/`IMPORT_MODE=full-access`); its PWA also needed a
+service-worker + Authentik-forward-auth re-auth fix — see the **resepti repo README**.
+
 ## The three tiers (the model)
 
 A paseo daemon's tier is decided by the **agent's capability + trust profile — not by
@@ -40,7 +85,7 @@ Keeping the tiers separate means **your experiments and Jeeves's full-shell agen
 take down the boring app agents**, and each tier uses the **right credentials/quota**
 (your personal AI Pro vs the shared work-Claude token vs Jeeves's App identity).
 
-## Current state (all on paseo 0.2.5 — too old for antigravity)
+## Current state (HISTORICAL — pre-migration snapshot; see the Status block above)
 
 | instance | where | serves | auth |
 |---|---|---|---|
