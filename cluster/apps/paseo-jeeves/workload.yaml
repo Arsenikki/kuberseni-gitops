@@ -65,6 +65,7 @@ spec:
         runAsUser: 1000
         runAsNonRoot: true
         fsGroup: 1000 # make the PVC writable by uid 1000 (all containers)
+        fsGroupChangePolicy: OnRootMismatch # skip the recursive chown when the PVC root already matches (fast rolls; the data PVC has ~20k+ files)
       initContainers:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
         # sidecar image (same jeeves:v1.40.0 tag the token-broker runs) into a shared
