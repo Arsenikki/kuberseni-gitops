@@ -135,6 +135,13 @@ spec:
               value: /data/paseo/go
             - name: GOCACHE
               value: /data/paseo/go-cache
+            # GitHub PAT for gh CLI interactions
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jeeves-secrets
+                  key: GH_TOKEN
+                  optional: true
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -145,6 +152,7 @@ spec:
             periodSeconds: 20
           volumeMounts:
             - { name: data, mountPath: /data/paseo }
+            - { name: workspaces, mountPath: /workspaces }
             - { name: broker-sock, mountPath: /run/jeeves } # shared token-broker socket dir
             - { name: jeeves-bin, mountPath: /opt/bin, readOnly: true } # injected jeeves binary (git-credential helper)
             # Seed Claude Code's user settings.json so the agent runs non-interactively.
@@ -207,6 +215,9 @@ spec:
           emptyDir: {} # shared token-broker↔paseo socket dir (pod-local, not networked)
         - name: jeeves-bin
           emptyDir: {} # initContainer copies the jeeves binary here → on the daemon's PATH
+        - name: workspaces
+          persistentVolumeClaim:
+            claimName: paseo-jeeves-workspaces
   volumeClaimTemplates:
     - metadata: { name: data }
       spec:
@@ -215,3 +226,19 @@ spec:
         resources:
           requests:
             storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paseo-jeeves-workspaces
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi
+
