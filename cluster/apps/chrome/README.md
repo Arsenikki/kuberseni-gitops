@@ -143,3 +143,72 @@ Re-run after any Cilium upgrade. See the CAVEATS block in `networkpolicy.yaml`.
   page meets a seccomp-Unconfined pod, so patch cadence matters.
 - **Second egress gate (optional):** a gluetun/WireGuard sidecar or Cilium Egress
   Gateway would survive a NetworkPolicy mistake. Not included here.
+
+## Architecture & key decisions (why it's built this way)
+
+Non-obvious choices — full rationale is in each manifest's comments:
+
+- **`wrapped-chromium` override (`launch-fix.yaml`).** Selkies' desktop *autostart*
+  applies `CHROME_CLI`, but any *relaunch* (crash, closing the window, the desktop
+  menu) re-runs `wrapped-chromium` with **no args** — so the extensions **and** the
+  CDP debug port silently vanish ("worked once, then broke"). We mount a hardened
+  override of `/usr/bin/wrapped-chromium` (a ConfigMap, `subPath`) that hardcodes
+  the profile + `--remote-debugging-port=9222` + both extensions, so every launch
+  path is identical. Keep it in sync with the upstream wrapper if the image bumps.
+- **CDP needs a non-default `--user-data-dir`.** Chrome 136+ ignores
+  `--remote-debugging-port` on the *default* profile (security hardening), so the
+  wrapper uses `--user-data-dir=/config/cdp-profile`.
+- **Self-heal liveness probe (`deployment.yaml`) checks CDP (`:9222`), not the
+  stream (`:3000`).** The Selkies stream server stays up even when the *browser*
+  process dies, so a `:3000` probe never notices a dead browser. Liveness `exec`s a
+  curl against CDP → dead browser ⇒ container restarts ⇒ autostart ⇒ override ⇒
+  back with extensions + CDP.
+- **Auth = Authentik only.** Registration is the `app-chrome` blueprint in
+  `cluster/apps/authentik/resources/` (+ its binding in `embedded-outpost.yaml`).
+  Any new app behind `authentik-forward-auth` ALSO needs a blueprint there or it
+  404s with "Not Found".
+- **Opener** (`opener.yaml`) = a token-gated sidecar that drives the running
+  Chromium via localhost CDP (`/json/new`) and 302-redirects to the viewer.
+
+## Performance & GPU — READ before trying to GPU-accelerate
+
+**This runs on SOFTWARE video encoding (x264) + software rendering — there is no
+GPU.** For a single-user reader that's fine: CPU is not the idle bottleneck
+(measured ~0.03% throttling), and the "streamed, not local" feel is inherent
+remote-desktop latency a GPU would not remove.
+
+**⚠️ GPU acceleration was attempted (Oct 2026) and REVERTED — do not naively retry:**
+- On worker-01's Intel Iris Xe iGPU, **VAAPI would not initialize**:
+  `iHD_drv_video.so init failed` *even as root on the accessible render node*. Root
+  cause: the image's bundled Intel userspace driver
+  (`intel-media-va-driver-non-free` **25.2.3**, Debian trixie) is **too old for the
+  Talos kernel (6.18)**. It is NOT a permissions / `card0` issue. (Plex works on
+  the same GPU only because it bundles its *own* newer driver — each container ships
+  its own userspace VAAPI driver; the kernel i915 side is shared and fine.)
+- The `--ignore-gpu-blocklist` / `--enable-features=Vaapi*` Chromium flags then
+  **forced Chromium onto the broken GPU → crashloop** (desktop kept dying → CDP
+  never bound → the liveness probe restart-looped). Reverted in PR #733.
+
+**The ONLY viable GPU path** (if ever worth it): a thin **custom image**
+`FROM lscr.io/linuxserver/chromium` that installs a newer driver *trio* —
+`intel-media-va-driver-non-free 26.2.4` + `libva2 ≥2.24` + `libigdgmm12` +
+`mesa-va-drivers` from **Debian forky/sid** (NOT trixie-backports — the driver is
+absent there; a newer lscr *tag* won't help — still trixie 25.2.3), APT-pinned so
+only the Intel bits come from forky. Then: bump `GpuDevicePlugin.sharedDevNum`
+1→2 (shares the iGPU with Plex, does not evict it), **prove VAAPI with a throwaway
+`vainfo`/`ffmpeg` probe pod BEFORE touching prod**, and deploy with **only**
+`DRINODE`/`DRI_NODE` + `gpu.intel.com/i915: 1` + `supplementalGroups: [44,110]` —
+**NO forcing flags** (Selkies falls back to software gracefully, so it can't
+crashloop). ~70% chance it works first-try. **Verdict: not worth the custom-image
+maintenance for one user — stay on software unless you hit real CPU/stream pain.**
+
+**Smoothness tuning (software encode)** — most are adjustable live in the Selkies
+sidebar (no restart); bake chosen values into the Deployment `env` if you like:
+- **CSS scaling** (`SELKIES_USE_CSS_SCALING=true`) or a lower resolution — fewer
+  pixels to encode = smoother; the biggest lever.
+- A steady **`SELKIES_FRAMERATE=30`** often feels smoother than a stuttery 60.
+- Raise **`SELKIES_VIDEO_CRF`** (default 25 → ~28) if choppy during motion;
+  paint-over re-sharpens static text.
+- Bitrate isn't the constraint on a LAN. More CPU headroom (a bigger node) *may*
+  help scroll smoothness, but **measure scroll-time CPU first** — it was never
+  confirmed to saturate.

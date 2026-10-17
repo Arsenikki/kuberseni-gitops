@@ -36,6 +36,8 @@ Homelab GitOps: **Talos Linux** Kubernetes on **Proxmox**, managed by **ArgoCD**
 
 - ArgoCD selfHeals — **don't fix drift manually; commit it**. To pause: set `spec.syncPolicy.automated.selfHeal=false` on the Application.
 - `op` returns empty in `$(...)` subshells (TTY detection) — fetch secrets by item ID to a temp file instead.
+- **No Cilium L7 proxy on this cluster** — never put an L7 `rules: dns:` block in a `CiliumNetworkPolicy`. It makes the WHOLE policy `Valid=False` and **silently unenforced** (egress isolation gone). Use L4-only DNS (port 53 → kube-dns) + IP `toCIDR`. (Bit `media/qbittorrent` + `monitoring/alloy-jeeves` — unenforced for months before it was caught.)
+- **A new app behind `authentik-forward-auth`** needs more than the ingress middleware: also add an `app-<name>` blueprint **and** its provider binding in `embedded-outpost.yaml` under `cluster/apps/authentik/resources/`, or the host 404s with Authentik "Not Found". Use the existing `app-*.yaml` as templates.
 
 ## Handing work to Jeeves (autonomous maintenance)
 
