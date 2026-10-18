@@ -94,6 +94,20 @@ spec:
             # loopback + the pod hostname automatically (so port-forward still works).
             - name: PASEO_HOSTNAMES
               value: "paseo-generic,paseo-generic.paseo-generic,paseo-generic.paseo-generic.svc.cluster.local,paseo-generic.arsenikki.casa"
+            # GitHub CLI auth token for gh CLI operations
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: GH_TOKEN
+                  optional: true
+            # Configure git to use gh as credential helper for cloning / submodules
+            - name: GIT_CONFIG_COUNT
+              value: "1"
+            - name: GIT_CONFIG_KEY_0
+              value: "credential.https://github.com.helper"
+            - name: GIT_CONFIG_VALUE_0
+              value: "!gh auth git-credential"
           ports:
             - containerPort: 6767
               name: paseo
@@ -113,6 +127,12 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data/paseo
+            - name: workspaces
+              mountPath: /workspaces
+      volumes:
+        - name: workspaces
+          persistentVolumeClaim:
+            claimName: paseo-generic-workspaces
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -123,6 +143,21 @@ spec:
         resources:
           requests:
             storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paseo-generic-workspaces
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi
 ---
 apiVersion: v1
 kind: Service
