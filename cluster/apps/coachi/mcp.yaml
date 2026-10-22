@@ -27,7 +27,7 @@ spec:
           command:
             - sh
             - -c
-            - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
+            - "until pg_isready -h coachi-pg-rw -U coachi -d coachi; do echo waiting for db; sleep 2; done"
       containers:
         - name: mcp
           image: ghcr.io/arsenikki/coachi:0.1.22
@@ -41,7 +41,7 @@ spec:
                   name: coachi-secrets
                   key: POSTGRES_PASSWORD
             - name: DATABASE_URL
-              value: "postgres://coachi:$(POSTGRES_PASSWORD)@coachi-postgres:5432/coachi?sslmode=disable"
+              value: "postgres://coachi:$(POSTGRES_PASSWORD)@coachi-pg-rw:5432/coachi?sslmode=disable"
             - name: MCP_ADDR
               valueFrom:
                 configMapKeyRef:

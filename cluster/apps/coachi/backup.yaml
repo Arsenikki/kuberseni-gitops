@@ -6,7 +6,7 @@
 # incident: test sessions were deleted with no way to recover them).
 #
 # Restore: `mc cp store/coachi-media/backups/coachi-<ts>.sql.gz .` then
-# `gunzip -c coachi-<ts>.sql.gz | psql -h coachi-postgres -U coachi -d coachi`.
+# `gunzip -c coachi-<ts>.sql.gz | psql -h coachi-pg-rw -U coachi -d coachi`.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -43,7 +43,7 @@ spec:
               args:
                 - |
                   ts=$(date -u +%Y%m%dT%H%M%SZ)
-                  pg_dump -h coachi-postgres -U coachi -d coachi \
+                  pg_dump -h coachi-pg-rw -U coachi -d coachi \
                     --no-owner --no-privileges -f "/work/coachi-${ts}.sql"
                   gzip -9 "/work/coachi-${ts}.sql"
                   echo "wrote /work/coachi-${ts}.sql.gz ($(wc -c < "/work/coachi-${ts}.sql.gz") bytes)"
