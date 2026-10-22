@@ -18,7 +18,7 @@ spec:
   sources:
     - repoURL: https://mend.github.io/renovate-ce-ee
       chart: mend-renovate-ce
-      targetRevision: 14.8.0
+      targetRevision: 15.0.0
       helm:
         valueFiles:
           - $values/cluster/apps/renovate/values.yaml
