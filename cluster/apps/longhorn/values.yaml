@@ -19,6 +19,12 @@ defaultSettings:
   # affected volumes degraded until it returns.
   replicaSoftAntiAffinity: false
   replicaAutoBalance: best-effort
+  # Reserve by spec size, so the asymmetric storage nodes (worker-01 500G,
+  # worker-02 100G) can each hold a full 2nd replica set (~174G spec) even though
+  # real usage is only ~53G. Underlying storage is LVM-thin, so over-provisioning
+  # matches reality. Without this, worker-02 can't reserve the largest volumes'
+  # replicas and they stay single-node (no redundancy).
+  storageOverProvisioningPercentage: 300
   # Auto-delete orphaned replica/instance resources so a storage node can't silently
   # fill with stale replica directories (the root cause of the 2026-07-04 collapse:
   # orphans pushed worker-02 below the 25% min-available threshold -> unschedulable).
