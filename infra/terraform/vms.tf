@@ -21,7 +21,10 @@ locals {
     # low and this gives k8s enough allocatable CPU to end the scheduling pressure.
     # RAM stays at 20 GiB — minipc memory is ~full, so cores (not RAM) are the lever.
     worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 14, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
-    # worker-02: 100GB Longhorn data disk on local-lvm (NAS has 106GB free).
+    # worker-02: Longhorn data disk on local-lvm. extra_disk_size=130 reconciles
+    # the config with the LIVE disk (grown 100->130 out-of-band during a space
+    # crunch, never committed). Keeping 100 here was a shrink landmine: any apply
+    # would try to shrink scsi1 130->100 and clobber the Longhorn disk.
     # 14 GiB (was 16, was 24): nas is only 32 GiB and also hosts TrueNAS(12) +
     # cp-03(6); 16(w02)+12(nas)+6(cp03)=34 GiB overcommits the 31 GiB host, which
     # sits with ~1 GiB free and multiple GiB swapped. worker-02 has only ever used
@@ -30,7 +33,7 @@ locals {
     # do it on a maintenance window AFTER metrics-server + the real-usage
     # descheduler land and worker-02 has rebalanced to a light pod set, so the
     # reboot doesn't repack a heavy load onto the smaller VM.
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 14336, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 14336, disk_size = 50, extra_disk_size = 130, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
