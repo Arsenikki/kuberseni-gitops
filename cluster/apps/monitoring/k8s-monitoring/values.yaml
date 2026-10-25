@@ -72,6 +72,12 @@ telemetryServices:
 #   alloy-metrics   — Deployment, scrapes metrics (cluster/host/operator objects)
 #   alloy-logs      — DaemonSet, tails pod logs (needs CP tolerations for CP node logs)
 #   alloy-singleton — single replica, cluster events + PrometheusRule→ruler sync
+# Requests (no limits) make the collectors Burstable instead of BestEffort, so
+# they are not the first OOM-kill victims when the weak worker-02 node swaps, and
+# — together with the real-usage descheduler — their load is accounted for during
+# placement/rebalancing. Limits are intentionally omitted to avoid CPU throttling
+# scrape/WAL work. Sized from observed usage: alloy-metrics scrapes the whole
+# cluster (heaviest); logs tails pods; singleton only does events + rule sync.
 collectors:
   alloy-metrics:
     enabled: true
@@ -79,6 +85,10 @@ collectors:
     alloy:
       clustering:
         enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
   alloy-logs:
     enabled: true
     # Mount host /var/log/pods so the DaemonSet can tail container logs (Talos exposes them here).
@@ -86,8 +96,18 @@ collectors:
     controller:
       tolerations:
         - operator: Exists
+    alloy:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
   alloy-singleton:
     enabled: true
+    alloy:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 128Mi
     # mimir.rules.kubernetes talks to the ruler API directly (no forward_to needed).
     extraConfig: |-
       mimir.rules.kubernetes "local" {
