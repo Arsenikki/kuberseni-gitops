@@ -56,8 +56,14 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
     type  = "host"  # Exposes AES-NI to ZFS; avoids SMB CPU spikes with kvm64
   }
 
+  # 12288 (was 16384): reconciles the committed value with what the VM has
+  # actually run for months (hand-shrunk live on the 31 GiB nas host, which is
+  # chronically RAM-overcommitted — it also hosts worker-02 + cp-03). Keeping the
+  # stale 16384 here was a landmine: any `terraform apply` would re-inflate
+  # TrueNAS by +4 GiB and reboot the storage VM. This change is a no-op against
+  # live state (no reboot), it just stops the drift from biting on the next apply.
   memory {
-    dedicated = 16384
+    dedicated = 12288
   }
 
   # Boot disk — stores SCALE OS only, not data
