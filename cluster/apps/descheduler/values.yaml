@@ -29,6 +29,16 @@ deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
 deschedulerPolicy:
   # Cap churn per run.
   maxNoOfPodsToEvictPerNode: 3
+  # Pull live CPU/memory from metrics-server (cluster/apps/metrics-server) so
+  # LowNodeUtilization balances on ACTUAL usage, not pod requests. Without this,
+  # worker-02 — the weak NAS node, packed with request-less tenants (jeeves,
+  # flock, alloy) — reads as under-utilized by the requests-based heuristic and
+  # never sheds load, which is why it keeps getting repacked to CPU/RAM
+  # starvation. Requires metrics-server to be deployed and serving (kubectl top
+  # nodes must work) BEFORE this merges, or every run errors. The chart
+  # auto-grants the metrics.k8s.io RBAC when a KubernetesMetrics provider is set.
+  metricsProviders:
+    - source: KubernetesMetrics
   profiles:
     - name: default
       pluginConfig:
@@ -53,6 +63,10 @@ deschedulerPolicy:
         - name: RemovePodsViolatingInterPodAntiAffinity
         - name: LowNodeUtilization
           args:
+            # Evaluate utilization from real metrics (above) instead of the sum
+            # of pod requests, so an overloaded-but-request-less node is seen.
+            metricsUtilization:
+              source: KubernetesMetrics
             thresholds:
               cpu: 20
               memory: 20
