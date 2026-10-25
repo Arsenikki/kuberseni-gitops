@@ -19,6 +19,13 @@ defaultSettings:
   # affected volumes degraded until it returns.
   replicaSoftAntiAffinity: false
   replicaAutoBalance: best-effort
+  # Cap concurrent replica rebuilds per node at 3 (Longhorn default is 5). A storage
+  # node reboot leaves every volume with a replica there degraded, and all rebuild
+  # at once; on the weak 4-core N5105 nas host (worker-02) 5 concurrent rebuilds
+  # drove load to ~11 and CPU-starved the Longhorn pods into liveness crashloops
+  # (2026-10-25). 3 balances rebuild speed against host headroom. The deeper fix is
+  # still capacity (fewer tenants on nas / more cores), but this bounds the blast radius.
+  concurrentReplicaRebuildPerNodeLimit: 3
   # Auto-delete orphaned replica/instance resources so a storage node can't silently
   # fill with stale replica directories (the root cause of the 2026-07-04 collapse:
   # orphans pushed worker-02 below the 25% min-available threshold -> unschedulable).
