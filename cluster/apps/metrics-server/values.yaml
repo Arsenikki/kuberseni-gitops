@@ -1,0 +1,21 @@
+---
+# metrics-server — provides resource metrics (kubectl top, HPAs, descheduler
+# real-usage) that Talos does not ship by default.
+#
+# Talos gotcha: kubelet serving certificates are self-signed, so metrics-server's
+# default TLS verification against the kubelet fails with x509 errors and no
+# metrics are served. --kubelet-insecure-tls is the accepted pragmatic fix for an
+# intra-cluster scrape in this homelab (enabling kubelet server-cert rotation +
+# a CSR approver is the "correct" alternative, intentionally out of scope here).
+args:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
