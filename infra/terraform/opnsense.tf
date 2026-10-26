@@ -95,6 +95,14 @@ resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
   description = ""
 }
 
+resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "ca:e0:0e:6c:cf:c1"
+  ip_address  = "192.168.1.105"
+  hostname    = "bazzite-chromebook"
+  description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
+}
+
 # ── IoT / home-automation devices ──────────────────────────────────────────────
 # Addressing scheme (flat 192.168.1.0/24 today; blocks chosen to map cleanly onto
 # future VLANs — keep the last octet when a block migrates to its own subnet):
