@@ -72,5 +72,14 @@ Secret management is split between two layers:
 
 ## :robot:&nbsp; Automation
 
+* **[Jeeves](https://github.com/Arsenikki/jeeves)** is a ticket-driven autonomous maintenance bot: file a GitHub issue labelled `jeeves` and it plans, codes (in an isolated git worktree), and opens a PR — low-risk changes outside `cluster/**` can auto-merge once the quality gate is green; anything touching `cluster/**` is left for human review.
+* **[Paseo](https://github.com/getpaseo/paseo)** is the in-cluster AI agent runtime Jeeves (and a few other apps) drive their coding/chat agents through — three tiers (`paseo-apps` for sandboxed MCP app agents, `paseo-jeeves` for Jeeves's full-shell coding agent, `paseo-generic` for personal/debug use), supporting Claude Code, Antigravity, and OpenCode.
 * [Renovate](https://github.com/renovatebot/renovate) helps keep workloads up-to-date by scanning the repo and opening pull requests when it detects a new container image update or a new helm chart in the upstream repository
 * [Container images](https://github.com/Arsenikki/container-images): Some self-managed container images are automatically built using Github Actions once a new version is detected in the upstream container image registry. Both AMD64 and ARM architectures supported and Trivy is used to scan and provide vulnerability reporting for the produced images. NOTE: This is no longer maintained.
+
+---
+
+## :book:&nbsp; Documentation
+
+- **[docs/homelab/](docs/homelab/)** is a lightweight overview, published as a site by the `homelab-docs` ArgoCD app.
+- The detailed operational knowledge base (cluster internals, networking, storage, GitOps conventions, applications inventory, secrets, Jeeves, Paseo, runbooks, and incident notes) lives in the private **[`Arsenikki/codex`](https://github.com/Arsenikki/codex)** repo, under `kuberseni-gitops/docs/`.

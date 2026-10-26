@@ -3,14 +3,16 @@ title: Homelab Overview
 description: A Talos Kubernetes homelab ("kuberseni") on Proxmox, managed by ArgoCD GitOps and maintained autonomously by Jeeves.
 ---
 
-This is the single source of truth for **kuberseni** — a self-hosted Kubernetes homelab. It is written both for humans and for the autonomous agents (Jeeves) that maintain it.
+**kuberseni** is a self-hosted Kubernetes homelab. This page is a lightweight
+overview for anyone landing on the repo — the detailed operational knowledge
+base lives in a private companion repo (see [Deeper docs](#deeper-docs) below).
 
 ## What this is
 
 - **Kubernetes** cluster named `kuberseni`, running **Talos Linux** (immutable, API-managed OS) on VMs.
 - Virtualized on **Proxmox** across three physical machines; VMs and the OPNSense/TrueNAS config are provisioned with **OpenTofu** (`infra/terraform/`), Talos machine config rendered by **Talhelper** (`infra/talos/talconfig.yaml`).
 - Everything in-cluster is **GitOps** — **ArgoCD** app-of-apps continuously syncs the `cluster/` tree from `Arsenikki/kuberseni-gitops`. Don't hand-fix drift; commit it (ArgoCD self-heals).
-- Maintenance is (partly) autonomous: **[Jeeves](/jeeves/)** turns a GitHub issue labelled `jeeves` into a reviewed PR. This repo is registered and eligible.
+- Maintenance is (partly) autonomous: **Jeeves** turns a GitHub issue labelled `jeeves` into a reviewed PR. This repo is registered and eligible.
 
 ## At a glance
 
@@ -48,19 +50,15 @@ flowchart TD
   W -->|Traefik + Cilium LB| Ingress["*.arsenikki.casa"]
 ```
 
-## Navigate
+## Deeper docs
 
-- **[Cluster](/cluster/)** — nodes, Talos config, control plane, workloads by namespace.
-- **[Networking](/networking/)** — Cilium CNI, LoadBalancer/L2, Traefik ingress, external-dns, OPNSense.
-- **[Storage](/storage/)** — Longhorn and TrueNAS/NFS.
-- **[GitOps](/gitops/)** — ArgoCD app-of-apps, sync/self-heal, OpenTofu + Talhelper.
-- **[Applications](/applications/)** — the apps under `cluster/apps/` (media, home-automation, monitoring, authentik, captain-core, …).
-- **[Secrets](/secrets/)** — External Secrets Operator, 1Password Connect, sops.
-- **[Jeeves](/jeeves/)** — the autonomous maintenance system: how to file tickets, the lifecycle, and the merge gate.
-- **[Paseo](/paseo/)** — the AI agent runtime: the personal-vs-apps split, how to upgrade to 0.11.x, and the AI-Pro/Claude auth model.
-- **[Runbooks](/runbooks/)** — operational procedures (bootstrap, tofu apply, ArgoCD, common gotchas).
+This page is intentionally a lightweight overview. The detailed operational
+knowledge base — cluster internals, networking, storage, GitOps conventions,
+applications inventory, secrets management, Jeeves, Paseo, and runbooks — lives
+in the private **[`Arsenikki/codex`](https://github.com/Arsenikki/codex)**
+repo, under `kuberseni-gitops/docs/`.
 
 ## Handing work to Jeeves
 
-File **one GitHub issue per deliverable, labelled `jeeves`**, in `Arsenikki/kuberseni-gitops`. That label is the only trigger; the prod instance claims it within ~5 min. Write the body for an agent — desired end state, acceptance criteria, files/paths to touch, and repo rules (sops-encrypted secrets, pin versions never `latest`, commit ArgoCD drift rather than hand-fixing it). Changes touching `cluster/**` are always left for human review; low-risk, non-behavioral changes elsewhere can auto-merge once the gate is green. See **[Jeeves](/jeeves/)** for details.
+File **one GitHub issue per deliverable, labelled `jeeves`**, in `Arsenikki/kuberseni-gitops`. That label is the only trigger; the prod instance claims it within ~5 min. Write the body for an agent — desired end state, acceptance criteria, files/paths to touch, and repo rules (sops-encrypted secrets, pin versions never `latest`, commit ArgoCD drift rather than hand-fixing it). Changes touching `cluster/**` are always left for human review; low-risk, non-behavioral changes elsewhere can auto-merge once the gate is green. See the Jeeves page in `codex` (linked above) for details.
 
