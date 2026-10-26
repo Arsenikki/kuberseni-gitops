@@ -87,7 +87,17 @@ spec:
                   key: AGY_TOKEN
                   optional: true
             # Gemini API key for the `opencode` provider (see secrets.yaml paseo-gemini).
+            # opencode's "google" provider is the Vercel AI SDK's Google provider, which
+            # actually reads GOOGLE_GENERATIVE_AI_API_KEY (confirmed live — GEMINI_API_KEY
+            # alone produced "ProviderAuthError: Google Generative AI API key is missing").
+            # Set both: GEMINI_API_KEY for anything else that reads the more common name
+            # (and for forward-compat), GOOGLE_GENERATIVE_AI_API_KEY for opencode itself.
             - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-gemini
+                  key: GEMINI_API_KEY
+            - name: GOOGLE_GENERATIVE_AI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: paseo-gemini
