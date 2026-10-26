@@ -159,3 +159,33 @@ annotation `traefik.ingress.kubernetes.io/router.middlewares:
   the few LAN `/32` host routes the agent egress policy allows
   (`deploy/base/paseo-lan-egress.yaml`).
 
+### Finding a device's IP via Kea DHCP leases
+
+LAN DHCP runs on OPNSense's **Kea** backend (not the legacy ISC dhcpd), configured via
+`infra/terraform/opnsense.tf` (`opnsense_kea_dhcpv4_subnet`/`..._reservation`
+resources). Devices without a static reservation (phones, laptops, the odd dual-boot
+HTPC box) don't show up in that file — to find one's current IP, query the live Kea
+leases through the same REST API the `opnsense` terraform provider uses
+(`browningluke/opnsense`, credentials in `infra/terraform/secrets.tfvars`):
+
+```sh
+sops exec-file infra/terraform/secrets.tfvars '
+CONTENT=$(cat {})   # read the decrypted temp file ONCE — see gotcha below
+KEY=$(printf "%s" "$CONTENT" | grep opnsense_api_key    | sed -E "s/.*= *\"([^\"]+)\".*/\1/")
+SECRET=$(printf "%s" "$CONTENT" | grep opnsense_api_secret | sed -E "s/.*= *\"([^\"]+)\".*/\1/")
+curl -s -k -u "$KEY:$SECRET" "https://192.168.1.1/api/kea/leases4/search"
+'
+```
+
+Response is JSON with a `rows` array; each row has `address`, `hostname` (often blank —
+plenty of client OSes don't send one), and `hwaddr`. Match by vendor OUI on the MAC, or
+by watching `expire` jump forward on a re-query right after the device boots/reconnects
+(Kea's lease `valid_lifetime` here is 4000s, so a freshly-renewed lease's `expire` is
+~4000s ahead of "now", well past any other idle device's).
+
+⚠️ **`sops exec-file`'s `{}` substitutes a FIFO, not a regular file — it can only be
+read once per invocation.** Referencing `{}` a second time (e.g. a second `grep {}` for
+the secret after already `grep`-ing the key) hangs forever waiting for a reader that
+will never come, since the first read already drained the pipe. Read it into a shell
+variable once (`CONTENT=$(cat {})`) and work from that in memory instead.
+
