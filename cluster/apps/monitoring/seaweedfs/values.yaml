@@ -15,10 +15,16 @@ master:
 volume:
   replicas: 1
   dataDirs:
+    # 20Gi (was 80Gi): the store holds only ~1.5 GiB of live data (mimir/loki/tempo
+    # S3 chunks under 7d retention). 80Gi was wildly over-provisioned — it let the
+    # volume quietly bloat and, because Longhorn schedules replicas by SPEC size, it
+    # could not fit a 2nd replica on worker-02 (stuck degraded). 20Gi is ~10x live
+    # usage and lets the volume become redundant. NOTE: shrinking a Longhorn PVC is
+    # not supported in place — requires deleting the StatefulSet + PVC to recreate.
     - name: data1
       type: "persistentVolumeClaim"
       storageClass: "longhorn"
-      size: "80Gi"
+      size: "20Gi"
       maxVolumes: 0
   idx:
     type: "persistentVolumeClaim"
