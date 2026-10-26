@@ -1,0 +1,48 @@
+---
+# Longhorn-native per-volume maintenance (apply to ALL volumes via the `default`
+# group — Longhorn auto-assigns the `default` group to any volume that carries no
+# explicit recurring-job labels, which is all of ours).
+#
+# WHY these exist (2026-10-26): the seaweedfs `data1` volume had ballooned to ~97 GiB
+# actualSize while holding only ~1.5 GiB of live data. The excess was (a) old snapshots
+# that were markRemoved but never engine-purged (a 30.7 GiB stuck one) plus a 31.9 GiB
+# leftover `expand` snapshot, and (b) blocks freed inside the volume that were never
+# trimmed back. The existing `longhorn-fstrim` CronJob only trims the NODE data disk
+# (thin-pool hygiene) — it does NOT reach inside individual volumes, so neither problem
+# was ever cleaned up automatically.
+#
+# concurrency: 1 everywhere — the 4-core N5105 nas host (worker-02) cannot sustain
+# parallel heavy Longhorn IO (a 5-wide replica rebuild crashlooped it on 2026-10-25),
+# so maintenance is deliberately serialized.
+
+# Reclaims space freed INSIDE each volume's filesystem — including blocks left behind
+# after snapshot coalescing — which node-level fstrim cannot touch. This is the job that
+# would have kept seaweedfs from bloating to 97 GiB.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: filesystem-trim-weekly
+  namespace: longhorn-system
+spec:
+  cron: "0 4 * * 0" # Sundays 04:00 (after the 03:00 node-level longhorn-fstrim)
+  task: filesystem-trim
+  groups:
+    - default
+  concurrency: 1
+  retain: 0
+---
+# Deletes system/expired snapshots and PURGES removed-but-stuck snapshots so they can't
+# accumulate for weeks (the 30.7 GiB markRemoved snapshot on seaweedfs sat un-purged
+# until it was found by hand).
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: snapshot-cleanup-weekly
+  namespace: longhorn-system
+spec:
+  cron: "30 4 * * 0" # Sundays 04:30, after the trim
+  task: snapshot-cleanup
+  groups:
+    - default
+  concurrency: 1
+  retain: 0
