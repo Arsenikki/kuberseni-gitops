@@ -2,7 +2,7 @@
 # paseo-generic — your personal/general Paseo daemon — chat, cluster debugging, ad-hoc (the `:tools` image variant:
 # + kubectl, jq, gh, yq, 1Password CLI, dig/nc/tcpdump/htop). Reach it over the
 # tailnet / port-forward and drive ad-hoc agents to poke at the cluster. Runs
-# claude, AI-Pro antigravity (agy), and opencode (Gemini via GEMINI_API_KEY).
+# claude and AI-Pro antigravity (agy).
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -58,7 +58,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-9
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -85,23 +85,6 @@ spec:
                 secretKeyRef:
                   name: paseo-agy
                   key: AGY_TOKEN
-                  optional: true
-            # Gemini API key for the `opencode` provider (see secrets.yaml paseo-gemini).
-            # opencode's "google" provider is the Vercel AI SDK's Google provider, which
-            # actually reads GOOGLE_GENERATIVE_AI_API_KEY (confirmed live — GEMINI_API_KEY
-            # alone produced "ProviderAuthError: Google Generative AI API key is missing").
-            # Set both: GEMINI_API_KEY for anything else that reads the more common name
-            # (and for forward-compat), GOOGLE_GENERATIVE_AI_API_KEY for opencode itself.
-            - name: GEMINI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: paseo-gemini
-                  key: GEMINI_API_KEY
-            - name: GOOGLE_GENERATIVE_AI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: paseo-gemini
-                  key: GEMINI_API_KEY
                   optional: true
             # Daemon Host-header allow-list: the 0.11.x daemon 403s a TCP client whose
             # Host isn't listed. SEPARATE from the PASEO_PASSWORD bearer auth above — a
