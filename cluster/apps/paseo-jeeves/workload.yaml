@@ -63,16 +63,17 @@ spec:
       automountServiceAccountToken: false # no in-pod k8s API identity (no infra access here)
       securityContext:
         runAsUser: 1000
+        runAsGroup: 1000
         runAsNonRoot: true
         fsGroup: 1000 # make the PVC writable by uid 1000 (all containers)
         fsGroupChangePolicy: OnRootMismatch # skip the recursive chown when the PVC root already matches (fast rolls; the data PVC has ~20k+ files)
       initContainers:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
-        # sidecar image (same jeeves:v1.40.0 tag the token-broker runs) into a shared
+        # sidecar image (same jeeves:v1.49.0 tag the token-broker runs) into a shared
         # /opt/bin on PATH, so git's `!jeeves git-credential` helper resolves in the
         # daemon container. Keeps the shared image free of jeeves-specific code.
         - name: inject-jeeves-bin
-          image: ghcr.io/arsenikki/jeeves:v1.40.0
+          image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
           command: ["sh","-c","cp /usr/local/bin/jeeves /opt/bin/jeeves && chmod 0755 /opt/bin/jeeves"]
           volumeMounts:
@@ -81,12 +82,12 @@ spec:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { cpu: 100m, memory: 32Mi }
       containers:
-        # The Paseo 0.11.x daemon (runs Claude Code agents in worktrees). Now the SHARED
+        # The Paseo 0.11.x daemon (runs Claude Code + Antigravity agents in worktrees). Now the SHARED
         # paseo-homelab image (same as paseo-apps/paseo-generic) — gains agy + newer
-        # claude-code + the baked Go toolchain; the jeeves binary is injected above and
+        # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-6
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -109,6 +110,12 @@ spec:
               valueFrom: { secretKeyRef: { name: jeeves-secrets, key: PASEO_PASSWORD } }
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom: { secretKeyRef: { name: jeeves-secrets, key: CLAUDE_CODE_OAUTH_TOKEN } }
+            - name: AGY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-agy
+                  key: AGY_TOKEN
+                  optional: true
             # Persist Claude Code's session transcripts on the PVC (survive restarts).
             - name: CLAUDE_CONFIG_DIR
               value: /data/paseo/claude
@@ -163,7 +170,7 @@ spec:
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker
-          image: ghcr.io/arsenikki/jeeves:v1.40.0
+          image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "token-broker"]
           envFrom:
@@ -184,9 +191,9 @@ spec:
         # Keeps base clones on the PVC for worktrees. Discovery is the GitHub App
         # installation (jeeves#175): repo-sync lists the installation's repos via the
         # App token and clones each under /data/paseo/repos/<name> — no repos.yaml, no
-        # allowlist. Image bumped to v1.40.0 (the App-install repo-sync).
+        # allowlist.
         - name: repo-sync
-          image: ghcr.io/arsenikki/jeeves:v1.40.0
+          image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "repo-sync"]
           envFrom:
