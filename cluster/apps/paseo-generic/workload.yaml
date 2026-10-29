@@ -56,6 +56,17 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
+      # Prefer worker-01 (~10 cores) over worker-02 (3 vCPU): agent sessions + go builds
+      # sustain ~1 core and saturated worker-02. Soft, so it still schedules if worker-01 is down.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: [worker-01]
       containers:
         - name: paseo
           image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
@@ -119,8 +130,8 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
+              memory: 768Mi # observed ~800Mi
             limits:
               cpu: "2"
               memory: 1536Mi
