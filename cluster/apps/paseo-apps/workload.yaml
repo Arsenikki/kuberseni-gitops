@@ -32,6 +32,19 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
+      # Soft-spread the Paseo daemons (paseo-apps/generic/jeeves) across workers: they
+      # are the heaviest pods and two had landed on 3-vCPU worker-02. Soft because there
+      # are 3 daemons (RWO PVCs) on 2 workers.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                namespaceSelector: {}
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/part-of: paseo-homelab
       containers:
         - name: paseo
           image: ghcr.io/arsenikki/paseo-homelab:0.11.2-5
