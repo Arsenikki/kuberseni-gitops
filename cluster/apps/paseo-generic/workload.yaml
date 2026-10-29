@@ -133,10 +133,12 @@ spec:
           resources:
             requests:
               cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
-              memory: 768Mi # observed ~800Mi
+              memory: 1Gi # observed ~800Mi idle-ish, ~1.5Gi under agent load
+            # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
+            # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
             limits:
               cpu: "2"
-              memory: 1536Mi
+              memory: 3Gi
           volumeMounts:
             - name: data
               mountPath: /data/paseo
