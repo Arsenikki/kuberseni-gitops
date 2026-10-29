@@ -67,6 +67,19 @@ spec:
         runAsNonRoot: true
         fsGroup: 1000 # make the PVC writable by uid 1000 (all containers)
         fsGroupChangePolicy: OnRootMismatch # skip the recursive chown when the PVC root already matches (fast rolls; the data PVC has ~20k+ files)
+      # Soft-spread the Paseo daemons (paseo-apps/generic/jeeves) across workers: they
+      # are the heaviest pods and two had landed on 3-vCPU worker-02. Soft because there
+      # are 3 daemons (RWO PVCs) on 2 workers.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                namespaceSelector: {}
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/part-of: paseo-homelab
       initContainers:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
         # sidecar image (same jeeves:v1.49.0 tag the token-broker runs) into a shared
