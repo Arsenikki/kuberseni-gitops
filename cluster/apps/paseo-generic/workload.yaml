@@ -130,6 +130,13 @@ spec:
               port: 6767
             initialDelaySeconds: 10
             periodSeconds: 10
+          # Same as paseo-apps/paseo-jeeves: restart a daemon that stops accepting connections
+          # (a crashed worker the supervisor fails to respawn) instead of leaving it NotReady.
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 20
           resources:
             requests:
               cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
