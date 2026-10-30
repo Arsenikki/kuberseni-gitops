@@ -1,0 +1,43 @@
+name: Image check
+# Fail a PR that points a workload at an image tag that doesn't exist in its registry.
+# #788 merged a bump to paseo-homelab:0.11.2-11 whose build never ran (Actions blocked),
+# leaving paseo-generic in ImagePullBackOff for ~22h. Checks only images on ADDED lines
+# of the PR diff (inline `image: repo:tag` refs; helm repository/tag splits are skipped).
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    paths: ['cluster/**']
+permissions:
+  contents: read
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Private ghcr.io/arsenikki packages need a token with read:packages
+      # (repo secret GHCR_READ_TOKEN); public images resolve anonymously.
+      - name: Log in to ghcr.io
+        env:
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        if: env.GHCR_READ_TOKEN != ''
+        run: echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+      - name: Check added image refs exist
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          imgs=$(git diff "$BASE"...HEAD -- 'cluster/**.yaml' 'cluster/**.yml' \
+            | grep -E '^\+[^+].*[[:space:]{,]image:[[:space:]]*[^[:space:]]' \
+            | sed -E "s/.*image:[[:space:]]*[\"']?([^\"' ,}#]+).*/\1/" \
+            | sort -u)
+          if [ -z "$imgs" ]; then echo "no image refs changed"; exit 0; fi
+          fail=0
+          for img in $imgs; do
+            if docker buildx imagetools inspect "$img" >/dev/null 2>&1; then
+              echo "ok      $img"
+            else
+              echo "::error::image not found (or not readable): $img"
+              fail=1
+            fi
+          done
+          exit $fail
