@@ -1,0 +1,27 @@
+---
+# Runner namespace for every repository's ARC scale set.
+#
+# Owned by the arc-controller Application (wave 5), not arc-runners: the
+# controller chart (watchSingleNamespace) puts its watch Role in this namespace,
+# so the namespace must exist before the controller syncs.
+#
+# PSA "privileged": each runner pod has a docker-in-docker sidecar (privileged:
+# true — rootful dockerd needs it) because the CI jobs build and push container
+# images. Talos enforces the baseline profile everywhere else, which would reject
+# these pods. Same pattern as the chrome / longhorn / monitoring namespaces.
+#
+# A privileged dind container is node-root-equivalent for whatever the job runs —
+# including PR code written by Jeeves' agents. The containment is:
+#   - only PRIVATE repos have scale sets (no fork PRs);
+#   - pods are ephemeral (one job, then deleted) with no ServiceAccount token;
+#   - networkpolicy.yaml limits egress to DNS + the public internet (no cluster
+#     services, no LAN, no nodes/apiserver).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arc-runners
+  labels:
+    app.kubernetes.io/part-of: arc
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: privileged

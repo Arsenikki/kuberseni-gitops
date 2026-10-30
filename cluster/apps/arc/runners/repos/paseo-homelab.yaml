@@ -1,0 +1,6 @@
+---
+# Runner scale set for Arsenikki/paseo-homelab. Workflows target it with
+# `runs-on: arc-paseo-homelab` (the scale set name is the runs-on label).
+githubConfigUrl: https://github.com/Arsenikki/paseo-homelab
+runnerScaleSetName: arc-paseo-homelab
+maxRunners: 1

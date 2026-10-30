@@ -65,6 +65,16 @@
       "groupName": "media app patches",
       "addLabels": ["group/media"]
     },
+    // ARC: the controller and scale-set charts must stay on the SAME version (the
+    // controller deletes runner scale sets of another major.minor), and the runner
+    // image must stay fresh (GitHub stops sending jobs to self-hosted runners more
+    // than ~30 days behind a runner release) — so they move together, promptly.
+    {
+      "description": ["Group ARC charts + runner/dind images"],
+      "matchFileNames": ["cluster/argocd/apps/arc-*.yaml", "cluster/apps/arc/**"],
+      "groupName": "actions-runner-controller",
+      "addLabels": ["group/arc"]
+    },
     // commit message topics
     {
       "matchDatasources": ["helm"],
@@ -253,6 +263,15 @@
         "repo = \"https://github.com/(?<depName>[^\"]+)\"\\nrev = \"(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": ["ARC runner pod images (plain `image: repo:tag` strings inside the scale-set Helm values)"],
+      "managerFilePatterns": ["/(^|/)cluster/apps/arc/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "image: (?<depName>[a-z0-9./-]+):(?<currentValue>[0-9][^\\s@\"]*)"
+      ],
+      "datasourceTemplate": "docker"
     }
   ]
 }

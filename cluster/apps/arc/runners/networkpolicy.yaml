@@ -1,0 +1,84 @@
+---
+# ==========================================================================
+# CiliumNetworkPolicy: ARC runner pods — egress to DNS + the public internet only
+# ==========================================================================
+# WHY
+#   Runner pods execute arbitrary CI code (including PR code from Jeeves' agents)
+#   next to a PRIVILEGED docker-in-docker sidecar. Without egress restriction a job
+#   could reach in-cluster services (NATS, flock, Postgres, ArgoCD), the LAN
+#   (Proxmox, TrueNAS, OPNSense) or the kube-apiserver. CI only needs the internet:
+#   GitHub (+ Actions cache/results, ghcr.io), Docker Hub / mirror.gcr.io, the Go
+#   and npm registries, Ubuntu/Debian archives.
+#
+# SEMANTICS (same as chrome/networkpolicy.yaml)
+#   - Selecting every pod in the namespace with an egress section makes egress
+#     DEFAULT-DENY; only DNS to kube-dns and "world" are allowed.
+#   - "world" includes the LAN, so egressDeny carves the private ranges back out
+#     (deny wins).
+#   - Traffic from containers INSIDE dind (job services, BuildKit RUN steps) is
+#     NATed through the pod's network namespace, so this policy covers it too.
+#   - L4 only: this cluster has NO Cilium L7 proxy — an L7 `rules: dns:` block or
+#     toFQDNs would make the whole policy Invalid and silently unenforced.
+# ==========================================================================
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: arc-runner-egress
+  namespace: arc-runners
+  labels:
+    app.kubernetes.io/part-of: arc
+spec:
+  endpointSelector: {}
+
+  # Nothing needs to reach a runner pod (job service containers such as the e2e
+  # Postgres publish on the pod IP). A single empty rule = ingress default-deny
+  # with nothing allowed (an empty list would leave ingress unenforced).
+  ingress:
+    - {}
+
+  egress:
+    # 1) DNS to CoreDNS (L4 only).
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - { port: "53", protocol: UDP }
+            - { port: "53", protocol: TCP }
+    # 2) The public internet (private ranges carved out below).
+    - toEntities:
+        - world
+
+  egressDeny:
+    # Private IPv4 (pods 10.244/16 and services 10.96/12 included) + link-local
+    # (169.254, metadata) + CGNAT (100.64, Tailscale).
+    - toCIDR:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16
+        - 100.64.0.0/10
+    - toCIDR:
+        - fc00::/7
+        - fe80::/10
+    # Node / control-plane identities (not the whole "cluster" entity — that would
+    # also block kube-dns).
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+# ==========================================================================
+# CAVEATS — VALIDATE ON THE LIVE CLUSTER (do not trust the YAML):
+#   1. The policy is valid (an Invalid CNP is silently unenforced):
+#        kubectl -n arc-runners get cnp arc-runner-egress    # VALID must be True
+#   2. From inside a running runner pod (start a job, then
+#      kubectl -n arc-runners exec <pod> -c runner -- sh -c '...'):
+#        curl -m5 http://192.168.1.1                  -> MUST fail/timeout
+#        curl -m5 http://argocd-server.argocd.svc     -> MUST fail
+#        curl -m5 -k https://192.168.1.40:6443        -> MUST fail
+#        curl -m5 https://api.github.com              -> MUST succeed
+#   3. Watch drops while a job runs:
+#        hubble observe -n arc-runners --verdict DROPPED -f
+#   Re-run after every Cilium upgrade.
+# ==========================================================================

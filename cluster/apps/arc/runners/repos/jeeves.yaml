@@ -1,0 +1,6 @@
+---
+# Runner scale set for Arsenikki/jeeves. Workflows target it with
+# `runs-on: arc-jeeves` (the scale set name is the runs-on label).
+githubConfigUrl: https://github.com/Arsenikki/jeeves
+runnerScaleSetName: arc-jeeves
+maxRunners: 2 # a push to main runs prek and build/test at the same time
