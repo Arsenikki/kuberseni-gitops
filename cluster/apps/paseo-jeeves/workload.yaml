@@ -102,7 +102,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }

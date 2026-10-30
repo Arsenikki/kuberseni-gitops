@@ -47,7 +47,7 @@ spec:
                     app.kubernetes.io/part-of: paseo-homelab
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-5
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
