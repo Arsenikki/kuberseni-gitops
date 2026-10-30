@@ -31,7 +31,7 @@ func TestFlow(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		_, _ = io.WriteString(w, `{"id":4242,"slug":"arsenikki-arc-runners","pem":"-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----\n","html_url":"https://github.com/apps/arsenikki-arc-runners"}`)
+		_, _ = io.WriteString(w, `{"id":4242,"slug":"arsenikki-arc-runners","pem":"-----BEGIN TEST KEY-----\nabc\n-----END TEST KEY-----\n","html_url":"https://github.com/apps/arsenikki-arc-runners"}`)
 	}))
 	defer api.Close()
 
@@ -77,7 +77,7 @@ func TestFlow(t *testing.T) {
 	for _, fl := range tpl.Fields {
 		got[fl["label"]] = fl["value"]
 	}
-	if tpl.Title != "arc-github-app" || got["github_app_id"] != "4242" || !strings.Contains(got["github_app_private_key"], "BEGIN RSA PRIVATE KEY") {
+	if tpl.Title != "arc-github-app" || got["github_app_id"] != "4242" || !strings.Contains(got["github_app_private_key"], "BEGIN TEST KEY") {
 		t.Fatalf("template = %s", raw)
 	}
 
