@@ -14,12 +14,11 @@ export default defineConfig({
       title: "Homelab",
       description:
         "Knowledge base for the kuberseni Talos Kubernetes homelab — infrastructure, GitOps, apps, and runbooks.",
+      // docs/homelab is a lightweight overview (#780); the deeper KB lives in the
+      // private companion repo. Only list pages that exist — Starlight fails the
+      // build on a sidebar slug with no page.
       sidebar: [
         { label: "Overview", link: "/" },
-        { label: "Infrastructure", items: ["cluster", "networking", "storage"] },
-        { label: "Platform", items: ["gitops", "secrets", "applications"] },
-        { label: "Automation", items: ["jeeves"] },
-        { label: "Runbooks", items: [{ autogenerate: { directory: "runbooks" } }] },
         { label: "Reference (generated)", items: [{ autogenerate: { directory: "generated" } }] },
       ],
     }),
