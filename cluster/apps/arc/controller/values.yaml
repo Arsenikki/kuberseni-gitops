@@ -1,0 +1,28 @@
+---
+# gha-runner-scale-set-controller values (chart 0.15.1). Defaults:
+# https://github.com/actions/actions-runner-controller/blob/gha-runner-scale-set-0.15.1/charts/gha-runner-scale-set-controller/values.yaml
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  # Pinned so the scale sets can name it (Argo renders with `helm template`, where
+  # the scale-set chart's `lookup` of the controller finds nothing).
+  name: arc-gha-rs-controller
+
+flags:
+  logLevel: info # chart default is debug
+  logFormat: json
+  # Only reconcile runner scale sets in the runner namespace (narrower RBAC).
+  watchSingleNamespace: arc-runners
+  # Don't copy ArgoCD's tracking label onto the objects ARC creates (listeners,
+  # EphemeralRunnerSets, Roles) — label tracking made Argo prune them (#3533).
+  # This cluster tracks by annotation, so this is belt and braces.
+  excludeLabelPropagationPrefixes:
+    - argocd.argoproj.io/instance
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

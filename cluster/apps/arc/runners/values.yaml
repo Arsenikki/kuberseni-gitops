@@ -1,0 +1,147 @@
+---
+# Shared values for every repository's gha-runner-scale-set release (chart 0.15.1).
+# Per-repo values (githubConfigUrl, runnerScaleSetName, maxRunners) live in repos/.
+# Defaults:
+# https://github.com/actions/actions-runner-controller/blob/gha-runner-scale-set-0.15.1/charts/gha-runner-scale-set/values.yaml
+
+githubConfigSecret: arc-github-app # externalsecret.yaml
+
+minRunners: 0 # scale to zero: a runner pod exists only while a job runs
+
+# Explicit, because Argo renders with `helm template` and the chart's `lookup` of
+# the controller returns nothing there (#3043). Matches arc-controller.yaml
+# (releaseName arc) + controller/values.yaml serviceAccount.name.
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-gha-rs-controller
+
+# One listener pod per scale set lives in arc-systems (a long-poll to GitHub).
+listenerTemplate:
+  spec:
+    containers:
+      - name: listener
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+
+# Full runner pod spec instead of `containerMode: dind`: the chart hard-codes the
+# dind sidecar in that mode (no image pin, args, resources or /var/lib/docker
+# mount), and this cluster needs dockerd started with a lower MTU. This is the
+# chart's dind layout, spelled out.
+template:
+  spec:
+    # ISOLATION — load-bearing. The dind sidecar is privileged, so a job can become
+    # root on whatever node runs it (`docker run --privileged -v /dev:/dev ...`),
+    # and from there read that node's disks and secrets; no NetworkPolicy contains
+    # that. Runner pods therefore only schedule on a node dedicated to CI: labelled
+    # kuberseni.io/arc-runner=true and tainted kuberseni.io/arc-runner=true:NoSchedule
+    # so nothing else (incl. Longhorn) lands there. Until such a node exists, runner
+    # pods stay Pending — fail-safe: they can never land next to 1Password Connect,
+    # ArgoCD or Longhorn data on worker-01/02. See README "Isolation".
+    nodeSelector:
+      kuberseni.io/arc-runner: "true"
+      kubernetes.io/arch: amd64 # images are built for the node's arch (no QEMU)
+    tolerations:
+      - key: kuberseni.io/arc-runner
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    # Builds yield first under pressure and never preempt app pods.
+    priorityClassName: kuberseni-low
+    # dind mode needs no Kubernetes API access.
+    automountServiceAccountToken: false
+    initContainers:
+      # Copies the runner's externals (node runtimes for JS actions) where the dind
+      # daemon can mount them into container jobs/actions.
+      - name: init-dind-externals
+        image: ghcr.io/actions/actions-runner:2.338.2
+        command: [cp, -r, /home/runner/externals/., /home/runner/tmpDir/]
+        volumeMounts:
+          - name: dind-externals
+            mountPath: /home/runner/tmpDir
+      # Native sidecar (restartPolicy: Always) docker daemon.
+      - name: dind
+        image: docker:29.9.2-dind # same engine version as the runner's docker CLI
+        restartPolicy: Always
+        args:
+          - dockerd
+          - --host=unix:///var/run/docker.sock
+          - --group=$(DOCKER_GROUP_GID)
+          # Pod MTU: the default route is mtu 1370 (Cilium VXLAN -50, WireGuard
+          # -80). dockerd defaults its bridges to 1500, which stalls TLS from
+          # nested containers (BuildKit RUN steps, apt/npm/go downloads, pushes).
+          # Re-measure (`ip route show default` in a pod) if Cilium's tunnel or
+          # encryption settings change.
+          - --mtu=1370
+          - --default-network-opt=bridge=com.docker.network.driver.mtu=1370
+          # Docker Hub pulls come from the homelab's single NAT IP (anonymous limit
+          # 100/6h). Google's public Docker Hub cache absorbs dockerd's pulls
+          # (falls back to Docker Hub on a miss). BuildKit's own base-image pulls
+          # don't go through this.
+          - --registry-mirror=https://mirror.gcr.io
+        env:
+          - name: DOCKER_GROUP_GID
+            value: "123" # the runner user's docker group in actions-runner
+        securityContext:
+          privileged: true
+        startupProbe:
+          exec:
+            command: [docker, info]
+          initialDelaySeconds: 0
+          failureThreshold: 24
+          periodSeconds: 5
+        resources:
+          requests:
+            cpu: 750m
+            memory: 1Gi
+            ephemeral-storage: 6Gi
+          limits:
+            memory: 5Gi # BuildKit's `go build` / npm installs run here
+            ephemeral-storage: 32Gi
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+          - name: dind-externals
+            mountPath: /home/runner/externals
+          - name: dind-storage
+            mountPath: /var/lib/docker
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:2.338.2
+        command: [/home/runner/run.sh]
+        env:
+          - name: DOCKER_HOST
+            value: unix:///var/run/docker.sock
+          - name: RUNNER_WAIT_FOR_DOCKER_IN_SECONDS
+            value: "120"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+            ephemeral-storage: 2Gi
+          limits:
+            memory: 3Gi # go test / golangci-lint / Playwright run here
+            ephemeral-storage: 16Gi
+        volumeMounts:
+          - name: work
+            mountPath: /home/runner/_work
+          - name: dind-sock
+            mountPath: /var/run
+    volumes:
+      - name: work
+        emptyDir:
+          sizeLimit: 16Gi
+      - name: dind-sock
+        emptyDir: {}
+      - name: dind-externals
+        emptyDir: {}
+      # dockerd's data root on a real filesystem (not overlay-on-overlay), bounded
+      # and thrown away with the pod. Every job starts with an empty image store.
+      - name: dind-storage
+        emptyDir:
+          sizeLimit: 30Gi

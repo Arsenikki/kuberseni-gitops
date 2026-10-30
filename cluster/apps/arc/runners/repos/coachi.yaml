@@ -1,0 +1,6 @@
+---
+# Runner scale set for Arsenikki/coachi. Workflows target it with
+# `runs-on: arc-coachi` (the scale set name is the runs-on label).
+githubConfigUrl: https://github.com/Arsenikki/coachi
+runnerScaleSetName: arc-coachi
+maxRunners: 1
