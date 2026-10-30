@@ -215,7 +215,8 @@ data:
         light.living_room_corner_light_02,
         light.lobby_candle_light_01,
         light.lobby_candle_light_02,
-        light.lobby_candle_light_03
+        light.lobby_candle_light_03,
+        light.bedroom_light_01
       ]
       prefer_rgb_color: false
       transition: 45
