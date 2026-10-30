@@ -1,6 +1,9 @@
 ---
 controller:
   type: statefulset
+  annotations:
+    # restart HA when home-assistant-config-yaml changes (subPath mounts never refresh)
+    reloader.stakater.com/auto: "true"
 
 image:
   repository: ghcr.io/home-assistant/home-assistant
