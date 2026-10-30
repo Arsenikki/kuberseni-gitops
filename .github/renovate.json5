@@ -73,7 +73,12 @@
       "description": ["Group ARC charts + runner/dind images"],
       "matchFileNames": ["cluster/argocd/apps/arc-*.yaml", "cluster/apps/arc/**"],
       "groupName": "actions-runner-controller",
-      "addLabels": ["group/arc"]
+      "addLabels": ["group/arc"],
+      // The charts and the runner image come from ghcr, which has no release
+      // timestamps; without this the 3-day minimumReleaseAge above marks them
+      // pending forever and no PR is ever opened. (The images are picked up by the
+      // helm-values manager from cluster/apps/arc/runners/values.yaml.)
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     // commit message topics
     {
@@ -263,15 +268,6 @@
         "repo = \"https://github.com/(?<depName>[^\"]+)\"\\nrev = \"(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "github-tags"
-    },
-    {
-      "customType": "regex",
-      "description": ["ARC runner pod images (plain `image: repo:tag` strings inside the scale-set Helm values)"],
-      "managerFilePatterns": ["/(^|/)cluster/apps/arc/.+\\.ya?ml$/"],
-      "matchStrings": [
-        "image: (?<depName>[a-z0-9./-]+):(?<currentValue>[0-9][^\\s@\"]*)"
-      ],
-      "datasourceTemplate": "docker"
     }
   ]
 }

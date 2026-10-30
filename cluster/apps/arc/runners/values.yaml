@@ -33,11 +33,22 @@ listenerTemplate:
 # chart's dind layout, spelled out.
 template:
   spec:
-    # The only node with room for builds: worker-02 is a weak, busy NAS host and
-    # the control planes are tainted. Also guarantees amd64 (images are built for
-    # the node's arch — no QEMU anywhere).
+    # ISOLATION — load-bearing. The dind sidecar is privileged, so a job can become
+    # root on whatever node runs it (`docker run --privileged -v /dev:/dev ...`),
+    # and from there read that node's disks and secrets; no NetworkPolicy contains
+    # that. Runner pods therefore only schedule on a node dedicated to CI: labelled
+    # kuberseni.io/arc-runner=true and tainted kuberseni.io/arc-runner=true:NoSchedule
+    # so nothing else (incl. Longhorn) lands there. Until such a node exists, runner
+    # pods stay Pending — fail-safe: they can never land next to 1Password Connect,
+    # ArgoCD or Longhorn data on worker-01/02. See README "Isolation".
     nodeSelector:
-      kubernetes.io/hostname: worker-01
+      kuberseni.io/arc-runner: "true"
+      kubernetes.io/arch: amd64 # images are built for the node's arch (no QEMU)
+    tolerations:
+      - key: kuberseni.io/arc-runner
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
     # Builds yield first under pressure and never preempt app pods.
     priorityClassName: kuberseni-low
     # dind mode needs no Kubernetes API access.

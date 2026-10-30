@@ -11,11 +11,12 @@
 # these pods. Same pattern as the chrome / longhorn / monitoring namespaces.
 #
 # A privileged dind container is node-root-equivalent for whatever the job runs —
-# including PR code written by Jeeves' agents. The containment is:
-#   - only PRIVATE repos have scale sets (no fork PRs);
-#   - pods are ephemeral (one job, then deleted) with no ServiceAccount token;
-#   - networkpolicy.yaml limits egress to DNS + the public internet (no cluster
-#     services, no LAN, no nodes/apiserver).
+# including PR code written by Jeeves' agents and every dependency it installs.
+# The ONLY real containment is where the pods run: runners/values.yaml pins them to
+# a dedicated, tainted CI node (see README "Isolation"). The rest only limits
+# UNPRIVILEGED mistakes: private repos only (no fork PRs), ephemeral pods without a
+# ServiceAccount token, and the egress policy in runners/networkpolicy.yaml — which
+# a job that escapes to the node can bypass.
 apiVersion: v1
 kind: Namespace
 metadata:

@@ -28,9 +28,15 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"flag"
 	"fmt"
@@ -40,7 +46,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -140,7 +149,9 @@ type flow struct {
 	done  chan error
 	hc    *http.Client
 	page  *template.Template
-	slug  string
+
+	mu  sync.Mutex
+	app conversion // set once /created stored the App; its key stays in memory only
 }
 
 func newFlow(c config, base string) *flow {
@@ -153,12 +164,20 @@ func newFlow(c config, base string) *flow {
 	}
 }
 
-func (f *flow) mux() *http.ServeMux {
+func (f *flow) mux() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("/", f.start)
 	m.HandleFunc("/created", f.created)
 	m.HandleFunc("/installed", f.installed)
-	return m
+	host := strings.TrimPrefix(f.base, "http://")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only our own origin: blocks DNS-rebinding pages from reading / (and the state).
+		if r.Host != host {
+			http.Error(w, "unexpected Host", http.StatusMisdirectedRequest)
+			return
+		}
+		m.ServeHTTP(w, r)
+	})
 }
 
 func (f *flow) finish(err error) {
@@ -205,7 +224,6 @@ func (f *flow) created(w http.ResponseWriter, r *http.Request) {
 		f.finish(err)
 		return
 	}
-	f.slug = conv.Slug
 	if err := f.store(r.Context(), conv); err != nil {
 		// The code is single-use: don't lose the key. Park it in a 0600 file.
 		path, werr := savePEM(conv)
@@ -217,6 +235,9 @@ func (f *flow) created(w http.ResponseWriter, r *http.Request) {
 		f.finish(errors.New(msg))
 		return
 	}
+	f.mu.Lock()
+	f.app = conv
+	f.mu.Unlock()
 	fmt.Printf("Created App %q (id %d) and stored its key in 1Password.\n", conv.Slug, conv.ID)
 	fmt.Printf("Now install it — select ONLY these repositories: %s\n", f.c.repos)
 	http.Redirect(w, r, fmt.Sprintf("%s/apps/%s/installations/new", f.c.web, conv.Slug), http.StatusFound)
@@ -285,13 +306,30 @@ func savePEM(conv conversion) (string, error) {
 	return path, os.WriteFile(path, []byte(conv.PEM), 0o600)
 }
 
-// installed records the installation id GitHub passes to the setup URL.
+// installed runs when GitHub redirects to the setup URL after the install. It
+// doesn't trust the query string (any page in the browser could hit this local
+// URL): it requires that /created succeeded in this run, then asks GitHub — as the
+// App, with a JWT signed by the key it just received — for the installation, and
+// refuses unless it is limited to exactly the expected repositories. The key is
+// repo-admin on whatever the installation covers; an "All repositories" install
+// would include the public GitOps repo that ArgoCD applies with cluster-admin.
 func (f *flow) installed(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("installation_id")
-	if id == "" || strings.Trim(id, "0123456789") != "" {
-		http.Error(w, "missing or invalid installation_id", http.StatusBadRequest)
+	f.mu.Lock()
+	app := f.app
+	f.mu.Unlock()
+	if app.ID == 0 {
+		http.Error(w, "the App hasn't been created in this run yet — start from "+f.base, http.StatusConflict)
 		return
 	}
+	inst, err := f.checkInstallation(r.Context(), app)
+	if err != nil {
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, "<p>%s</p><p>Fix it on GitHub (Settings → Applications → %s → Configure), then <b>reload this page</b>.</p>",
+			template.HTMLEscapeString(err.Error()), template.HTMLEscapeString(app.Slug))
+		fmt.Println("Installation not accepted yet:", err)
+		return
+	}
+	id := strconv.FormatInt(inst, 10)
 	out, err := exec.CommandContext(r.Context(), f.c.op, "item", "edit", f.c.item, "--vault", f.c.vault,
 		"github_app_installation_id[text]="+id).CombinedOutput()
 	if err != nil {
@@ -300,9 +338,120 @@ func (f *flow) installed(w http.ResponseWriter, r *http.Request) {
 		f.finish(errors.New(msg))
 		return
 	}
-	fmt.Printf("Installed (installation id %s) and stored it in 1Password.\n", id)
-	fmt.Fprintf(w, "<p>All set: the App is installed and 1Password item <b>%s</b> is complete. You can close this tab.</p>", template.HTMLEscapeString(f.c.item))
+	fmt.Printf("Installed on %s (installation id %s) and stored it in 1Password.\n", f.c.repos, id)
+	fmt.Fprintf(w, "<p>All set: the App is installed on exactly the expected repositories and 1Password item <b>%s</b> is complete. You can close this tab.</p>", template.HTMLEscapeString(f.c.item))
 	f.finish(nil)
+}
+
+// checkInstallation returns the App's single installation id after verifying it is
+// limited to exactly f.c.repos.
+func (f *flow) checkInstallation(ctx context.Context, app conversion) (int64, error) {
+	jwt, err := appJWT(app.ID, app.PEM, time.Now())
+	if err != nil {
+		return 0, err
+	}
+	var insts []struct {
+		ID                  int64  `json:"id"`
+		RepositorySelection string `json:"repository_selection"`
+		Account             struct {
+			Login string `json:"login"`
+		} `json:"account"`
+	}
+	if err := f.api(ctx, http.MethodGet, "/app/installations", "Bearer "+jwt, &insts); err != nil {
+		return 0, err
+	}
+	if len(insts) != 1 {
+		return 0, fmt.Errorf("expected exactly one installation of the App, found %d", len(insts))
+	}
+	inst := insts[0]
+	if inst.RepositorySelection != "selected" {
+		return 0, fmt.Errorf("the installation covers %q repositories — choose \"Only select repositories\" and pick %s", inst.RepositorySelection, f.c.repos)
+	}
+	var tok struct {
+		Token string `json:"token"`
+	}
+	if err := f.api(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", inst.ID), "Bearer "+jwt, &tok); err != nil {
+		return 0, err
+	}
+	var list struct {
+		Repositories []struct {
+			Name string `json:"name"`
+		} `json:"repositories"`
+	}
+	if err := f.api(ctx, http.MethodGet, "/installation/repositories?per_page=100", "token "+tok.Token, &list); err != nil {
+		return 0, err
+	}
+	got := map[string]bool{}
+	for _, r := range list.Repositories {
+		got[r.Name] = true
+	}
+	want := map[string]bool{}
+	var missing, extra []string
+	for _, r := range strings.Split(f.c.repos, ",") {
+		if r = strings.TrimSpace(r); r != "" {
+			want[r] = true
+			if !got[r] {
+				missing = append(missing, r)
+			}
+		}
+	}
+	for r := range got {
+		if !want[r] {
+			extra = append(extra, r)
+		}
+	}
+	if len(missing)+len(extra) > 0 {
+		sort.Strings(extra)
+		return 0, fmt.Errorf("the installation's repositories don't match: missing %v, unexpected %v (want exactly %s)", missing, extra, f.c.repos)
+	}
+	return inst.ID, nil
+}
+
+// api calls the GitHub REST API and decodes a 2xx JSON response into out.
+func (f *flow) api(ctx context.Context, method, path, auth string, out any) error {
+	req, _ := http.NewRequestWithContext(ctx, method, f.c.api+path, nil)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Authorization", auth)
+	resp, err := f.hc.Do(req)
+	if err != nil {
+		return fmt.Errorf("%s %s: %w", method, path, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("%s %s: HTTP %d", method, path, resp.StatusCode)
+	}
+	return json.NewDecoder(resp.Body).Decode(out)
+}
+
+// appJWT signs a GitHub App JWT (RS256, valid ~9 minutes, backdated 60s for clock
+// skew) with the App's private key.
+func appJWT(appID int64, keyPEM string, now time.Time) (string, error) {
+	block, _ := pem.Decode([]byte(keyPEM))
+	if block == nil {
+		return "", errors.New("App private key is not PEM")
+	}
+	var key *rsa.PrivateKey
+	if k, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+		key = k
+	} else if k8, err8 := x509.ParsePKCS8PrivateKey(block.Bytes); err8 == nil {
+		rk, ok := k8.(*rsa.PrivateKey)
+		if !ok {
+			return "", errors.New("App private key is not RSA")
+		}
+		key = rk
+	} else {
+		return "", fmt.Errorf("parse App private key: %w", err)
+	}
+	enc := base64.RawURLEncoding
+	header := enc.EncodeToString([]byte(`{"alg":"RS256","typ":"JWT"}`))
+	claims, _ := json.Marshal(map[string]any{"iat": now.Add(-60 * time.Second).Unix(), "exp": now.Add(9 * time.Minute).Unix(), "iss": strconv.FormatInt(appID, 10)})
+	signing := header + "." + enc.EncodeToString(claims)
+	sum := sha256.Sum256([]byte(signing))
+	sig, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, sum[:])
+	if err != nil {
+		return "", fmt.Errorf("sign JWT: %w", err)
+	}
+	return signing + "." + enc.EncodeToString(sig), nil
 }
 
 func openBrowser(url string) {

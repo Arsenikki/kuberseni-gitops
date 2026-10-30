@@ -3,10 +3,13 @@
 # CiliumNetworkPolicy: ARC runner pods — egress to DNS + the public internet only
 # ==========================================================================
 # WHY
-#   Runner pods execute arbitrary CI code (including PR code from Jeeves' agents)
-#   next to a PRIVILEGED docker-in-docker sidecar. Without egress restriction a job
-#   could reach in-cluster services (NATS, flock, Postgres, ArgoCD), the LAN
-#   (Proxmox, TrueNAS, OPNSense) or the kube-apiserver. CI only needs the internet:
+#   Runner pods execute arbitrary CI code (including PR code from Jeeves' agents).
+#   Without egress restriction a job could reach in-cluster services (NATS, flock,
+#   Postgres, ArgoCD), the LAN (Proxmox, TrueNAS, OPNSense) or the kube-apiserver.
+#   LIMIT: this contains ordinary job code only. A job can use the PRIVILEGED dind
+#   sidecar to become root on the node and bypass any pod policy (incl. rewriting
+#   Cilium's BPF maps) — that risk is handled by node isolation (values.yaml), not
+#   here. CI only needs the internet:
 #   GitHub (+ Actions cache/results, ghcr.io), Docker Hub / mirror.gcr.io, the Go
 #   and npm registries, Ubuntu/Debian archives.
 #

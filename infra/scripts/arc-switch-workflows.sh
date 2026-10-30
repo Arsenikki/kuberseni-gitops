@@ -66,6 +66,13 @@ insert_gh_step() {
 
 for repo in "${repos[@]}"; do
   echo "== $OWNER/$repo"
+  # Re-runnable: a repo whose branch was already pushed (earlier run) is skipped.
+  if gh api "repos/$OWNER/$repo/git/ref/heads/$BRANCH" --silent 2>/dev/null; then
+    gh pr view "$BRANCH" --repo "$OWNER/$repo" --json url -q .url 2>/dev/null ||
+      echo "  ! $BRANCH exists but has no PR — open one by hand, or delete the branch to redo" >&2
+    echo "  $BRANCH already pushed — skipping"
+    continue
+  fi
   dir="$work/$repo"
   gh repo clone "$OWNER/$repo" "$dir" -- --quiet --depth 1
   pushd "$dir" >/dev/null
