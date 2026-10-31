@@ -1,0 +1,18 @@
+---
+# Default CPU request for Longhorn pods the chart can't size: longhorn-manager creates
+# the engine-image and csi-plugin DaemonSets and the csi-attacher/provisioner/resizer/
+# snapshotter Deployments with no requests, making them BestEffort (cgroup cpu.weight 1).
+# On a CPU-starved node they then lose every scheduling race and their exec/HTTP probes
+# time out → crashloops. Any request moves them into the burstable slice.
+# Applies at pod creation only — restart the affected pods after this lands.
+# Containers that already set requests (instance-manager) are unaffected.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-cpu-request
+  namespace: longhorn-system
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 25m

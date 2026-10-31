@@ -33,6 +33,16 @@ locals {
     worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 14336, disk_size = 50, extra_disk_size = 100, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
   }
 
+  # Proxmox cpuunits = relative CPU weight between VMs on the same host (PVE default
+  # 100 on cgroup v2). nas is a 4-core Celeron N5105 running 9 vCPUs (TrueNAS 4 +
+  # cp-03 2 + worker-02 3), so under contention etcd (cp-03) wins first, then
+  # worker-02 (Longhorn engines); TrueNAS (not tofu-managed) is set to 50 by hand.
+  # Unlisted VMs keep the provider default.
+  cpu_units = {
+    control-plane-03 = 200
+    worker-02        = 150
+  }
+
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
   proxmox_nodes = toset([for v in local.all_vms : v.proxmox_node])
 }
@@ -109,6 +119,7 @@ resource "proxmox_virtual_environment_vm" "controlplane" {
   cpu {
     cores = each.value.cores
     type  = "host"
+    units = lookup(local.cpu_units, each.key, null)
   }
 
   memory {
@@ -178,6 +189,7 @@ resource "proxmox_virtual_environment_vm" "worker" {
   cpu {
     cores = each.value.cores
     type  = "host"
+    units = lookup(local.cpu_units, each.key, null)
   }
 
   memory {

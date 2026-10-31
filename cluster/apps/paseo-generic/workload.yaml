@@ -56,19 +56,18 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
-      # Soft-spread the Paseo daemons (paseo-apps/generic/jeeves) across workers: they
-      # are the heaviest pods and two had landed on 3-vCPU worker-02. Soft because there
-      # are 3 daemons (RWO PVCs) on 2 workers.
+      # Keep the Paseo daemons off worker-02: it is a 3-vCPU VM on the 4-core nas host
+      # (shared with TrueNAS + cp-03) and also runs Longhorn engines. Agent spikes
+      # (builds, renovate, gh fan-out) pinned it at load ~100, starving Longhorn's
+      # probes into crashloops. Hard rule — a soft spread put a daemon back on it.
       affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                topologyKey: kubernetes.io/hostname
-                namespaceSelector: {}
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/part-of: paseo-homelab
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: [worker-02]
       containers:
         - name: paseo
           image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
