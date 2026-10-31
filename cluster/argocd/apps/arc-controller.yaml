@@ -1,0 +1,67 @@
+---
+# GitHub Actions Runner Controller (ARC) — the controller half. Runs self-hosted,
+# ephemeral GitHub Actions runners in the cluster for the PRIVATE repos (private
+# repos pay for hosted-runner minutes; public repos keep the free hosted runners and
+# must never get a self-hosted runner). The runner scale sets themselves are the
+# arc-runners Application (wave 6); this one ships the CRDs + controller first.
+#
+# - Chart: the official OCI chart, referenced WITHOUT the oci:// prefix (Argo
+#   treats a scheme-less repoURL as a Helm OCI repo; public, no repo secret, so the
+#   CI argocd-diff render works too). ghcr.io/actions/actions-runner-controller-charts
+#   is in the kuberseni AppProject's sourceRepos.
+# - Version LOCKSTEP: this chart and gha-runner-scale-set (arc-runners.yaml) must
+#   stay on the same version — the controller DELETES AutoscalingRunnerSets whose
+#   chart major.minor differs from its own. Renovate groups them.
+# - ServerSideApply is mandatory: the ARC CRDs (300-640 KB each) exceed the
+#   client-side last-applied annotation limit.
+# - releaseName "arc" makes the controller ServiceAccount arc-gha-rs-controller,
+#   which every scale set names explicitly (values.yaml controllerServiceAccount).
+# Setup + maintenance notes: cluster/apps/arc/README.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set-controller
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc
+        valueFiles:
+          - $values/cluster/apps/arc/controller/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+    # The privileged arc-runners namespace. It lives here (not in arc-runners)
+    # because the controller's watch Role (watchSingleNamespace) goes into it, so
+    # it must exist before the controller chart syncs.
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/arc/controller
+      directory:
+        exclude: "values.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-systems
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    # Auto-sync doesn't re-attempt a failed sync of the same commit; retry rides
+    # out transient failures (CRD establishment, OCI pull hiccups).
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

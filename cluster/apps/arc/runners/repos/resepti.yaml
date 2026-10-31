@@ -1,0 +1,6 @@
+---
+# Runner scale set for Arsenikki/resepti. Workflows target it with
+# `runs-on: arc-resepti` (the scale set name is the runs-on label).
+githubConfigUrl: https://github.com/Arsenikki/resepti
+runnerScaleSetName: arc-resepti
+maxRunners: 1

@@ -1,0 +1,105 @@
+---
+# GitHub Actions Runner Controller — the runner half: one ephemeral, scale-to-zero
+# runner scale set per PRIVATE repo, all in the privileged arc-runners namespace
+# (owned by arc-controller), plus the GitHub App ExternalSecret and the egress
+# policy.
+#
+# A personal GitHub account can only register runners per repository, so each repo
+# gets its own gha-runner-scale-set release (one Helm source below, values in
+# cluster/apps/arc/runners/repos/<repo>.yaml); they all share values.yaml (the
+# runner pod) and the arc-github-app Secret. Workflows use `runs-on: arc-<repo>`.
+# To add a repo: add it to the GitHub App installation, add repos/<repo>.yaml and a
+# source block here.
+#
+# - Wave 6, after arc-controller (wave 5) brought the CRDs. Waves don't wait for
+#   health, so SkipDryRunOnMissingResource + retry let the first sync survive the
+#   CRDs not being established yet.
+# - Version LOCKSTEP with arc-controller.yaml (same chart version everywhere).
+# - Deletion order: remove scale sets BEFORE the controller — the controller
+#   removes the cleanup finalizers it put on their Roles/ServiceAccounts.
+# Setup + maintenance notes: cluster/apps/arc/README.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-runners
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    # ExternalSecret + CiliumNetworkPolicy (the namespace is arc-controller's).
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/arc/runners
+      directory:
+        exclude: "values.yaml"
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-jeeves
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/jeeves.yaml
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-paseo-homelab
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/paseo-homelab.yaml
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-resepti
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/resepti.yaml
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-flock
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/flock.yaml
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-coachi
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/coachi.yaml
+    - repoURL: ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.15.1
+      helm:
+        releaseName: arc-captain-core
+        valueFiles:
+          - $values/cluster/apps/arc/runners/values.yaml
+          - $values/cluster/apps/arc/runners/repos/captain-core.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

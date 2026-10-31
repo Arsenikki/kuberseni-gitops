@@ -1,0 +1,6 @@
+---
+# Runner scale set for Arsenikki/flock. Workflows target it with
+# `runs-on: arc-flock` (the scale set name is the runs-on label).
+githubConfigUrl: https://github.com/Arsenikki/flock
+runnerScaleSetName: arc-flock
+maxRunners: 1

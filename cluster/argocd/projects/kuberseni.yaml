@@ -33,6 +33,8 @@ spec:
     - https://seaweedfs.github.io/seaweedfs/helm
     - https://oauth2-proxy.github.io/manifests
     - https://mend.github.io/renovate-ce-ee
+    # OCI Helm charts are listed without the oci:// prefix (same form as repoURL).
+    - ghcr.io/actions/actions-runner-controller-charts
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"
