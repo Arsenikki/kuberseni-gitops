@@ -1,0 +1,48 @@
+---
+# Cluster access for the paseo-jeeves daemon's agents: `edit` (debug AND fix:
+# restart/delete pods, exec, port-forward, scale, annotate) + paseo-debug-read
+# (nodes, ArgoCD Applications, ARC, Cilium, Longhorn, CRDs, RBAC — read-only; the
+# ClusterRole lives in cluster/apps/paseo-generic/rbac.yaml).
+#
+# Trade-off, deliberately accepted: these agents run on untrusted ticket content
+# with a full shell, and `edit` includes reading/writing Secrets in every namespace.
+# The autonomy ceiling (human-reviewed PRs, merge gate) still governs what reaches
+# git; ArgoCD selfHeal reverts manual changes to managed objects, so durable fixes
+# still go through a PR. Previously this tier had no cluster identity at all.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paseo-jeeves
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: paseo-jeeves-edit
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: paseo-jeeves
+    namespace: paseo-jeeves
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: paseo-jeeves-debug-read
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: paseo-debug-read
+subjects:
+  - kind: ServiceAccount
+    name: paseo-jeeves
+    namespace: paseo-jeeves

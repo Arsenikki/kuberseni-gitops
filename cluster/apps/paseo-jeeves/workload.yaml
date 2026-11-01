@@ -7,7 +7,7 @@
 #                       untappi, …). One boring daemon for all data/domain apps.
 #   2. paseo-jeeves   — THIS: full shell + git worktrees + daemon password + GitHub
 #                       App token-broker. The autonomous code-maintenance agent.
-#   3. paseo-generic  — interactive personal/debug (you), full shell + cluster-read.
+#   3. paseo-generic  — interactive personal/debug (you), full shell + cluster `edit`.
 #
 # Jeeves gets its own tier because its coding agents are the opposite of the sandboxed
 # app agents: they edit files, run builds/tests, and git commit/push across many repos.
@@ -18,9 +18,9 @@
 #   - repo-sync    : keeps base clones of the managed repos on the PVC for worktrees
 #
 # Both the prod and dev Jeeves instances' agent-runners connect to this one daemon
-# (agents are isolated by per-instance labels). Blast-radius: deliberately NO homelab
-# infra creds and NO cluster-reader SA here — infra-investigation tickets are not run
-# on this daemon; automountServiceAccountToken:false keeps the pod API-identity-free.
+# (agents are isolated by per-instance labels). Cluster access: the paseo-jeeves SA has
+# `edit` + paseo-debug-read (rbac.yaml) so agents can debug and fix the cluster; the
+# API server is reachable through apiserver-egress.yaml. Still NO homelab infra creds.
 apiVersion: v1
 kind: Service
 metadata:
@@ -60,7 +60,8 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-credentials
-      automountServiceAccountToken: false # no in-pod k8s API identity (no infra access here)
+      serviceAccountName: paseo-jeeves # `edit` + paseo-debug-read, see rbac.yaml
+      automountServiceAccountToken: true
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
