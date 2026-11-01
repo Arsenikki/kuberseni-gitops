@@ -1,5 +1,5 @@
 ---
-# Weekly trim of the Longhorn data disk on every storage node.
+# Daily trim of the Longhorn data disk and /var on every storage node.
 #
 # Why: Talos runs no fstrim and mounts the data disk (see infra/talos/patches/
 # worker-storage.yaml) without the `discard` option, so blocks freed by Longhorn
@@ -18,7 +18,9 @@ metadata:
   name: longhorn-fstrim
   namespace: longhorn-system
 spec:
-  schedule: "0 3 * * 0" # Sundays 03:00
+  # Daily (was weekly): on 2026-11-01 the nas thin pool was back at 98.4% six days
+  # after the last run — Longhorn rebuild/replica churn frees ~17G/week on worker-02.
+  schedule: "0 3 * * *" # daily 03:00
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 3600
   successfulJobsHistoryLimit: 3
@@ -58,7 +60,7 @@ spec:
                 - python3
                 - -c
                 - |
-                  import ctypes, os, socket
+                  import ctypes, os, socket, subprocess
                   libc = ctypes.CDLL(None, use_errno=True)
                   CLONE_NEWNS = 0x00020000
                   node = socket.gethostname()
@@ -71,10 +73,15 @@ spec:
                       os.close(nsfd)
                       os.chroot("/proc/1/root")
                       os.chdir("/")
-                      os.execv("/usr/bin/xfs_spaceman",
-                               ["/usr/bin/xfs_spaceman", "-c", "trim -f",
-                                "/var/mnt/longhorn-data"])
-                      os._exit(1)
+                      # /var (Talos EPHEMERAL, also XFS without `discard`) holds
+                      # container images; image GC churn left ~10G of freed-but-
+                      # allocated blocks in the thin pool on worker-02.
+                      rc = 0
+                      for path in ("/var/mnt/longhorn-data", "/var"):
+                          r = subprocess.run(["/usr/bin/xfs_spaceman", "-c", "trim -f", path])
+                          print(f"  {path}: exit {r.returncode}", flush=True)
+                          rc = rc or r.returncode
+                      os._exit(rc)
                   else:
                       _, status = os.waitpid(pid, 0)
                       rc = os.waitstatus_to_exitcode(status)
