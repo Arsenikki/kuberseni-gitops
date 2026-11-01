@@ -88,7 +88,7 @@ spec:
         - name: inject-jeeves-bin
           image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
-          command: ["sh","-c","cp /usr/local/bin/jeeves /opt/bin/jeeves && chmod 0755 /opt/bin/jeeves"]
+          command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && chmod 0755 /opt/bin/jeeves"]
           volumeMounts:
             - { name: jeeves-bin, mountPath: /opt/bin }
           resources:
@@ -261,4 +261,3 @@ spec:
   resources:
     requests:
       storage: 50Gi
-
