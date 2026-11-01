@@ -28,6 +28,15 @@ defaultSettings:
   taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
 
 longhornManager:
+  # Without a request the manager is BestEffort → cgroup cpu.weight 1 (vs ~111 for
+  # the burstable slice). The longhorn-critical PriorityClass only affects scheduling,
+  # not CPU share, so under contention its 4s healthz probe timed out and the node
+  # flapped "ManagerPodDown". Other Longhorn-spawned pods get a default request from
+  # resources/limitrange.yaml (the chart has no knob for them).
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists

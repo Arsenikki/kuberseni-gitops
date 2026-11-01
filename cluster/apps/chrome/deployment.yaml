@@ -36,6 +36,16 @@ spec:
     spec:
       # A browser pod has no business talking to the kube API — drop the token.
       automountServiceAccountToken: false
+      # Keep off worker-02 (3 vCPU on the oversubscribed nas host): Chromium bursts
+      # starve the Longhorn components there. See paseo-generic for the full story.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: [worker-02]
       securityContext:
         fsGroup: 1000          # make the /config PVC writable by the abc (PUID 1000) user
         # Chromium's sandbox needs seccomp Unconfined to start. This is the
