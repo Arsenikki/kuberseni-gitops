@@ -72,6 +72,22 @@ spec:
             - port: "21188"   # bittorrent
               protocol: TCP
 
+    # 3) Home Assistant qBittorrent integration. HA runs hostNetwork: true,
+    #    so its traffic carries a NODE identity: `remote-node` from other
+    #    nodes (was DROPPED -> HA startup stalled ~3 min on the qbittorrent
+    #    config entry); `host` on the same node is already allowed by
+    #    Cilium's allow-localhost, listed for clarity. Every hostNetwork
+    #    workload (music-assistant, cast-sponsor-skip, node-exporter, Talos
+    #    host processes) gains 8080 too, unauthenticated via qBittorrent's
+    #    AuthSubnetWhitelist.
+    - fromEntities:
+        - remote-node
+        - host
+      toPorts:
+        - ports:
+            - port: "8080"   # WebUI / API only
+              protocol: TCP
+
   # ======================================================================
   # EGRESS  (default-deny; only the rules below are allowed)
   # ======================================================================
