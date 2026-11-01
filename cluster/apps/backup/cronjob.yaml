@@ -31,6 +31,10 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      # Fail a stuck run instead of hanging forever: with concurrencyPolicy Forbid a
+      # pod stuck in ImagePullBackOff/ContainerCreating blocked every later run for
+      # 3 weeks (2026-10). Drive throttling can make a copy slow.
+      activeDeadlineSeconds: 7200
       ttlSecondsAfterFinished: 86400
       template:
         metadata:

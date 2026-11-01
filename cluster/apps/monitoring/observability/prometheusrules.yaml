@@ -62,3 +62,26 @@ spec:
             severity: warning
           annotations:
             summary: "Scrape target {{ $labels.job }} ({{ $labels.instance }}) is down"
+
+    # Backup CronJobs failed silently for 3 weeks (2026-10-12 → 11-01: mc image 404
+    # → ImagePullBackOff; offsite never configured), then the only copies were lost
+    # with SeaweedFS. Alert on staleness, and on backup jobs that never succeeded.
+    - name: backups
+      rules:
+        - alert: BackupJobStale
+          expr: |
+            time() - max by (namespace, cronjob) (kube_cronjob_status_last_successful_time{cronjob=~".*backup.*"}) > 26 * 3600
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backup CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} has not succeeded in over 26h"
+        - alert: BackupJobNeverSucceeded
+          expr: |
+            max by (namespace, cronjob) (kube_cronjob_info{cronjob=~".*backup.*"})
+              unless on (namespace, cronjob) kube_cronjob_status_last_successful_time
+          for: 26h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backup CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} has never succeeded"
