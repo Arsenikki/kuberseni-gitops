@@ -1,0 +1,34 @@
+---
+# Lets the paseo-jeeves daemon reach the kube-apiserver (its agents have `edit`, see
+# rbac.yaml). netpol.yaml's internet rule excludes the private ranges, and a plain
+# NetworkPolicy ipBlock can't match the apiserver here anyway (Cilium
+# policy-cidr-match-mode "" — CIDR rules never match node/apiserver identities), so
+# the apiserver needs this identity-based Cilium rule. Cilium unions it with
+# netpol.yaml: DNS, same-namespace pods and the public internet stay as they are,
+# and the rest of the cluster and the LAN stay blocked.
+#
+# Port 6443: kube-proxy replacement translates the kubernetes Service
+# (10.96.0.1:443) to the apiserver endpoints at connect time, so policy sees 6443;
+# 443 is listed too in case the Service port is evaluated. L4 only (no L7 proxy
+# here — an L7 rule would make the whole policy Invalid and unenforced).
+# Check after rollout:  kubectl -n paseo-jeeves get cnp paseo-jeeves-apiserver
+# (VALID must be True)  and  kubectl -n paseo-jeeves exec paseo-jeeves-0 -c paseo --
+# kubectl auth can-i get pods -A
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: paseo-jeeves-apiserver
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+spec:
+  endpointSelector:
+    matchLabels:
+      app: paseo-jeeves
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - { port: "6443", protocol: TCP }
+            - { port: "443", protocol: TCP }
