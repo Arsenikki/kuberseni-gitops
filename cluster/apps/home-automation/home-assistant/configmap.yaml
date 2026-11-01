@@ -49,9 +49,6 @@ data:
     light:
     # Configure specified switches to report as lights
       - platform: switch
-        name: kitchen_countertop_lights
-        entity_id: switch.kitchen_countertop_lights
-      - platform: switch
         name: living_room_christmas_lights
         entity_id: switch.living_room_christmas_lights
 
@@ -59,7 +56,6 @@ data:
       - platform: group
         name: "kitchen_all_lights"
         entities:
-          - light.kitchen_countertop_lights
           - light.kitchen_led_strip_01
           - light.kitchen_led_strip_02
       - platform: group
