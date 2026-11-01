@@ -228,8 +228,8 @@ data:
       max_color_temp: 3000
       sleep_brightness: 1
       sleep_color_temp: 1000
-      take_over_control: false
-      detect_non_ha_changes: true
+      take_over_control: true
+      detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
     - name: "Medium"
@@ -244,8 +244,8 @@ data:
       max_color_temp: 4000
       sleep_brightness: 1
       sleep_color_temp: 1000
-      take_over_control: false
-      detect_non_ha_changes: true
+      take_over_control: true
+      detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
     - name: "High"
@@ -260,8 +260,8 @@ data:
       max_color_temp: 5000
       sleep_brightness: 1
       sleep_color_temp: 1000
-      take_over_control: false
-      detect_non_ha_changes: true
+      take_over_control: true
+      detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
     - name: "Maximum"
@@ -276,6 +276,6 @@ data:
       max_color_temp: 5000
       sleep_brightness: 1
       sleep_color_temp: 1000
-      take_over_control: false
-      detect_non_ha_changes: true
+      take_over_control: true
+      detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
