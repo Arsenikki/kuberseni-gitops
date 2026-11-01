@@ -17,3 +17,24 @@ data:
         "allow": ["Bash", "WebFetch", "WebSearch"]
       }
     }
+---
+# `gh` shim for the daemon container: runs the real gh with a short-lived Jeeves App
+# installation token from the token-broker sidecar (the same source git's
+# `!jeeves git-credential` helper uses), so gh calls from agents and from paseo itself
+# (PR status) are bounded by the App installation instead of a personal PAT. Copied
+# onto /opt/bin (first on PATH) by the inject-jeeves-bin initContainer.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jeeves-gh-shim
+  namespace: paseo-jeeves
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+data:
+  gh: |
+    #!/bin/sh
+    if [ -z "${GH_TOKEN:-}" ]; then
+      tok=$(printf 'protocol=https\nhost=github.com\n\n' | /opt/bin/jeeves git-credential get 2>/dev/null | sed -n 's/^password=//p')
+      [ -n "$tok" ] && export GH_TOKEN="$tok"
+    fi
+    exec /usr/bin/gh "$@"

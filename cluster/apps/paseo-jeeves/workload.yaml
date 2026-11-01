@@ -83,13 +83,15 @@ spec:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
         # sidecar image (same jeeves:v1.49.0 tag the token-broker runs) into a shared
         # /opt/bin on PATH, so git's `!jeeves git-credential` helper resolves in the
-        # daemon container. Keeps the shared image free of jeeves-specific code.
+        # daemon container. Keeps the shared image free of jeeves-specific code. Also
+        # installs the `gh` shim (jeeves-gh-shim) so gh uses App tokens, not a PAT.
         - name: inject-jeeves-bin
           image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && chmod 0755 /opt/bin/jeeves"]
+          command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && cp /gh-shim/gh /opt/bin/gh && chmod 0755 /opt/bin/jeeves /opt/bin/gh"]
           volumeMounts:
             - { name: jeeves-bin, mountPath: /opt/bin }
+            - { name: gh-shim, mountPath: /gh-shim, readOnly: true }
           resources:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { cpu: 100m, memory: 32Mi }
@@ -154,13 +156,6 @@ spec:
               value: /data/paseo/go
             - name: GOCACHE
               value: /data/paseo/go-cache
-            # GitHub PAT for gh CLI interactions
-            - name: GH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: jeeves-secrets
-                  key: GH_TOKEN
-                  optional: true
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -224,6 +219,8 @@ spec:
       volumes:
         - name: claude-settings
           configMap: { name: jeeves-claude-settings }
+        - name: gh-shim
+          configMap: { name: jeeves-gh-shim }
         - name: ghapp
           secret:
             secretName: jeeves-gh-app
