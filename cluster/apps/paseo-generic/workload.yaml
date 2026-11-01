@@ -161,10 +161,19 @@ spec:
               mountPath: /data/paseo
             - name: workspaces
               mountPath: /workspaces
+            # 1Password service-account token as a file (see secrets.yaml paseo-op).
+            - name: op-token
+              mountPath: /var/run/secrets/1password
+              readOnly: true
       volumes:
         - name: workspaces
           persistentVolumeClaim:
             claimName: paseo-generic-workspaces
+        - name: op-token
+          secret:
+            secretName: paseo-op
+            optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
+            defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
   volumeClaimTemplates:
     - metadata:
         name: data
