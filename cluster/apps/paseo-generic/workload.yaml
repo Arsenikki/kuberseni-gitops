@@ -11,19 +11,23 @@ metadata:
   labels:
     app.kubernetes.io/part-of: paseo-homelab
 ---
-# Cluster access for this agent. Defaults to READ-ONLY (`view`) — safe for an
-# autonomous agent. Bump to `edit` (modify workloads) or `cluster-admin` (full, incl.
-# fixing things) by changing roleRef.name if you want it able to act, not just look.
+# Cluster access for this agent: `edit` — it can debug AND fix (restart/delete pods,
+# exec, port-forward, scale, annotate e.g. an ExternalSecret force-sync), not just
+# look. Plus paseo-debug-read (rbac.yaml) for what `edit` can't see: nodes, ArgoCD
+# Applications, ARC, Cilium, Longhorn, CRDs, RBAC.
+# Note: `edit` includes reading/writing Secrets in every namespace, and ArgoCD
+# selfHeal reverts manual changes to managed objects — real fixes still go in git.
+# (Was `view`; a ClusterRoleBinding's roleRef is immutable, hence the new name.)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: paseo-generic-view
+  name: paseo-generic-edit
   labels:
     app.kubernetes.io/part-of: paseo-homelab
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view
+  name: edit
 subjects:
   - kind: ServiceAccount
     name: paseo-generic
@@ -70,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -112,6 +116,13 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: GH_TOKEN
+                  optional: true
+            # Read-only ghcr.io access (verify image tags exist; see secrets.yaml)
+            - name: GHCR_READ_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: GHCR_READ_TOKEN
                   optional: true
             # Configure git to use gh as credential helper for cloning / submodules
             - name: GIT_CONFIG_COUNT

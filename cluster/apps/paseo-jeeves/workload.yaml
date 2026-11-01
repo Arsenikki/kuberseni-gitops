@@ -7,7 +7,7 @@
 #                       untappi, …). One boring daemon for all data/domain apps.
 #   2. paseo-jeeves   — THIS: full shell + git worktrees + daemon password + GitHub
 #                       App token-broker. The autonomous code-maintenance agent.
-#   3. paseo-generic  — interactive personal/debug (you), full shell + cluster-read.
+#   3. paseo-generic  — interactive personal/debug (you), full shell + cluster `edit`.
 #
 # Jeeves gets its own tier because its coding agents are the opposite of the sandboxed
 # app agents: they edit files, run builds/tests, and git commit/push across many repos.
@@ -18,9 +18,9 @@
 #   - repo-sync    : keeps base clones of the managed repos on the PVC for worktrees
 #
 # Both the prod and dev Jeeves instances' agent-runners connect to this one daemon
-# (agents are isolated by per-instance labels). Blast-radius: deliberately NO homelab
-# infra creds and NO cluster-reader SA here — infra-investigation tickets are not run
-# on this daemon; automountServiceAccountToken:false keeps the pod API-identity-free.
+# (agents are isolated by per-instance labels). Cluster access: the paseo-jeeves SA has
+# `edit` + paseo-debug-read (rbac.yaml) so agents can debug and fix the cluster; the
+# API server is reachable through apiserver-egress.yaml. Still NO homelab infra creds.
 apiVersion: v1
 kind: Service
 metadata:
@@ -60,7 +60,8 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-credentials
-      automountServiceAccountToken: false # no in-pod k8s API identity (no infra access here)
+      serviceAccountName: paseo-jeeves # `edit` + paseo-debug-read, see rbac.yaml
+      automountServiceAccountToken: true
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -83,13 +84,15 @@ spec:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
         # sidecar image (same jeeves:v1.49.0 tag the token-broker runs) into a shared
         # /opt/bin on PATH, so git's `!jeeves git-credential` helper resolves in the
-        # daemon container. Keeps the shared image free of jeeves-specific code.
+        # daemon container. Keeps the shared image free of jeeves-specific code. Also
+        # installs the `gh` shim (jeeves-gh-shim) so gh uses App tokens, not a PAT.
         - name: inject-jeeves-bin
           image: ghcr.io/arsenikki/jeeves:v1.49.0
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && chmod 0755 /opt/bin/jeeves"]
+          command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && cp /gh-shim/gh /opt/bin/gh && chmod 0755 /opt/bin/jeeves /opt/bin/gh"]
           volumeMounts:
             - { name: jeeves-bin, mountPath: /opt/bin }
+            - { name: gh-shim, mountPath: /gh-shim, readOnly: true }
           resources:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { cpu: 100m, memory: 32Mi }
@@ -99,7 +102,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-10
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -154,13 +157,6 @@ spec:
               value: /data/paseo/go
             - name: GOCACHE
               value: /data/paseo/go-cache
-            # GitHub PAT for gh CLI interactions
-            - name: GH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: jeeves-secrets
-                  key: GH_TOKEN
-                  optional: true
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -224,6 +220,8 @@ spec:
       volumes:
         - name: claude-settings
           configMap: { name: jeeves-claude-settings }
+        - name: gh-shim
+          configMap: { name: jeeves-gh-shim }
         - name: ghapp
           secret:
             secretName: jeeves-gh-app

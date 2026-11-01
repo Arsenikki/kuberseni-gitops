@@ -1,7 +1,11 @@
 ---
-# flock — a standalone realtime kanban board (github.com/Arsenikki/flock), a flock
-# of AI agents swarming tickets. Source + deploy manifests live in a SEPARATE
-# (private) repo, rendered with kustomize (path "deploy"). Isolated/additive: its
+# flock — the Jeeves board (`jeeves board`): the realtime kanban board that is
+# Jeeves' ticket surface, shared by the jeeves + jeeves-dev instances. Formerly the
+# separate Arsenikki/flock repo; its source + deploy manifests now live in the
+# (private) jeeves repo under deploy/board. The Application, namespace, StatefulSet
+# and PVC keep the `flock` name on purpose — renaming would orphan the SQLite PVC.
+# NEVER delete/rename this Application: its finalizer + prune would take the
+# board data with it. Isolated/additive: its
 # own namespace `flock` and its own ingress host flock.arsenikki.casa. No auth in
 # v1 (private LAN/Tailscale only; authentik SSO is a planned follow-up). Wave 6 —
 # after ESO/1Password + Longhorn, like jeeves.
@@ -22,9 +26,9 @@ metadata:
 spec:
   project: kuberseni
   source:
-    repoURL: https://github.com/Arsenikki/flock
+    repoURL: https://github.com/Arsenikki/jeeves
     targetRevision: main
-    path: deploy
+    path: deploy/board
   destination:
     server: https://kubernetes.default.svc
     namespace: flock

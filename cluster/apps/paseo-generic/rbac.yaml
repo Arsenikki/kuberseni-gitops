@@ -1,0 +1,57 @@
+---
+# paseo-debug-read — READ-ONLY access to the cluster-scoped objects and custom
+# resources that the built-in `edit`/`view` roles don't cover, so a debugging agent
+# can see the whole picture: nodes, ArgoCD Applications, ARC runner scale sets,
+# Cilium policies/endpoints, Longhorn volumes, CRDs and RBAC. Nothing here grants
+# write access. Bound to the paseo-generic SA below and to the paseo-jeeves SA
+# (cluster/apps/paseo-jeeves/rbac.yaml); it lives in this app because paseo-generic
+# is the debug tier.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: paseo-debug-read
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+rules:
+  # Cluster-scoped core objects (view/edit only cover namespaced ones).
+  - apiGroups: [""]
+    resources: [nodes, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, volumeattachments, csinodes, csidrivers]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+  # Who can do what (debugging "forbidden" errors). No secrets in these objects.
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [clusterroles, clusterrolebindings, roles, rolebindings]
+    verbs: [get, list, watch]
+  # Custom resources the platform runs on.
+  - apiGroups: [argoproj.io]
+    resources: [applications, applicationsets, appprojects]
+    verbs: [get, list, watch]
+  - apiGroups: [actions.github.com]
+    resources: ["*"]
+    verbs: [get, list, watch]
+  - apiGroups: [cilium.io]
+    resources: ["*"]
+    verbs: [get, list, watch]
+  - apiGroups: [longhorn.io]
+    resources: ["*"]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: paseo-generic-debug-read
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: paseo-debug-read
+subjects:
+  - kind: ServiceAccount
+    name: paseo-generic
+    namespace: paseo-generic

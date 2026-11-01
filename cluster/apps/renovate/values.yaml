@@ -27,7 +27,7 @@ renovate:
   mendRnvSqliteFilePath: "/tmp/renovate/renovate-ce.sqlite"
   logLevel: "info"
   logFormat: "json"
-  # Private ghcr.io auth: inject the shared claudtainer GHCR creds (from ESO,
+  # Private ghcr.io auth: inject the shared read-only GHCR creds (github-packages-ro, from ESO,
   # see externalsecret.yaml) as env, then reference them from config.js below —
   # so the token is never written into Git.
   extraEnvVars:
