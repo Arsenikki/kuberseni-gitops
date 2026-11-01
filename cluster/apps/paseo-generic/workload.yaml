@@ -113,6 +113,13 @@ spec:
                   name: paseo-secrets
                   key: GH_TOKEN
                   optional: true
+            # Read-only ghcr.io access (verify image tags exist; see secrets.yaml)
+            - name: GHCR_READ_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: GHCR_READ_TOKEN
+                  optional: true
             # Configure git to use gh as credential helper for cloning / submodules
             - name: GIT_CONFIG_COUNT
               value: "1"
