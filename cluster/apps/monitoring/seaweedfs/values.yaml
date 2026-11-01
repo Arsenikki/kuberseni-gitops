@@ -5,6 +5,13 @@
 
 master:
   replicas: 1
+  # 200 (chart default 1000): with `maxVolumes: 0` the volume server's slot count is
+  # disk / volumeSizeLimit → 20Gi/1000MB = 19 slots, and each collection (= bucket)
+  # grows 7 volumes at a time. With 3 collections holding 19/19 slots (only ~2.2 GiB
+  # of real data), any other bucket failed to grow ("Not enough data nodes found!"):
+  # mimir-ruler writes 504'd and the ruler crashlooped, so no alerts fired.
+  # 200MB → ~100 slots. Files are chunked, so smaller volumes cost nothing.
+  volumeSizeLimitMB: 200
   data:
     type: "persistentVolumeClaim"
     size: "2Gi"
