@@ -40,30 +40,33 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
   node_name       = "nas"
   vm_id           = 202
   stop_on_destroy = true
-  started         = true   # Production NAS — keep running
-  on_boot         = true   # Auto-start with the Proxmox host (storage must come up on boot)
+  started         = true # Production NAS — keep running
+  on_boot         = true # Auto-start with the Proxmox host (storage must come up on boot)
   bios            = "seabios"
-  machine         = "q35"  # PCIe bus required for HDD passthrough; SeaBIOS avoids OVMF/passthrough boot issues
-  scsi_hardware   = "virtio-scsi-single"  # One I/O thread per disk via iothread=true
-  tags            = ["critical"]          # ProxmoxVMDown alerts only on `critical`-tagged VMs
+  machine         = "q35"                # PCIe bus required for HDD passthrough; SeaBIOS avoids OVMF/passthrough boot issues
+  scsi_hardware   = "virtio-scsi-single" # One I/O thread per disk via iothread=true
+  tags            = ["critical"]         # ProxmoxVMDown alerts only on `critical`-tagged VMs
 
   agent {
     enabled = true
   }
 
+  # 2 cores (was 4) + cpuunits 50 (PVE default 100): nas is a 4-core Celeron N5105
+  # shared with cp-03 (etcd, units 200) and worker-02 (Longhorn, units 150). TrueNAS
+  # is mostly idle; 4 vCPUs let a scrub contend for every host core. Applied live
+  # 2026-10-31 (VM restarted) — this reconciles code with live.
   cpu {
-    cores = 4
-    type  = "host"  # Exposes AES-NI to ZFS; avoids SMB CPU spikes with kvm64
+    cores = 2
+    type  = "host" # Exposes AES-NI to ZFS; avoids SMB CPU spikes with kvm64
+    units = 50
   }
 
-  # 12288 (was 16384): reconciles the committed value with what the VM has
-  # actually run for months (hand-shrunk live on the 31 GiB nas host, which is
-  # chronically RAM-overcommitted — it also hosts worker-02 + cp-03). Keeping the
-  # stale 16384 here was a landmine: any `terraform apply` would re-inflate
-  # TrueNAS by +4 GiB and reboot the storage VM. This change is a no-op against
-  # live state (no reboot), it just stops the drift from biting on the next apply.
+  # 8192 (was 12288, was 16384): the 31 GiB nas host was RAM-overcommitted
+  # (12 + worker-02 14 + cp-03 6 = 32 GiB) — ~0.7 GiB free, 2 GiB swapped, ksmd
+  # burning ~25% of a core. 8 GiB (TrueNAS SCALE minimum) leaves ~11 GiB free.
+  # Applied live 2026-10-31; this keeps an apply from re-inflating it.
   memory {
-    dedicated = 12288
+    dedicated = 8192
   }
 
   # Boot disk — stores SCALE OS only, not data
@@ -87,7 +90,7 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
 
   network_device {
     bridge      = "vmbr0"
-    mac_address = "BC:24:11:5C:A1:E0"  # fixed MAC — reserve 192.168.1.3 in OPNSense
+    mac_address = "BC:24:11:5C:A1:E0" # fixed MAC — reserve 192.168.1.3 in OPNSense
   }
 
   operating_system {
