@@ -1,6 +1,6 @@
 ---
 # Flock — the Jeeves kanban board. Forward-auth protects the HUMAN-facing ingress
-# (flock.arsenikki.casa), including the REST API — so the unauthenticated
+# (jeeves.arsenikki.casa), including the REST API — so the unauthenticated
 # merge-policy controls (PATCH /projects/{name}/autoMerge) can no longer be hit by
 # anyone on the LAN/Tailscale. Jeeves's own API calls use the in-cluster service
 # (flock.flock.svc.cluster.local:8099), which does NOT go through the ingress, so
@@ -23,7 +23,7 @@ entries:
         !Find [authentik_flows.flow, [slug, "default-provider-invalidation-flow"]]
       mode: forward_single
       internal_host: http://flock.flock.svc.cluster.local:8099
-      external_host: https://flock.arsenikki.casa
+      external_host: https://jeeves.arsenikki.casa
       access_token_validity: hours=1
 
   - id: application
