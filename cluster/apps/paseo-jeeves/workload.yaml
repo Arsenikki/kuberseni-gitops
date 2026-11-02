@@ -151,12 +151,15 @@ spec:
               value: Jeeves
             - name: GIT_COMMITTER_EMAIL
               value: jeeves@users.noreply.github.com
-            # Go module + build caches on the PVC (warm across runs, #140). The shared
-            # image also sets these, but pin them here authoritatively.
+            # Go module + build caches on a PVC (warm across runs, #140) — the 50Gi
+            # workspaces volume, not the 5Gi data volume: that one holds the repo clones,
+            # every worktree, agent state and the daemon logs, and agents' builds filled
+            # it (2026-11-02: 100% full, 3.5G of it Go caches). The shared image also sets
+            # these, but pin them here authoritatively.
             - name: GOPATH
-              value: /data/paseo/go
+              value: /workspaces/go
             - name: GOCACHE
-              value: /data/paseo/go-cache
+              value: /workspaces/go-cache
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
