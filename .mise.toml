@@ -4,7 +4,7 @@
 [tools]
 # Talos tooling
 talhelper = "3.1.13"
-talosctl = "1.13.6"
+talosctl = "1.14.5"
 
 # Configuration management
 sops = "3.13.2"
