@@ -108,3 +108,11 @@ service:
 # Scheduler-only: no inbound endpoint.
 ingress:
   enabled: false
+
+# Temporary (2026-11-02): run only on worker-01, the node that has the 2.9 GB
+# renovate-ce "-full" image cached. Pulling it onto a worker with ~11 GiB of
+# ephemeral space free pushes that node past the kubelet's disk-eviction line:
+# after #821's rollout worker-01 went DiskPressure and evicted the pod. Drop
+# this once the workers' ephemeral disks have headroom for the image.
+nodeSelector:
+  kubernetes.io/hostname: worker-01
