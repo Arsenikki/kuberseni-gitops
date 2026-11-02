@@ -7,6 +7,20 @@ Homelab GitOps: **Talos Linux** Kubernetes on **Proxmox**, managed by **ArgoCD**
 - **Never push directly to `main`** — always open a PR, even for one-liners.
 - **Never use `git reset --hard`** — use `git pull --rebase` or `git merge --ff-only` instead.
 
+## Working alongside other sessions
+
+Several agent sessions (and Jeeves) change this repo at the same time, and a merge
+here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#800,
+#776/#798) and PRs built on an outdated `main`.
+
+- **Before you start**, run `gh pr list --state open` and look for PRs touching the
+  same app or paths (`cluster/apps/<ns>/…`, `infra/…`). If one exists, build on it
+  or comment there instead of opening a second fix.
+- **Branch from current `main`** (`git fetch origin`, then branch off `origin/main`).
+  Before opening a PR, `git rebase origin/main` and re-run the checks; once the PR is
+  pushed, merge `origin/main` into it instead of rebasing.
+- **If your PR supersedes another**, close the old one with a link to yours.
+
 ## Tooling
 
 - **IaC: OpenTofu** (`tofu`), not terraform. Providers from `registry.opentofu.org`. Secrets in `infra/tofu/secrets.tfvars` are sops-encrypted — inject via `sops exec-file secrets.tfvars 'tofu <cmd> -var-file={}'`.
