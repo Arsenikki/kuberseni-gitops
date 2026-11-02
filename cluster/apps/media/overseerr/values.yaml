@@ -1,23 +1,46 @@
 ---
-image:
-  repository: ghcr.io/sct/overseerr
-  tag: 1.35.0
-
-env:
-  TZ: "Europe/London"
-  LOG_LEVEL: "debug"
-  PORT: &port 80
+controllers:
+  main:
+    annotations:
+      # app-template >=2 adds app.kubernetes.io/controller to the (immutable)
+      # selector, so the Deployment must be deleted and recreated once.
+      # TODO: drop this annotation once the 5.x rollout has synced.
+      argocd.argoproj.io/sync-options: Force=true,Replace=true
+    containers:
+      main:
+        image:
+          repository: ghcr.io/sct/overseerr
+          tag: 1.35.0
+        env:
+          TZ: "Europe/London"
+          LOG_LEVEL: "debug"
+          PORT: &port 80
+        probes:
+          liveness: &probes
+            enabled: true
+          readiness: *probes
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 5
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64M
+          limits:
+            memory: 256M
 
 service:
   main:
+    controller: main
     ports:
       http:
         port: *port
 
 ingress:
   main:
-    enabled: true
-    ingressClassName: traefik
+    className: traefik
     annotations:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
@@ -26,6 +49,9 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
+            service:
+              identifier: main
+              port: http
     tls:
       - secretName: overseerr-tls
         hosts:
@@ -33,13 +59,6 @@ ingress:
 
 persistence:
   config:
-    enabled: true
     existingClaim: overseerr-config
-    mountPath: /app/config
-
-resources:
-  requests:
-    cpu: 10m
-    memory: 64M
-  limits:
-    memory: 256M
+    globalMounts:
+      - path: /app/config

@@ -2,6 +2,12 @@
 controllers:
   main:
     type: deployment
+    annotations:
+      # app-template 4.x renamed the (immutable) selector label
+      # app.kubernetes.io/component -> app.kubernetes.io/controller, so the
+      # Deployment must be deleted and recreated once.
+      # TODO: drop this annotation once the 5.x rollout has synced.
+      argocd.argoproj.io/sync-options: Force=true,Replace=true
     pod:
       nodeSelector:
         kubernetes.io/hostname: "control-plane-01"
@@ -48,6 +54,15 @@ controllers:
                 key: ZIGBEE2MQTT_PASSWORD
           ZIGBEE2MQTT_CONFIG_SERIAL_BAUDRATE: 115200
           ZIGBEE2MQTT_CONFIG_SERIAL_PORT: &usbdevice /dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231219170448-if00
+        probes:
+          liveness: &probes
+            enabled: true
+          readiness: *probes
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 5
         resources:
           requests:
             cpu: 10m
@@ -59,14 +74,14 @@ controllers:
 
 service:
   main:
+    controller: main
     ports:
       http:
         port: 8080
 
 ingress:
   main:
-    enabled: true
-    ingressClassName: traefik
+    className: traefik
     annotations:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
@@ -76,7 +91,7 @@ ingress:
           - path: /
             pathType: Prefix
             service:
-              name: main
+              identifier: main
               port: http
     tls:
       - hosts:
@@ -85,12 +100,10 @@ ingress:
 
 persistence:
   config:
-    enabled: true
     existingClaim: zigbee2mqtt
     globalMounts:
       - path: /config
   usb:
-    enabled: true
     type: hostPath
     hostPath: *usbdevice
     hostPathType: CharDevice

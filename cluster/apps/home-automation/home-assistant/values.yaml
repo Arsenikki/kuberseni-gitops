@@ -1,31 +1,84 @@
 ---
-controller:
-  type: statefulset
-
-image:
-  repository: ghcr.io/home-assistant/home-assistant
-  tag: 2026.6.1
-
-env:
-  TZ: "Europe/London"
-
-envFrom:
-  - secretRef:
-      name: argocd-dashboard
-
-hostNetwork: true
+controllers:
+  main:
+    type: statefulset
+    replicas: 1
+    annotations:
+      # app-template >=2 adds app.kubernetes.io/controller to the (immutable)
+      # selector, so the StatefulSet must be deleted and recreated once.
+      # TODO: drop this annotation once the 5.x rollout has synced.
+      argocd.argoproj.io/sync-options: Force=true,Replace=true
+    pod:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+    containers:
+      main:
+        image:
+          repository: ghcr.io/home-assistant/home-assistant
+          tag: 2026.6.1
+        env:
+          TZ: "Europe/London"
+        envFrom:
+          - secretRef:
+              name: argocd-dashboard
+        probes:
+          liveness: &probes
+            enabled: true
+          readiness: *probes
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 5
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi
+          limits:
+            memory: 2000Mi
+      # Was the app-template 1.x codeserver addon.
+      codeserver:
+        image:
+          repository: ghcr.io/coder/code-server
+          tag: 4.95.3
+          pullPolicy: IfNotPresent
+        env:
+          TZ: "Europe/London"
+        args:
+          - --auth
+          - "none"
+          - --user-data-dir
+          - "/config/.vscode"
+          - --extensions-dir
+          - "/config/.vscode"
+          - --port
+          - "12321"
+          - /config
+        securityContext:
+          runAsUser: 0
 
 service:
   main:
+    controller: main
+    primary: true
+    # Keep the pre-5.x name (the chart suffixes it when there are several services).
+    forceRename: home-assistant
     ports:
       http:
+        primary: true
         port: 8123
       homekit:
         port: 21063
+  codeserver:
+    controller: main
+    forceRename: home-assistant-addon-codeserver
+    ports:
+      codeserver:
+        port: 12321
 
 ingress:
   main:
-    enabled: true
+    forceRename: home-assistant
     annotations:
       kubernetes.io/tls-acme: "true"
     hosts:
@@ -33,90 +86,57 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
+            service:
+              identifier: main
+              port: http
     tls:
       - secretName: home-assistant-tls
         hosts:
           - homeassistant.arsenikki.casa
+  codeserver:
+    forceRename: home-assistant-addon-codeserver
+    annotations:
+      kubernetes.io/tls-acme: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
+      external-dns/is-public: "true"
+    hosts:
+      - host: "code.homeassistant.arsenikki.casa"
+        paths:
+          - path: /
+            pathType: Prefix
+            service:
+              identifier: codeserver
+              port: codeserver
+    tls:
+      - secretName: home-assistant-vscode-tls
+        hosts:
+          - "code.homeassistant.arsenikki.casa"
 
 persistence:
   config:
-    enabled: true
-    type: pvc
+    type: persistentVolumeClaim
     existingClaim: home-assistant-config
-  configuration-yaml:
-    enabled: true
+    # Shared by Home Assistant and code-server.
+    globalMounts:
+      - path: /config
+  config-yaml:
     type: configMap
     name: home-assistant-config-yaml
-    mountPath: /config/configuration.yaml
-    subPath: configuration.yaml
-    readOnly: true
-  adaptive-lighting-config:
-    enabled: true
-    type: configMap
-    name: home-assistant-config-yaml
-    mountPath: /config/adaptive_lighting_config.yaml
-    subPath: adaptive_lighting_config.yaml
-    readOnly: true
-  automations-yaml:
-    enabled: true
-    type: configMap
-    name: home-assistant-config-yaml
-    mountPath: /config/automations.yaml
-    subPath: automations.yaml
-    readOnly: true
-  scenes-yaml:
-    enabled: true
-    type: configMap
-    name: home-assistant-config-yaml
-    mountPath: /config/scenes.yaml
-    subPath: scenes.yaml
-    readOnly: true
-  scripts-yaml:
-    enabled: true
-    type: configMap
-    name: home-assistant-config-yaml
-    mountPath: /config/scripts.yaml
-    subPath: scripts.yaml
-    readOnly: true
-
-resources:
-  requests:
-    cpu: 10m
-    memory: 100Mi
-  limits:
-    memory: 2000Mi
-
-addons:
-  codeserver:
-    enabled: true
-    image:
-      repository: ghcr.io/coder/code-server
-      tag: 4.95.3
-      pullPolicy: IfNotPresent
-    env:
-      TZ: "Europe/London"
-    args:
-      - --auth
-      - "none"
-      - --user-data-dir
-      - "/config/.vscode"
-      - --extensions-dir
-      - "/config/.vscode"
-    volumeMounts:
-      - name: config
-        mountPath: /config
-    ingress:
-      enabled: true
-      annotations:
-        kubernetes.io/tls-acme: "true"
-        traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
-        external-dns/is-public: "true"
-      hosts:
-        - host: "code.homeassistant.arsenikki.casa"
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - secretName: home-assistant-vscode-tls
-          hosts:
-            - "code.homeassistant.arsenikki.casa"
+    advancedMounts:
+      main:
+        main:
+          - path: /config/configuration.yaml
+            subPath: configuration.yaml
+            readOnly: true
+          - path: /config/adaptive_lighting_config.yaml
+            subPath: adaptive_lighting_config.yaml
+            readOnly: true
+          - path: /config/automations.yaml
+            subPath: automations.yaml
+            readOnly: true
+          - path: /config/scenes.yaml
+            subPath: scenes.yaml
+            readOnly: true
+          - path: /config/scripts.yaml
+            subPath: scripts.yaml
+            readOnly: true

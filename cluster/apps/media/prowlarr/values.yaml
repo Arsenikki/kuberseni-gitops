@@ -1,22 +1,53 @@
 ---
-image:
-  repository: ghcr.io/home-operations/prowlarr
-  tag: 2.1.5.5216
+controllers:
+  main:
+    annotations:
+      # app-template >=2 adds app.kubernetes.io/controller to the (immutable)
+      # selector, so the Deployment must be deleted and recreated once.
+      # TODO: drop this annotation once the 5.x rollout has synced.
+      argocd.argoproj.io/sync-options: Force=true,Replace=true
+    containers:
+      main:
+        image:
+          repository: ghcr.io/home-operations/prowlarr
+          tag: 2.1.5.5216
+        env:
+          TZ: "Europe/London"
+          PROWLARR__AUTH__METHOD: External
+          PROWLARR__AUTH__REQUIRED: Enabled
+        probes:
+          liveness: &probes
+            enabled: true
+          readiness: *probes
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            memory: 1024M
 
-env:
-  TZ: "Europe/London"
-  PROWLARR__AUTH__METHOD: External
-  PROWLARR__AUTH__REQUIRED: Enabled
+defaultPodOptions:
+  securityContext:
+    runAsUser: 568
+    runAsGroup: 568
+    fsGroup: 568
+    fsGroupChangePolicy: "OnRootMismatch"
+    supplementalGroups: [10000]
 
 service:
   main:
+    controller: main
     ports:
       http:
         port: 9696
 
 ingress:
   main:
-    enabled: true
     annotations:
       kubernetes.io/tls-acme: "true"
       traefik.ingress.kubernetes.io/router.middlewares: "authentik-forward-auth@kubernetescrd"
@@ -25,26 +56,14 @@ ingress:
         paths:
           - path: /
             pathType: Prefix
+            service:
+              identifier: main
+              port: http
     tls:
       - secretName: prowlarr-tls
         hosts:
           - prowlarr.arsenikki.casa
 
-podSecurityContext:
-  runAsUser: 568
-  runAsGroup: 568
-  fsGroup: 568
-  fsGroupChangePolicy: "OnRootMismatch"
-  supplementalGroups: [10000]
-
 persistence:
   config:
-    enabled: true
     existingClaim: prowlarr-config
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128M
-  limits:
-    memory: 1024M

@@ -1,6 +1,12 @@
 ---
 controllers:
   main:
+    annotations:
+      # app-template 4.x renamed the (immutable) selector label
+      # app.kubernetes.io/component -> app.kubernetes.io/controller, so the
+      # Deployment must be deleted and recreated once.
+      # TODO: drop this annotation once the 5.x rollout has synced.
+      argocd.argoproj.io/sync-options: Force=true,Replace=true
     containers:
       main:
         image:
@@ -18,7 +24,3 @@ controllers:
     pod:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-
-service:
-  main:
-    enabled: false
