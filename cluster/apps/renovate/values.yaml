@@ -8,7 +8,7 @@
 # only). Repo config comes from this repo's existing .github/renovate.json5.
 image:
   repository: ghcr.io/mend/renovate-ce
-  tag: "14.8.0"
+  tag: "15.11.0"
 
 renovate:
   # You must accept Mend's ToS (https://www.mend.io/terms-of-service/) — 'y'.
@@ -72,7 +72,7 @@ renovate:
 # inode table. Same image as the main container (already on the node).
 initContainers:
   - name: purge-package-cache
-    image: ghcr.io/mend/renovate-ce:14.8.0-full
+    image: ghcr.io/mend/renovate-ce:15.11.0-full
     command: ["sh", "-c", "rm -rf /tmp/renovate/cache/renovate"]
     volumeMounts:
       - name: renovate-ce-cache-volume
