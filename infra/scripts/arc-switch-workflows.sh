@@ -10,13 +10,13 @@
 # Usage:
 #   infra/scripts/arc-switch-workflows.sh --dry-run          # show the diffs only
 #   infra/scripts/arc-switch-workflows.sh                    # all repos
-#   infra/scripts/arc-switch-workflows.sh jeeves flock       # selected repos
+#   infra/scripts/arc-switch-workflows.sh jeeves resepti     # selected repos
 set -euo pipefail
 
 OWNER=Arsenikki
 BRANCH=ci/arc-runners
 GH_VERSION=2.103.3 # cli/cli release installed where a job needs gh
-DEFAULT_REPOS=(jeeves paseo-homelab resepti flock coachi captain-core)
+DEFAULT_REPOS=(jeeves paseo-homelab resepti coachi captain-core)
 
 dry_run=false
 repos=()

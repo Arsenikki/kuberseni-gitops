@@ -15,7 +15,7 @@ must **never** get a self-hosted runner (fork PRs would run in the homelab).
 | GitHub App creation helper | `infra/scripts/arc-github-app/` |
 | Workflow switch (`runs-on: arc-<repo>`) | `infra/scripts/arc-switch-workflows.sh` |
 
-Scale sets: `arc-jeeves`, `arc-paseo-homelab`, `arc-resepti`, `arc-flock`,
+Scale sets: `arc-jeeves`, `arc-paseo-homelab`, `arc-resepti`,
 `arc-coachi`, `arc-captain-core`. A workflow job targets one with
 `runs-on: arc-<repo>`.
 
