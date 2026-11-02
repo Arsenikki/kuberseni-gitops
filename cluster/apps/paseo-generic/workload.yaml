@@ -74,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-13
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -110,6 +110,15 @@ spec:
             # loopback + the pod hostname automatically (so port-forward still works).
             - name: PASEO_HOSTNAMES
               value: "paseo-generic,paseo-generic.paseo-generic,paseo-generic.paseo-generic.svc.cluster.local,paseo-generic.arsenikki.casa"
+            # Image-baked Claude Code skills the entrypoint seeds into $CLAUDE_CONFIG_DIR
+            # (comma-separated; paseo-homelab skills/). jeeves-handover files a PoC session
+            # as a Jeeves board card via the in-cluster board Service. Generic-only.
+            - name: PASEO_SEED_SKILLS
+              value: "jeeves-handover"
+            # Public (authentik-SSO-fronted) board root for the card link file-card.sh
+            # prints; its API calls still go to the in-cluster board Service.
+            - name: JEEVES_BOARD_PUBLIC_URL
+              value: "https://jeeves.arsenikki.casa"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
