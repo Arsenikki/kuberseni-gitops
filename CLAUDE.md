@@ -58,8 +58,8 @@ it by hand.
   "title":"…","body":"…","column":"backlog","owner":"jeeves"}`.
 - **Jeeves only works cards in a `managed` project, in the `ready` column, owned by
   its instance** (`jeeves` = prod, `jeeves-dev` = dev). The `Arsenikki/kuberseni-gitops`
-  project is currently **not** managed, so its cards are plain tickets until someone
-  turns `managed` on in the project settings.
+  project is **managed** (since 2026-11-02) with `autoMerge: off`: Jeeves opens the PR
+  but never merges it here — you review and merge on GitHub.
 
 > **Do NOT file GitHub issues for Jeeves.** The old GitHub-issue + `jeeves`-label
 > trigger is retired.
