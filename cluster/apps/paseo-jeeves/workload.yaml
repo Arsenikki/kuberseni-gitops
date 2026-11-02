@@ -82,12 +82,12 @@ spec:
                     values: [worker-02]
       initContainers:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
-        # sidecar image (same jeeves:v1.49.0 tag the token-broker runs) into a shared
+        # sidecar image (same jeeves tag the token-broker runs) into a shared
         # /opt/bin on PATH, so git's `!jeeves git-credential` helper resolves in the
         # daemon container. Keeps the shared image free of jeeves-specific code. Also
         # installs the `gh` shim (jeeves-gh-shim) so gh uses App tokens, not a PAT.
         - name: inject-jeeves-bin
-          image: ghcr.io/arsenikki/jeeves:v1.49.0
+          image: ghcr.io/arsenikki/jeeves:v1.56.0
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c", "cp /usr/local/bin/jeeves /opt/bin/jeeves && cp /gh-shim/gh /opt/bin/gh && chmod 0755 /opt/bin/jeeves /opt/bin/gh"]
           volumeMounts:
@@ -151,12 +151,15 @@ spec:
               value: Jeeves
             - name: GIT_COMMITTER_EMAIL
               value: jeeves@users.noreply.github.com
-            # Go module + build caches on the PVC (warm across runs, #140). The shared
-            # image also sets these, but pin them here authoritatively.
+            # Go module + build caches on a PVC (warm across runs, #140) — the 50Gi
+            # workspaces volume, not the 5Gi data volume: that one holds the repo clones,
+            # every worktree, agent state and the daemon logs, and agents' builds filled
+            # it (2026-11-02: 100% full, 3.5G of it Go caches). The shared image also sets
+            # these, but pin them here authoritatively.
             - name: GOPATH
-              value: /data/paseo/go
+              value: /workspaces/go
             - name: GOCACHE
-              value: /data/paseo/go-cache
+              value: /workspaces/go-cache
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -178,7 +181,7 @@ spec:
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker
-          image: ghcr.io/arsenikki/jeeves:v1.49.0
+          image: ghcr.io/arsenikki/jeeves:v1.56.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "token-broker"]
           envFrom:
@@ -200,20 +203,22 @@ spec:
         # installation (jeeves#175): repo-sync lists the installation's repos via the
         # App token and clones each under /data/paseo/repos/<name> — no repos.yaml, no
         # allowlist.
+        # Authenticates through the token broker (jeeves#236), NOT the App key: agents
+        # can write the clones repo-sync runs git in, so this sidecar must hold
+        # nothing worth stealing — no key mount, and no jeeves-gh-app envFrom (that
+        # secret carries private-key.pem too).
         - name: repo-sync
-          image: ghcr.io/arsenikki/jeeves:v1.49.0
+          image: ghcr.io/arsenikki/jeeves:v1.56.0
           imagePullPolicy: IfNotPresent
           command: ["jeeves", "repo-sync"]
-          envFrom:
-            - secretRef: { name: jeeves-gh-app, optional: true }
           env:
             - name: LOG_LEVEL
               value: info
-            - name: GITHUB_APP_KEY_FILE
-              value: /etc/jeeves-ghapp/private-key.pem
+            - name: JEEVES_TOKEN_BROKER_SOCKET
+              value: /run/jeeves/token-broker.sock
           volumeMounts:
             - { name: data, mountPath: /data/paseo }
-            - { name: ghapp, mountPath: /etc/jeeves-ghapp, readOnly: true }
+            - { name: broker-sock, mountPath: /run/jeeves }
           resources:
             requests: { cpu: 25m, memory: 32Mi }
             limits: { cpu: 500m, memory: 128Mi }
