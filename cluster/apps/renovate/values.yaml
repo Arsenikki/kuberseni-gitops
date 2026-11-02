@@ -25,6 +25,15 @@ renovate:
   # Hourly full scan (CE default) — matches the hosted app's cadence.
   mendRnvCronJobSchedulerAll: "0 * * * *"
   mendRnvSqliteFilePath: "/tmp/renovate/renovate-ce.sqlite"
+  # The package cache (cacache under /tmp/renovate/cache) never deletes replaced
+  # entries, so on this persistent 2Gi ext4 PVC (131,072 inodes) it used up every
+  # inode by mid-July 2026 (~82k orphaned content files at 49% of the space). From
+  # then on every run hit ENOSPC mid-clone ("Disk space error - skipping") and
+  # Renovate opened nothing for ~3.5 months. A daily cleanup of what the workers
+  # wrote under /tmp/renovate/{cache,repos} keeps it bounded; the SQLite queue
+  # and job logs are not touched. Daily, not "always": an always-empty cache makes
+  # every hourly run cold. Quoted: a bare `off` would parse as a YAML boolean.
+  mendRnvWorkerCleanup: "0 0 * * *"
   logLevel: "info"
   logFormat: "json"
   # Private ghcr.io auth: inject the shared read-only GHCR creds (github-packages-ro, from ESO,
@@ -55,6 +64,19 @@ renovate:
         },
       ],
     };
+
+# Purge the package cache on every pod start. It is pure cache and rebuilds in one
+# run. Needed because CE's own cleanup (mendRnvWorkerCleanup above) only deletes
+# files created since the current process started (find -newercc), so it never
+# reclaims orphans from earlier pod lifetimes, like the July backlog that filled the
+# inode table. Same image as the main container (already on the node).
+initContainers:
+  - name: purge-package-cache
+    image: ghcr.io/mend/renovate-ce:14.8.0-full
+    command: ["sh", "-c", "rm -rf /tmp/renovate/cache/renovate"]
+    volumeMounts:
+      - name: renovate-ce-cache-volume
+        mountPath: /tmp/renovate
 
 # Persist the SQLite job queue + repo cache across restarts.
 cachePersistence:
