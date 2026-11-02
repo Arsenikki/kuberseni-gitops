@@ -22,9 +22,13 @@ jobs:
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
         if: env.GHCR_READ_TOKEN != ''
         run: echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+      # An unreadable image still fails: a private tag we can't verify is exactly how
+      # #788 slipped through. The message just says WHY, so a missing secret isn't
+      # mistaken for a missing tag.
       - name: Check added image refs exist
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
+          HAVE_GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN != '' }}
         run: |
           imgs=$(git diff "$BASE"...HEAD -- 'cluster/**.yaml' 'cluster/**.yml' \
             | grep -E '^\+[^+].*[[:space:]{,]image:[[:space:]]*[^[:space:]]' \
@@ -33,11 +37,26 @@ jobs:
           if [ -z "$imgs" ]; then echo "no image refs changed"; exit 0; fi
           fail=0
           for img in $imgs; do
-            if docker buildx imagetools inspect "$img" >/dev/null 2>&1; then
+            if err=$(docker buildx imagetools inspect "$img" 2>&1 >/dev/null); then
               echo "ok      $img"
+              continue
+            fi
+            fail=1
+            reason=$(printf '%s\n' "$err" | grep -m1 . | cut -c1-300)
+            if printf '%s' "$err" | grep -qiE 'not found|manifest unknown'; then
+              echo "::error::image tag does not exist: $img"
+            elif printf '%s' "$err" | grep -qiE '401|403|unauthori[sz]ed|denied|forbidden'; then
+              case "$img" in
+                ghcr.io/*)
+                  if [ "$HAVE_GHCR_TOKEN" = true ]; then
+                    echo "::error::cannot read $img with GHCR_READ_TOKEN (token lacks read:packages or access to this package?): $reason"
+                  else
+                    echo "::error::cannot verify $img: it is private and the GHCR_READ_TOKEN repo secret is not set (token with read:packages). The tag may well exist; this check can't tell."
+                  fi ;;
+                *) echo "::error::cannot read $img (private registry, no credentials here): $reason" ;;
+              esac
             else
-              echo "::error::image not found (or not readable): $img"
-              fail=1
+              echo "::error::could not inspect $img: $reason"
             fi
           done
           exit $fail
