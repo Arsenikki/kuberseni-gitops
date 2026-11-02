@@ -115,6 +115,10 @@ spec:
             # as a Jeeves board card via the in-cluster board Service. Generic-only.
             - name: PASEO_SEED_SKILLS
               value: "jeeves-handover"
+            # Public (authentik-SSO-fronted) board root for the card link file-card.sh
+            # prints; its API calls still go to the in-cluster board Service.
+            - name: JEEVES_BOARD_PUBLIC_URL
+              value: "https://jeeves.arsenikki.casa"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
