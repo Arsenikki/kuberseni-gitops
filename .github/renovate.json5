@@ -42,6 +42,15 @@
   "commitMessageSuffix": "",
   // package rules
   "packageRules": [
+    // philips-bridge pins aioairctrl==0.3.1 and paho-mqtt<2, which break on
+    // Python 3.14 — keep it on 3.12 (its "# renovate: ignore" comment is not a
+    // Renovate directive, so this rule does the actual ignoring)
+    {
+      "description": ["Keep philips-bridge on python 3.12"],
+      "matchFileNames": ["cluster/apps/home-automation/philips-bridge/**"],
+      "matchPackageNames": ["python"],
+      "enabled": false
+    },
     // automerge
     {
       "description": ["Auto merge Github Actions"],
