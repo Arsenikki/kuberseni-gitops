@@ -71,7 +71,7 @@ func main() {
 	flag.StringVar(&c.vault, "vault", "homelab", "1Password vault")
 	flag.StringVar(&c.item, "item", "arc-github-app", "1Password item to create")
 	flag.IntVar(&c.port, "port", 8971, "local port for GitHub's redirects")
-	flag.StringVar(&c.repos, "repos", "jeeves,paseo-homelab,resepti,flock,coachi,captain-core", "repositories to select on the install page (shown as a reminder)")
+	flag.StringVar(&c.repos, "repos", "jeeves,paseo-homelab,resepti,coachi,captain-core", "repositories to select on the install page (shown as a reminder)")
 	flag.BoolVar(&c.dry, "dry-run", false, "print the manifest and exit")
 	flag.StringVar(&c.op, "op", "op", "1Password CLI binary")
 	flag.Parse()

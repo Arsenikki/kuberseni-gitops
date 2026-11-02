@@ -46,15 +46,23 @@ Homelab GitOps: **Talos Linux** Kubernetes on **Proxmox**, managed by **ArgoCD**
 the quality gate, and opens a PR. Use it to hand off maintenance instead of doing
 it by hand.
 
-**Hand-off is via the `flock` ticketing app** — a self-built ticket system
-(repo: [Arsenikki/flock](https://github.com/Arsenikki/flock)) that exposes an API
-for creating tickets. File **one ticket per deliverable** there; Jeeves ingests
-tickets from flock.
+**Hand-off is via the Jeeves board**: a kanban ticket system that is part of Jeeves
+(source: `internal/board` in [Arsenikki/jeeves](https://github.com/Arsenikki/jeeves), API reference
+`docs/board/API.md`; formerly the separate `Arsenikki/flock` repo, now archived). File
+**one card per deliverable**; Jeeves picks cards up from the board.
+
+- **UI:** <https://jeeves.arsenikki.casa> (authentik login). **In-cluster API:**
+  `http://flock.flock.svc.cluster.local:8099/api/v1` (the k8s namespace, StatefulSet
+  and Service are still named `flock`).
+- **File a card:** `POST /api/v1/cards` with JSON `{"project":"Arsenikki/kuberseni-gitops",
+  "title":"…","body":"…","column":"backlog","owner":"jeeves"}`.
+- **Jeeves only works cards in a `managed` project, in the `ready` column, owned by
+  its instance** (`jeeves` = prod, `jeeves-dev` = dev). The `Arsenikki/kuberseni-gitops`
+  project is currently **not** managed, so its cards are plain tickets until someone
+  turns `managed` on in the project settings.
 
 > **Do NOT file GitHub issues for Jeeves.** The old GitHub-issue + `jeeves`-label
-> trigger is retired. The exact flock ticket API (endpoint, auth, payload) isn't
-> pinned down here yet — confirm the current method before filing, and refine this
-> section as it settles.
+> trigger is retired.
 
 **Write the ticket for an agent, not a human.** A vague ticket stalls on a
 clarifying question. Give it:
