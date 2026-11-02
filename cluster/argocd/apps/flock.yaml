@@ -6,7 +6,7 @@
 # and PVC keep the `flock` name on purpose — renaming would orphan the SQLite PVC.
 # NEVER delete/rename this Application: its finalizer + prune would take the
 # board data with it. Isolated/additive: its
-# own namespace `flock` and its own ingress host flock.arsenikki.casa. No auth in
+# own namespace `flock` and its own ingress host jeeves.arsenikki.casa. No auth in
 # v1 (private LAN/Tailscale only; authentik SSO is a planned follow-up). Wave 6 —
 # after ESO/1Password + Longhorn, like jeeves.
 apiVersion: argoproj.io/v1alpha1
