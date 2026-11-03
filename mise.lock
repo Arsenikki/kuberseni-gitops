@@ -121,7 +121,7 @@ version = "1.13.4"
 backend = "aqua:siderolabs/talos"
 
 [[tools.task]]
-version = "3.52.0"
+version = "3.54.0"
 backend = "aqua:go-task/task"
 
 [[tools.uv]]
