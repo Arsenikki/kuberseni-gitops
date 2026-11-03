@@ -27,11 +27,20 @@ jobs:
       # mistaken for a missing tag.
       - name: Check added image refs exist
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          # pull_request checks out refs/pull/N/merge, whose first parent is the CURRENT
+          # base tip. Diff against that, not event.pull_request.base.sha: that sha goes
+          # stale as main moves, and diffing from it drags in every image main changed
+          # since (seen on #460). Fall back to the event sha if HEAD isn't a merge.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HAVE_GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN != '' }}
         run: |
-          imgs=$(git diff "$BASE"...HEAD -- 'cluster/**.yaml' 'cluster/**.yml' \
-            | grep -E '^\+[^+].*[[:space:]{,]image:[[:space:]]*[^[:space:]]' \
+          if git rev-parse -q --verify HEAD^2 >/dev/null; then BASE=HEAD^1; else BASE=$BASE_SHA; fi
+          # Added lines only, with YAML comments stripped first so prose like
+          # "# (jeeves-paseo image: paseo 0.11.x ...)" isn't read as an image ref.
+          imgs=$(git diff "$BASE" HEAD -- 'cluster/**.yaml' 'cluster/**.yml' \
+            | grep -E '^\+[^+]' \
+            | sed -E 's/^\+//; s/(^|[[:space:]])#.*$//' \
+            | grep -E '(^|[[:space:]{,])image:[[:space:]]*[^[:space:]]' \
             | sed -E "s/.*image:[[:space:]]*[\"']?([^\"' ,}#]+).*/\1/" \
             | sort -u)
           if [ -z "$imgs" ]; then echo "no image refs changed"; exit 0; fi
