@@ -17,6 +17,54 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   match_client_id = false
 }
 
+# ── Kea DHCP — global lease lifetime ─────────────────────────────────────────
+# Not exposed by the opnsense provider, so it's set via its REST API directly.
+# Kea's default lease is 4000s, and clients renew at 50% of it (~33 min). Android
+# schedules that renewal as a wakeup alarm, which pulled the Formovie projector
+# out of standby every ~33 min (fans spin, and its HDMI-CEC wake switches the
+# Q990H soundbar input). See Arsenikki/codex android-tv/README.md.
+# A 7-day lease means a renewal (and wake) only every ~3.5 days.
+
+locals {
+  kea_valid_lifetime = 604800 # 7 days
+}
+
+resource "restapi_object" "kea_dhcpv4_general" {
+  provider = restapi.opnsense
+
+  # A singleton settings object, not a collection: pin the id and point every
+  # operation at the fixed get/set endpoints.
+  path         = "/kea/dhcpv4"
+  object_id    = "general"
+  create_path  = "/kea/dhcpv4/set"
+  read_path    = "/kea/dhcpv4/get"
+  update_path  = "/kea/dhcpv4/set"
+  destroy_path = "/kea/dhcpv4/set"
+
+  # OPNSense returns integer fields as strings, so send one too or the read-back
+  # never matches and every plan shows drift.
+  data = jsonencode({ dhcpv4 = { general = { valid_lifetime = tostring(local.kea_valid_lifetime) } } })
+
+  # Removing this resource saves Kea's default back (reconfigure Kea by hand after).
+  destroy_data = jsonencode({ dhcpv4 = { general = { valid_lifetime = "4000" } } })
+
+  # `get` returns the whole Kea model; only compare the keys set in `data`.
+  ignore_server_additions = true
+}
+
+# `set` only saves config.xml; Kea needs a reconfigure to render and load it.
+resource "terraform_data" "kea_dhcpv4_reconfigure" {
+  triggers_replace = restapi_object.kea_dhcpv4_general.data
+
+  provisioner "local-exec" {
+    command = "curl -fsS -k -u \"$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET\" -X POST -H 'Content-Type: application/json' -d '{}' https://192.168.1.1/api/kea/service/reconfigure"
+    environment = {
+      OPNSENSE_API_KEY    = var.opnsense_api_key
+      OPNSENSE_API_SECRET = var.opnsense_api_secret
+    }
+  }
+}
+
 # ── Cluster VM reservations — derived from vms.tf locals ──────────────────────
 # MAC, IP and hostname come from the same place as the VM config.
 # Adding/removing a VM automatically adds/removes its DHCP reservation.
@@ -124,6 +172,16 @@ resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
   ip_address  = "192.168.1.150"
   hostname    = "philips-purifier"
   description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
+}
+
+# MAC is Android's per-SSID randomized one (stable unless the projector forgets the
+# network or is reset), not the device MAC 38:54:39:6c:bc:de.
+resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "26:78:d3:6e:2d:42"
+  ip_address  = "192.168.1.151"
+  hostname    = "formovie-projector"
+  description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"
 }
 
 # ── State migration — rename old individual resources to for_each ──────────────
