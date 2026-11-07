@@ -182,7 +182,9 @@ notifications:
         - on-sync-failed
         - on-health-degraded
     - recipients:
-        - webhook:jeeves-board
+        # A webhook service is addressed by its NAME alone (service.webhook.<name>);
+        # "webhook:<name>" fails with "notification service 'webhook' is not supported".
+        - jeeves-board
       triggers:
         - on-board-deployed
         - on-board-sync-failed
