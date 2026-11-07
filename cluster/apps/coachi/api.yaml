@@ -26,7 +26,7 @@ spec:
         - name: ghcr-credentials
       initContainers:
         - name: wait-for-db
-          image: postgres:16-alpine
+          image: postgres:18-alpine
           command:
             - sh
             - -c
