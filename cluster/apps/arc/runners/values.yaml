@@ -64,7 +64,7 @@ template:
             mountPath: /home/runner/tmpDir
       # Native sidecar (restartPolicy: Always) docker daemon.
       - name: dind
-        image: docker:29.9.2-dind # same engine version as the runner's docker CLI
+        image: docker:29.9.3-dind # same engine version as the runner's docker CLI
         restartPolicy: Always
         args:
           - dockerd
