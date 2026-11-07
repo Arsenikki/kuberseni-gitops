@@ -66,6 +66,15 @@ notifications:
   notifiers:
     "service.telegram": |
       token: $argocd-casabot:telegram-token
+    # The Jeeves board's activity log (in-cluster, no auth: the board attributes
+    # writes by X-Jeeves-Actor). Deploy results show up there for every agent to see.
+    "service.webhook.jeeves-board": |
+      url: http://flock.flock.svc.cluster.local:8099/api/v1
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: X-Jeeves-Actor
+          value: argocd
   templates:
     "template.app-sync-succeeded": |
       telegram:
@@ -82,6 +91,67 @@ notifications:
         message: |
           ⚠️ *Degraded:* {{.app.metadata.name}}
           {{.app.metadata.name}} health is Degraded.
+    # Board activity-log entries (webhook only; the Telegram templates above are
+    # untouched). $repo is the app's GitHub repo, "" for Helm-chart sources, so the
+    # board's owner/name check never rejects an entry. Strings go through toJson.
+    "template.board-deployed": |
+      webhook:
+        jeeves-board:
+          method: POST
+          path: /activity
+          body: |
+            {{- $repo := "" -}}
+            {{- with .app.spec.source }}{{ if hasPrefix "https://github.com/" .repoURL }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- range .app.spec.sources }}{{ if and (eq $repo "") (hasPrefix "https://github.com/" .repoURL) }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- $res := .app.status.operationState.syncResult | default dict -}}
+            {{- $rev := $res.revision | default "" -}}
+            {{- if not $rev }}{{ $rev = join "," ($res.revisions | default list) }}{{ end -}}
+            {{- $short := "" -}}
+            {{- range $res.revisions }}{{ if and (eq $short "") (eq (len .) 40) }}{{ $short = trunc 7 . }}{{ end }}{{ end -}}
+            {{- if not $short }}{{ $short = trunc 7 $rev }}{{ end -}}
+            {"kind":"deploy","repo":{{ $repo | toJson }},
+             "summary":{{ printf "%s synced to %s (%s)" .app.metadata.name $short .app.status.health.status | toJson }},
+             "links":[{"url":{{ printf "%s/applications/argocd/%s" .context.argocdUrl .app.metadata.name | toJson }},"title":"ArgoCD"}],
+             "key":{{ printf "argocd:%s:%s:deployed" .app.metadata.name ($rev | sha256sum | trunc 16) | toJson }}}
+    "template.board-sync-failed": |
+      webhook:
+        jeeves-board:
+          method: POST
+          path: /activity
+          body: |
+            {{- $repo := "" -}}
+            {{- with .app.spec.source }}{{ if hasPrefix "https://github.com/" .repoURL }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- range .app.spec.sources }}{{ if and (eq $repo "") (hasPrefix "https://github.com/" .repoURL) }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- $res := .app.status.operationState.syncResult | default dict -}}
+            {{- $rev := $res.revision | default "" -}}
+            {{- if not $rev }}{{ $rev = join "," ($res.revisions | default list) }}{{ end -}}
+            {{- $short := "" -}}
+            {{- range $res.revisions }}{{ if and (eq $short "") (eq (len .) 40) }}{{ $short = trunc 7 . }}{{ end }}{{ end -}}
+            {{- if not $short }}{{ $short = trunc 7 $rev }}{{ end -}}
+            {"kind":"failure","severity":"error","repo":{{ $repo | toJson }},
+             "summary":{{ printf "%s sync failed (%s)" .app.metadata.name .app.status.operationState.phase | toJson }},
+             "detail":{{ .app.status.operationState.message | trunc 3500 | toJson }},
+             "links":[{"url":{{ printf "%s/applications/argocd/%s" .context.argocdUrl .app.metadata.name | toJson }},"title":"ArgoCD"}],
+             "key":{{ printf "argocd:%s:%s:sync-failed" .app.metadata.name ($rev | sha256sum | trunc 16) | toJson }}}
+    "template.board-degraded": |
+      webhook:
+        jeeves-board:
+          method: POST
+          path: /activity
+          body: |
+            {{- $repo := "" -}}
+            {{- with .app.spec.source }}{{ if hasPrefix "https://github.com/" .repoURL }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- range .app.spec.sources }}{{ if and (eq $repo "") (hasPrefix "https://github.com/" .repoURL) }}{{ $repo = .repoURL | trimPrefix "https://github.com/" | trimSuffix ".git" }}{{ end }}{{ end -}}
+            {{- $res := .app.status.operationState.syncResult | default dict -}}
+            {{- $rev := $res.revision | default "" -}}
+            {{- if not $rev }}{{ $rev = join "," ($res.revisions | default list) }}{{ end -}}
+            {{- $short := "" -}}
+            {{- range $res.revisions }}{{ if and (eq $short "") (eq (len .) 40) }}{{ $short = trunc 7 . }}{{ end }}{{ end -}}
+            {{- if not $short }}{{ $short = trunc 7 $rev }}{{ end -}}
+            {"kind":"failure","severity":"warn","repo":{{ $repo | toJson }},
+             "summary":{{ printf "%s health is Degraded" .app.metadata.name | toJson }},
+             "detail":{{ default "" .app.status.health.message | trunc 3500 | toJson }},
+             "links":[{"url":{{ printf "%s/applications/argocd/%s" .context.argocdUrl .app.metadata.name | toJson }},"title":"ArgoCD"}]}
   triggers:
     "trigger.on-sync-succeeded": |
       - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
@@ -92,12 +162,31 @@ notifications:
     "trigger.on-health-degraded": |
       - when: app.status.health.status == 'Degraded'
         send: [app-health-degraded]
+    # Board triggers: once per synced revision, so an app that selfHeal keeps
+    # re-syncing (a known permanent diff) logs one entry, not one per retry.
+    "trigger.on-board-deployed": |
+      - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+        oncePer: "[app.status.operationState.syncResult.revision, app.status.operationState.syncResult.revisions]"
+        send: [board-deployed]
+    "trigger.on-board-sync-failed": |
+      - when: app.status.operationState.phase in ['Error', 'Failed']
+        oncePer: "[app.status.operationState.syncResult.revision, app.status.operationState.syncResult.revisions]"
+        send: [board-sync-failed]
+    "trigger.on-board-degraded": |
+      - when: app.status.health.status == 'Degraded'
+        send: [board-degraded]
   subscriptions:
     - recipients:
         - telegram:128627881
       triggers:
         - on-sync-failed
         - on-health-degraded
+    - recipients:
+        - webhook:jeeves-board
+      triggers:
+        - on-board-deployed
+        - on-board-sync-failed
+        - on-board-degraded
 
 extraObjects:
   - apiVersion: external-secrets.io/v1
