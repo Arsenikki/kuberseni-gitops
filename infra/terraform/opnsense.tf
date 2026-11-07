@@ -15,6 +15,76 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   # Pin to OPNSense's actual value — the provider defaults this to true but the
   # write doesn't round-trip, causing a perpetual diff. false matches reality.
   match_client_id = false
+
+  # Keep the DNS servers above. With auto-collect on (the provider default), any save of
+  # the Kea model — GUI or the restapi_object below — replaces them with the router's own
+  # IP (it flipped DHCP DNS + NTP to 192.168.1.1 on 2026-11-07).
+  auto_collect = false
+}
+
+# ── Kea DHCP — global lease lifetime ─────────────────────────────────────────
+# Not exposed by the opnsense provider, so it's set via its REST API directly.
+# Kea's default lease is 4000s, and clients renew at 50% of it (~33 min). Android
+# schedules that renewal as a wakeup alarm, which pulled the Formovie projector
+# out of standby every ~33 min (fans spin, and its HDMI-CEC wake switches the
+# Q990H soundbar input). See Arsenikki/codex android-tv/README.md.
+# A 7-day lease means a renewal (and wake) only every ~3.5 days.
+
+locals {
+  kea_valid_lifetime = 604800 # 7 days
+}
+
+resource "restapi_object" "kea_dhcpv4_general" {
+  provider = restapi.opnsense
+
+  # A singleton settings object, not a collection: pin the id and point every
+  # operation at the fixed get/set endpoints.
+  path         = "/kea/dhcpv4"
+  object_id    = "general"
+  create_path  = "/kea/dhcpv4/set"
+  read_path    = "/kea/dhcpv4/get"
+  update_path  = "/kea/dhcpv4/set"
+  destroy_path = "/kea/dhcpv4/set"
+
+  # OPNSense returns integer fields as strings, so send one too or the read-back
+  # never matches and every plan shows drift.
+  data = jsonencode({ dhcpv4 = { general = { valid_lifetime = tostring(local.kea_valid_lifetime) } } })
+
+  # Removing this resource saves Kea's default back (reconfigure Kea by hand after).
+  destroy_data = jsonencode({ dhcpv4 = { general = { valid_lifetime = "4000" } } })
+
+  # `get` returns the whole Kea model; only compare the keys set in `data`.
+  ignore_server_additions = true
+
+  # `set` saves the whole Kea model from a snapshot, so a reservation or subnet written in
+  # parallel gets lost (the projector reservation was, on the first apply). Write after them.
+  depends_on = [
+    opnsense_kea_dhcpv4_subnet.lan,
+    opnsense_kea_dhcpv4_reservation.controlplane,
+    opnsense_kea_dhcpv4_reservation.worker,
+    opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.desktop_main,
+    opnsense_kea_dhcpv4_reservation.netgear_ap,
+    opnsense_kea_dhcpv4_reservation.laptop,
+    opnsense_kea_dhcpv4_reservation.desktop_secondary,
+    opnsense_kea_dhcpv4_reservation.vm_hub,
+    opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
+    opnsense_kea_dhcpv4_reservation.philips_purifier,
+    opnsense_kea_dhcpv4_reservation.formovie_projector,
+  ]
+}
+
+# `set` only saves config.xml; Kea needs a reconfigure to render and load it.
+resource "terraform_data" "kea_dhcpv4_reconfigure" {
+  triggers_replace = restapi_object.kea_dhcpv4_general.data
+
+  provisioner "local-exec" {
+    command = "curl -fsS -k -u \"$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET\" -X POST -H 'Content-Type: application/json' -d '{}' https://192.168.1.1/api/kea/service/reconfigure"
+    environment = {
+      OPNSENSE_API_KEY    = var.opnsense_api_key
+      OPNSENSE_API_SECRET = var.opnsense_api_secret
+    }
+  }
 }
 
 # ── Cluster VM reservations — derived from vms.tf locals ──────────────────────
@@ -124,6 +194,16 @@ resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
   ip_address  = "192.168.1.150"
   hostname    = "philips-purifier"
   description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
+}
+
+# MAC is Android's per-SSID randomized one (stable unless the projector forgets the
+# network or is reset), not the device MAC 38:54:39:6c:bc:de.
+resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "26:78:d3:6e:2d:42"
+  ip_address  = "192.168.1.151"
+  hostname    = "formovie-projector"
+  description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"
 }
 
 # ── State migration — rename old individual resources to for_each ──────────────

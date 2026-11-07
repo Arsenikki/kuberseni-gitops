@@ -1,0 +1,20 @@
+---
+# paseo-generic's global mise tools (MISE_GLOBAL_CONFIG_FILE). The paseo-homelab entrypoint
+# runs `mise install` for this on every start: a no-op once installed (installs live on the
+# data PVC), a self-heal if the PVC is wiped. Repo-pinned tools (sops/tofu/task) come from
+# each checkout's own .mise.toml instead (`mise trust && mise install`).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paseo-generic-mise
+  namespace: paseo-generic
+  labels:
+    app.kubernetes.io/part-of: paseo-homelab
+data:
+  config.toml: |
+    [tools]
+    # adb for Android TV debugging (Arsenikki/codex android-tv/). Not in mise's registry,
+    # so it's pulled from Google's versioned platform-tools zip. To bump: latest
+    # platform-tools in https://dl.google.com/android/repository/repository2-3.xml, then
+    # sha256sum the zip.
+    "http:adb" = { version = "37.0.2", url = "https://dl.google.com/android/repository/platform-tools_r{{ version }}-linux.zip", bin_path = "platform-tools", checksum = "sha256:dfc80a84a6710e5674415d4b55ae599c01aa4961822f53097d747472f410f157" }
