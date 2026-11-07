@@ -74,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-13
+          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-15
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -140,6 +140,16 @@ spec:
               value: "credential.https://github.com.helper"
             - name: GIT_CONFIG_VALUE_0
               value: "!gh auth git-credential"
+            # Global mise tools (adb), installed by the entrypoint on start. See config.yaml.
+            - name: MISE_GLOBAL_CONFIG_FILE
+              value: /etc/paseo-mise/config.toml
+            # sops age key for kuberseni-gitops `task terraform:*` (see secrets.yaml).
+            - name: SOPS_AGE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-sops-age
+                  key: SOPS_AGE_KEY
+                  optional: true
           ports:
             - containerPort: 6767
               name: paseo
@@ -170,10 +180,16 @@ spec:
               mountPath: /data/paseo
             - name: workspaces
               mountPath: /workspaces
+            - name: mise-config
+              mountPath: /etc/paseo-mise
+              readOnly: true
       volumes:
         - name: workspaces
           persistentVolumeClaim:
             claimName: paseo-generic-workspaces
+        - name: mise-config
+          configMap:
+            name: paseo-generic-mise
   volumeClaimTemplates:
     - metadata:
         name: data
