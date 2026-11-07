@@ -34,6 +34,34 @@ server:
     requests:
       cpu: 150m
       memory: 512Mi
+  # Keep the server off worker-02: a 3-vCPU VM on the 4-core "nas" Proxmox host
+  # (7 vCPUs on 4 cores, ~20% steal, ~95% CPU PSI). Soft, so SSO still schedules
+  # if worker-01 is down. Setting `affinity` replaces the chart's soft
+  # self-anti-affinity, which is pointless at replicas=1 and steered the
+  # 2026-11-07 04:00 replacement pod onto worker-02 while the evicted pod was
+  # still terminating on worker-01.
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                  - worker-02
+  # /-/health/live/ runs the DB-touching tenant/brand middleware, so slow Postgres
+  # made it exceed the chart's 3s x3 budget and get killed while alive; every
+  # restart re-runs the proxy_set_defaults provider sweep, feeding the loop.
+  livenessProbe:
+    timeoutSeconds: 10
+    failureThreshold: 6
+  # /-/health/ready/ opens a fresh DB connection (SCRAM auth) each time and holds
+  # a gunicorn worker's sync thread meanwhile (seen up to 21s), blocking liveness
+  # requests routed to the same worker -- so probe it less often.
+  readinessProbe:
+    timeoutSeconds: 5
+    periodSeconds: 30
   ingress:
     enabled: true
     hosts:
@@ -62,6 +90,35 @@ postgresql:
     secretKeys:
       adminPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
       userPasswordKey: AUTHENTIK_POSTGRES_PASSWORD
+  primary:
+    # Was BestEffort (resources {}) -> shared cgroup cpu.weight=1 slice; on
+    # CPU-saturated worker-02 it stalled ~3.6x more than the Burstable server,
+    # pg_isready blew its 5s timeout and kubelet killed it 107x (2026-11-01..07).
+    # The Bitnami subchart ignores global.priorityClassName, so set it here:
+    # the server is kuberseni-critical, its database must be too.
+    priorityClassName: kuberseni-critical
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    # Fast shutdown under starvation exceeded 30s and was SIGKILLed (11-07 11:34).
+    terminationGracePeriodSeconds: 120
+    livenessProbe:
+      timeoutSeconds: 15
+    readinessProbe:
+      timeoutSeconds: 10
+    # Prefer anything but worker-02 (see server.affinity). Soft: the descheduler
+    # never moves PVC pods, so this only takes effect when the pod is (re)created.
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                    - worker-02
 
 redis:
   enabled: true
