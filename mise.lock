@@ -93,28 +93,28 @@ version = "3.13.1"
 backend = "aqua:getsops/sops"
 
 [[tools.talhelper]]
-version = "3.1.11"
+version = "3.1.17"
 backend = "aqua:budimanjojo/talhelper"
 
 [tools.talhelper."platforms.linux-arm64"]
-checksum = "sha256:dfcb10b679fd3780a041c99788c2d67908ff4c9a79e63224ad8a48f1c00e1410"
-url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.11/talhelper_linux_arm64.tar.gz"
+checksum = "sha256:1841915ec6f533ef653baedc5f1cbf68683e0ca9a72f240ac2f257d94f68798b"
+url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.17/talhelper_linux_arm64.tar.gz"
 
 [tools.talhelper."platforms.linux-x64"]
-checksum = "sha256:0951cc31b4b34d2c5e31efb9bf3c1a2b8be7e99401533e2d46fbb39f07ab38d8"
-url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.11/talhelper_linux_amd64.tar.gz"
+checksum = "sha256:dff9162569004637b6a842c4020d909b0ffbc7fbbe2fca23a754708db95be204"
+url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.17/talhelper_linux_amd64.tar.gz"
 
 [tools.talhelper."platforms.macos-arm64"]
-checksum = "sha256:f7cdbc97612e64e8a3aa69e6ac073c763e449ce6d5885119d226eba5580569ef"
-url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.11/talhelper_darwin_arm64.tar.gz"
+checksum = "sha256:cf86526d730010193d3e858f13242e5f0c94fdcefe5e001716c552211b1e95b0"
+url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.17/talhelper_darwin_arm64.tar.gz"
 
 [tools.talhelper."platforms.macos-x64"]
-checksum = "sha256:8611446bdf3862dd1c36f78b39146c832ead41d97c4f63863952f8f1da379ea1"
-url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.11/talhelper_darwin_amd64.tar.gz"
+checksum = "sha256:29dec70a5b2049058e4adf5ff6f236ca74fb51500ebb8e41e381ad1d49d60a09"
+url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.17/talhelper_darwin_amd64.tar.gz"
 
 [tools.talhelper."platforms.windows-x64"]
-checksum = "sha256:7bf1aad1fbe0c3c6a866e02731e71db500bbd2ac0c965958309e61edbc14ee3c"
-url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.11/talhelper_windows_amd64.tar.gz"
+checksum = "sha256:415f079abd09fa686b29a4d02de03cd6c5d8339cc6d497f2f4a54da6765c0a79"
+url = "https://github.com/budimanjojo/talhelper/releases/download/v3.1.17/talhelper_windows_amd64.tar.gz"
 
 [[tools.talosctl]]
 version = "1.13.4"
