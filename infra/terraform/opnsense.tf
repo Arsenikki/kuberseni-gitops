@@ -15,6 +15,11 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   # Pin to OPNSense's actual value — the provider defaults this to true but the
   # write doesn't round-trip, causing a perpetual diff. false matches reality.
   match_client_id = false
+
+  # Keep the DNS servers above. With auto-collect on (the provider default), any save of
+  # the Kea model — GUI or the restapi_object below — replaces them with the router's own
+  # IP (it flipped DHCP DNS + NTP to 192.168.1.1 on 2026-11-07).
+  auto_collect = false
 }
 
 # ── Kea DHCP — global lease lifetime ─────────────────────────────────────────
@@ -50,6 +55,23 @@ resource "restapi_object" "kea_dhcpv4_general" {
 
   # `get` returns the whole Kea model; only compare the keys set in `data`.
   ignore_server_additions = true
+
+  # `set` saves the whole Kea model from a snapshot, so a reservation or subnet written in
+  # parallel gets lost (the projector reservation was, on the first apply). Write after them.
+  depends_on = [
+    opnsense_kea_dhcpv4_subnet.lan,
+    opnsense_kea_dhcpv4_reservation.controlplane,
+    opnsense_kea_dhcpv4_reservation.worker,
+    opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.desktop_main,
+    opnsense_kea_dhcpv4_reservation.netgear_ap,
+    opnsense_kea_dhcpv4_reservation.laptop,
+    opnsense_kea_dhcpv4_reservation.desktop_secondary,
+    opnsense_kea_dhcpv4_reservation.vm_hub,
+    opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
+    opnsense_kea_dhcpv4_reservation.philips_purifier,
+    opnsense_kea_dhcpv4_reservation.formovie_projector,
+  ]
 }
 
 # `set` only saves config.xml; Kea needs a reconfigure to render and load it.
