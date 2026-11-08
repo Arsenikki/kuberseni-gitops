@@ -96,3 +96,28 @@ spec:
     - port: hubble-metrics
       scheme: http
       interval: 30s
+---
+# Mimir compactor — only the staleness signals for the bucket index and block
+# cleanup (they went silent when the bucket index got corrupted on 2026-11-03).
+# Keep list is narrow on purpose: every series counts against the tenant limit.
+# `up` is kept as a safety net (Alloy generates it itself anyway).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mimir-compactor
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames: [monitoring]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mimir
+      app.kubernetes.io/component: compactor
+  endpoints:
+    - port: http-metrics
+      scheme: http
+      interval: 60s
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          action: keep
+          regex: "cortex_bucket_index_last_successful_update_timestamp_seconds|cortex_compactor_block_cleanup_last_successful_run_timestamp_seconds|cortex_compactor_last_successful_run_timestamp_seconds|up"

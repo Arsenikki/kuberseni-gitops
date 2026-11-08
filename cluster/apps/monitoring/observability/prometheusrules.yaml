@@ -85,3 +85,61 @@ spec:
             severity: warning
           annotations:
             summary: "Backup CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} has never succeeded"
+
+    # Metric loss was silent: node-exporter was never scraped (hostMetrics without
+    # linuxHosts), and the Mimir bucket index has been corrupt since 2026-11-03
+    # (queries >12h fail) with nothing alerting. Alert on missing scrape jobs and
+    # on a stale bucket index / failing compactor cleanup.
+    - name: metrics-pipeline
+      rules:
+        - alert: MimirBucketIndexStale
+          expr: |
+            time() - max by (user) (cortex_bucket_index_last_successful_update_timestamp_seconds) > 2 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Mimir bucket index for tenant {{ $labels.user }} not updated in over 2h"
+        - alert: MimirCompactorCleanupFailing
+          expr: |
+            time() - max(cortex_compactor_block_cleanup_last_successful_run_timestamp_seconds) > 6 * 3600
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Mimir compactor has not completed a block cleanup in over 6h"
+        - alert: ScrapeJobMissing
+          expr: absent_over_time(up{job="integrations/node_exporter"}[15m])
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No up series for scrape job {{ $labels.job }} in 15m"
+        - alert: ScrapeJobMissing
+          expr: absent_over_time(up{job="pve-exporter"}[15m])
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No up series for scrape job {{ $labels.job }} in 15m"
+        - alert: ScrapeJobMissing
+          expr: absent_over_time(up{job="integrations/kubernetes/kube-state-metrics"}[15m])
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No up series for scrape job {{ $labels.job }} in 15m"
+        - alert: ScrapeJobMissing
+          expr: absent_over_time(up{job="integrations/kubernetes/kubelet"}[15m])
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No up series for scrape job {{ $labels.job }} in 15m"
+        - alert: ScrapeJobMissing
+          expr: absent_over_time(up{job="mimir-compactor"}[15m])
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No up series for scrape job {{ $labels.job }} in 15m"
