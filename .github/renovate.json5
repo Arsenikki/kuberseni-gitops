@@ -40,6 +40,9 @@
   "commitMessageTopic": "{{depName}}",
   "commitMessageExtra": "to {{newVersion}}",
   "commitMessageSuffix": "",
+  // Credit Renovate's work on Arsenikki's contribution graph: the trailer survives the
+  // squash merge, and GitHub counts co-authors as contributors.
+  "commitBody": "Co-authored-by: Arsenikki <42617129+Arsenikki@users.noreply.github.com>",
   // package rules
   "packageRules": [
     // automerge
