@@ -52,7 +52,7 @@ spec:
                   value: /tmp
               envFrom:
                 - secretRef:
-                    name: digests  # PASEO_PASSWORD, VAULT_GIT_TOKEN
+                    name: digests  # PASEO_PASSWORD, GITHUB_APP_{ID,INSTALLATION_ID,PRIVATE_KEY}
                 - secretRef:
                     name: digests-telegram  # TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
               securityContext:

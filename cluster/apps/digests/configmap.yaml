@@ -56,7 +56,6 @@ data:
         repo_url: https://github.com/Arsenikki/daily-digests.git
         branch: main
         folder: Daily
-        token_env: VAULT_GIT_TOKEN
         commit_author: "Arsenikki <42617129+Arsenikki@users.noreply.github.com>"  # contribution-graph credit
         # Telegram only taps http(s) links; GitHub opens in the GitHub app.
         note_url: https://github.com/Arsenikki/daily-digests/blob/main/{path}

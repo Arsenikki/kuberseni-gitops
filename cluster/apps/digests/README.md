@@ -15,7 +15,7 @@ Work email is out of scope here. It's summarised on the work laptop by the `/goo
 | Field | What |
 |---|---|
 | `google_token_personal` | token JSON from `digests auth --profile personal` (OAuth app must be "In production", or the refresh token expires after 7 days) |
-| `vault_git_token` | fine-grained PAT: Contents read/write on `Arsenikki/daily-digests` only |
+| `github_app_id`, `github_app_installation_id`, `github_app_private_key` | GitHub App with Contents read/write, installed on `Arsenikki/daily-digests` only. The job mints a 1-hour token per run. |
 
 The Paseo password comes from `paseo-apps-password` (same as resepti), and Telegram from the existing `CasaBot (Telegram)` item. Gemini quota is your AI Pro plan's, shared with everything else on paseo-apps.
 
