@@ -1,0 +1,89 @@
+---
+# Daily digest at 06:30 UK time. Unlike the backup CronJobs (UTC), this one sets timeZone
+# so the digest lands at the same wall-clock time across BST/GMT changes.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: digests
+  namespace: digests
+  labels:
+    app.kubernetes.io/part-of: digests
+spec:
+  schedule: "30 6 * * *"
+  timeZone: Europe/London
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # One retry at most: a rerun after drafts were created is deduped via the vault's
+      # .digests/state.json, but there's no point hammering a broken token.
+      backoffLimit: 1
+      # Fail a stuck run instead of blocking later runs (concurrencyPolicy Forbid). Generous
+      # because every AI step is its own paseo-apps agent (one per email, two at a time).
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: digests
+            app.kubernetes.io/part-of: digests
+        spec:
+          restartPolicy: Never
+          priorityClassName: kuberseni-low
+          automountServiceAccountToken: false
+          imagePullSecrets:
+            - name: ghcr-credentials
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: digests
+              image: ghcr.io/arsenikki/digests:0.1.0
+              args: ["run"]
+              env:
+                - name: DIGESTS_CONFIG
+                  value: /config/config.yaml
+                - name: HOME
+                  value: /tmp
+              envFrom:
+                - secretRef:
+                    name: digests  # PASEO_PASSWORD, GITHUB_APP_{ID,INSTALLATION_ID,PRIVATE_KEY}
+                - secretRef:
+                    name: digests-telegram  # TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: google
+                  mountPath: /secrets/google
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+          volumes:
+            - name: config
+              configMap:
+                name: digests
+            - name: google
+              secret:
+                secretName: digests-google
+                items:
+                  - key: personal.json
+                    path: personal.json
+            - name: tmp
+              emptyDir: {}
