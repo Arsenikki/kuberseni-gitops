@@ -1,0 +1,39 @@
+---
+# Egress containment. The job handles untrusted email content, so keep it to HTTPS on the
+# public internet (Google APIs, GitHub, Telegram, RSS feeds) plus the paseo-apps daemon,
+# and away from the rest of the LAN, cluster ranges and link-local metadata. Same shape as
+# paseo-jeeves/netpol.yaml (standard NetworkPolicy; no Cilium L7 DNS rules).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: digests-egress
+  namespace: digests
+  labels:
+    app.kubernetes.io/part-of: digests
+spec:
+  podSelector:
+    matchLabels: { app: digests }
+  policyTypes: [Egress, Ingress]
+  egress:
+    - to: []
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # The shared Paseo daemon that runs the AI steps.
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: paseo-apps }
+          podSelector:
+            matchLabels: { app: paseo-apps }
+      ports:
+        - { protocol: TCP, port: 6767 }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - { protocol: TCP, port: 443 }
