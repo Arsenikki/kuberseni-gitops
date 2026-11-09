@@ -177,7 +177,7 @@ spec:
             - { name: claude-settings, mountPath: /data/paseo/claude/settings.json, subPath: settings.json, readOnly: true }
           resources:
             requests: { cpu: 100m, memory: 512Mi }
-            limits: { cpu: "2", memory: 3Gi }
+            limits: { cpu: "2", memory: 6Gi }
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker
