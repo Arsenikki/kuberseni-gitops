@@ -59,9 +59,9 @@ podSecurityContext:
 resources:
   requests:
     cpu: 2
-    memory: 1024Mi
+    memory: 2048Mi
   limits:
-    memory: 4096Mi
+    memory: 8192Mi
     # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.
     # Also pins Plex to worker-01 via resource availability.
     gpu.intel.com/i915: 1
