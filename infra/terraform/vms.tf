@@ -20,7 +20,10 @@ locals {
     # control-plane-02 (2) + paseo-homelab (6) overcommits vCPU, but real CPU use is
     # low and this gives k8s enough allocatable CPU to end the scheduling pressure.
     # RAM stays at 20 GiB — minipc memory is ~full, so cores (not RAM) are the lever.
-    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 14, memory = 20480, disk_size = 50, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
+    # disk_size=80 (was 50): /var hit DiskPressure 2026-11-10 — ~40G of unpacked images,
+    # all in use by running pods, so kubelet image GC can't free any. Talos EPHEMERAL
+    # has grow=true, so /var expands into the resized disk.
+    worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 14, memory = 20480, disk_size = 80, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
     # worker-02: 130GB Longhorn data disk on local-lvm (grown live from 100; Proxmox
     # can't shrink, so the code must never go below the live size). local-lvm is a
     # thin pool that is ~98% full (2026-10-31) — don't grow this further.
