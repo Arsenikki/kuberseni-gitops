@@ -12,7 +12,7 @@
 # Jeeves gets its own tier because its coding agents are the opposite of the sandboxed
 # app agents: they edit files, run builds/tests, and git commit/push across many repos.
 # Three containers (mirror the jeeves repo deploy/base/paseo.yaml, #68 PEM isolation):
-#   - paseo        : the 0.11.x daemon that runs Claude Code agents in worktrees
+#   - paseo        : the paseo daemon that runs Claude Code agents in worktrees
 #   - token-broker : holds the App private key, mints short-lived tokens on a unix
 #                    socket, so the durable key NEVER enters the agent container
 #   - repo-sync    : keeps base clones of the managed repos on the PVC for worktrees
@@ -97,12 +97,12 @@ spec:
             requests: { cpu: 10m, memory: 16Mi }
             limits: { cpu: 100m, memory: 32Mi }
       containers:
-        # The Paseo 0.11.x daemon (runs Claude Code + Antigravity agents in worktrees). Now the SHARED
+        # The Paseo 0.15.x daemon (runs Claude Code + Antigravity agents in worktrees). Now the SHARED
         # paseo-homelab image (same as paseo-apps/paseo-generic) — gains agy + newer
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -111,7 +111,7 @@ spec:
           env:
             - name: PASEO_HOME
               value: /data/paseo
-            # 0.11.x Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
+            # Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
             # dials this Service's FQDN, so those names must be allow-listed. The
             # entrypoint always adds loopback + the pod hostname.
             - name: PASEO_HOSTNAMES

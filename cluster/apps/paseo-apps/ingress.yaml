@@ -9,7 +9,7 @@
 # (AGY_FORCE_SANDBOX=1, settings deny Bash/Edit/Write — MCP tools only, no arbitrary shell).
 #
 # Auth is the daemon PASSWORD (PASEO_PASSWORD, already set on this tier via #757 — the
-# same value in-cluster clients use) PLUS the 0.11.x Host-header allow-list (this ingress
+# same value in-cluster clients use) PLUS the Host-header allow-list (this ingress
 # host is appended to PASEO_HOSTNAMES in workload.yaml). Do NOT add an authentik
 # forward-auth middleware: it 302-redirects, which the non-browser paseo WebSocket client
 # cannot follow — it would break every client. Connect with:

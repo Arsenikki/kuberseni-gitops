@@ -7,7 +7,7 @@
 # gate is the OPNSense WAN firewall — confirm it does not forward this host).
 #
 # Auth is the daemon PASSWORD (already set on this tier via PASEO_PASSWORD) plus the
-# 0.11.x Host-header allow-list (the ingress host is appended to PASEO_HOSTNAMES in
+# Host-header allow-list (the ingress host is appended to PASEO_HOSTNAMES in
 # workload.yaml). Do NOT add an authentik forward-auth middleware: it 302-redirects,
 # which the non-browser paseo WebSocket client cannot follow — it would break every
 # client. Connect with:
