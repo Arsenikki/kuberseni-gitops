@@ -102,7 +102,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-1
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -116,6 +116,12 @@ spec:
             # entrypoint always adds loopback + the pod hostname.
             - name: PASEO_HOSTNAMES
               value: paseo-jeeves,paseo-jeeves.paseo-jeeves,paseo-jeeves.paseo-jeeves.svc.cluster.local,paseo-jeeves.arsenikki.casa
+            # Plugin host on (config.json is merged, so installed plugins persist). No
+            # JEEVES_BOARD_URL on purpose: netpol.yaml keeps this daemon (untrusted-content
+            # agents, full shell) off other namespaces, and the board API is unauthenticated
+            # in-cluster. The jeeves plugin here gives PR pills; card state lives on the board.
+            - name: PASEO_PLUGINS_ENABLED
+              value: "1"
             # git auth goes through the token-broker sidecar over a unix socket —
             # `jeeves git-credential` fetches short-lived App tokens from it. The App
             # private key is NOT in this container (#68).

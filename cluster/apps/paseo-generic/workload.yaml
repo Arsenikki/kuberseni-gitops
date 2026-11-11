@@ -74,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-1
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -119,6 +119,12 @@ spec:
             # prints; its API calls still go to the in-cluster board Service.
             - name: JEEVES_BOARD_PUBLIC_URL
               value: "https://jeeves.arsenikki.casa"
+            # Plugin host on (config.json is merged, so installed plugins persist). The jeeves
+            # plugin (Arsenikki/paseo-jeeves-plugin) reads cards from the in-cluster board API.
+            - name: PASEO_PLUGINS_ENABLED
+              value: "1"
+            - name: JEEVES_BOARD_URL
+              value: "http://flock.flock.svc.cluster.local:8099"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
