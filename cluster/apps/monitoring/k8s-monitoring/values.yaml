@@ -40,6 +40,12 @@ hostMetrics:
   enabled: true
   collector: alloy-metrics
   destinations: [mimir]
+  # The feature-host-metrics subchart defaults linuxHosts.enabled to false, so
+  # hostMetrics.enabled alone scraped nothing and NodeFilesystemAlmostFull /
+  # NodeMemoryHigh were dead. Source, jobLabel and allow-list stay at defaults
+  # (node-exporter, integrations/node_exporter, default keep list).
+  linuxHosts:
+    enabled: true
 
 # ---- Logs + events ----
 podLogsViaLoki:
