@@ -74,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-15
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -84,7 +84,7 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            # Daemon bearer auth. The 0.11.2 daemon bcrypts PASEO_PASSWORD from env
+            # Daemon bearer auth. The paseo daemon bcrypts PASEO_PASSWORD from env
             # (resolveAuthConfig — env wins over any persisted hash), so this alone
             # enables auth with no image/entrypoint change. REQUIRED before exposing
             # this full-shell + cluster-read daemon over the ingress: the Host-header
@@ -102,7 +102,7 @@ spec:
                   name: paseo-agy
                   key: AGY_TOKEN
                   optional: true
-            # Daemon Host-header allow-list: the 0.11.x daemon 403s a TCP client whose
+            # Daemon Host-header allow-list: the paseo daemon 403s a TCP client whose
             # Host isn't listed. SEPARATE from the PASEO_PASSWORD bearer auth above — a
             # client must satisfy BOTH (allow-listed Host AND password). The ingress host
             # must be listed so wss://paseo-generic.arsenikki.casa/ws is accepted; the

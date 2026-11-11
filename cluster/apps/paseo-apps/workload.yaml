@@ -1,6 +1,6 @@
 ---
 # paseo-apps — the shared Paseo daemon for the homelab app agents (resepti, coachi,
-# untappi, …). Built from the portable `paseo-homelab` image (paseo 0.11.x + Claude
+# untappi, …). Built from the portable `paseo-homelab` image (paseo 0.15.x + Claude
 # Code + Antigravity/agy). Apps drive it over the paseo CLI pointed at the
 # `paseo-apps` service; each app runs agents in its own workspace + MCP.
 #
@@ -47,7 +47,7 @@ spec:
                     app.kubernetes.io/part-of: paseo-homelab
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -58,7 +58,7 @@ spec:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            # Daemon bearer auth. The 0.11.2 daemon bcrypts PASEO_PASSWORD from env
+            # Daemon bearer auth. The paseo daemon bcrypts PASEO_PASSWORD from env
             # (env takes precedence over any persisted hash), so this alone enables
             # auth — no entrypoint/image change. Every client (resepti-api) must send
             # the same value; both read it from the paseo-apps-password 1Password item.
@@ -85,7 +85,7 @@ spec:
             # shell/exec. (paseo-generic leaves this unset so its debug shell is full.)
             - name: AGY_FORCE_SANDBOX
               value: "1"
-            # Daemon Host-header allowlist: the 0.11.x daemon 403s a TCP client whose
+            # Daemon Host-header allowlist: the paseo daemon 403s a TCP client whose
             # Host isn't listed. This is a SEPARATE layer from the PASEO_PASSWORD bearer
             # auth above — a client must satisfy BOTH (allow-listed Host AND password).
             # In-cluster apps dial the Service FQDN, so it must be allowed. The
