@@ -40,6 +40,10 @@ hostMetrics:
   enabled: true
   collector: alloy-metrics
   destinations: [mimir]
+  # Required on top of `enabled`: chart 4.x defaults linuxHosts off, so without this
+  # node-exporter is deployed but never scraped (no node_* metrics in Mimir at all).
+  linuxHosts:
+    enabled: true
 
 # ---- Logs + events ----
 podLogsViaLoki:
@@ -64,6 +68,12 @@ telemetryServices:
     # Cover control-plane nodes too.
     tolerations:
       - operator: Exists
+    # Chart default is a 1s probe timeout, which the CPU-starved worker-02 (3 vCPU on
+    # a shared 4-core Celeron host) regularly misses, so kubelet kept killing it.
+    livenessProbe:
+      timeoutSeconds: 5
+    readinessProbe:
+      timeoutSeconds: 5
   kube-state-metrics:
     deploy: true
 
