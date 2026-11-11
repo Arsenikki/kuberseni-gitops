@@ -104,6 +104,13 @@ spec:
               port: 6767
             initialDelaySeconds: 10
             periodSeconds: 10
+          # A first start after an upgrade (config migration, plugin builds) or on a slow
+          # node can take minutes; give it up to 5 min before liveness can kill it.
+          startupProbe:
+            tcpSocket:
+              port: 6767
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: 6767
