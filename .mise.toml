@@ -15,7 +15,7 @@ opentofu = "1.12.2"
 
 # Utilities
 yq = "4.54.3"
-task = "3.52.0"
+task = "3.54.0"
 pre-commit = "4.7.0"
 
 # Python tooling — provides `uvx` for running MCP servers (e.g. ha-mcp)
