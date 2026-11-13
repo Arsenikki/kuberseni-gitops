@@ -4,9 +4,11 @@ talosVersion: v1.13.4
 # renovate: datasource=github-releases depName=kubernetes/kubernetes
 kubernetesVersion: v1.35.2
 
-# Use standard installer (ghcr.io) for fast initial install from ISO.
-# Extensions are added via A/B upgrade after cluster is up: task talos:upgrade
-talosImageURL: ghcr.io/siderolabs/installer
+# Installer images come from the per-group/per-node `schematic:` blocks below.
+# `talhelper gencommand upgrade` (task talos:upgrade) turns each into a
+# factory.talos.dev installer URL. A node without a schematic gets the
+# vanilla installer, which drops iscsi-tools/util-linux-tools (Longhorn).
+# (A top-level `talosImageURL` is not a talhelper field and was ignored.)
 
 # VIP shared across all control plane nodes
 endpoint: https://192.168.1.40:6443
@@ -81,6 +83,16 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.1.1
+    # Schematic a7eb3dff56: worker schematic + i915 + intel-ucode (Plex iGPU)
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/qemu-guest-agent
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+            - siderolabs/i915
+            - siderolabs/intel-ucode
     patches:
       - "@./patches/worker-gpu.yaml"
 
@@ -101,12 +113,29 @@ nodes:
       - "@./patches/worker-storage.yaml"
 
 controlPlane:
+  # Schematic 53513e54bb: qemu-guest-agent + iscsi-tools + util-linux-tools
+  # (same as the boot ISO in infra/terraform/vms.tf)
+  schematic:
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/qemu-guest-agent
+          - siderolabs/iscsi-tools
+          - siderolabs/util-linux-tools
   patches:
     - "@./patches/all.yaml"
     - "@./patches/controlplane.yaml"
     - "@./patches/install-image-override.yaml"
 
 worker:
+  # Same schematic as controlPlane (53513e54bb)
+  schematic:
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/qemu-guest-agent
+          - siderolabs/iscsi-tools
+          - siderolabs/util-linux-tools
   patches:
     - "@./patches/all.yaml"
     - "@./patches/worker-common.yaml"
