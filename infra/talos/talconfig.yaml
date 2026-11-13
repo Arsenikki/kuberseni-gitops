@@ -2,7 +2,7 @@ clusterName: kuberseni
 # renovate: datasource=github-releases depName=siderolabs/talos
 talosVersion: v1.13.4
 # renovate: datasource=github-releases depName=kubernetes/kubernetes
-kubernetesVersion: v1.35.2
+kubernetesVersion: v1.37.2
 
 # Installer images come from the per-group/per-node `schematic:` blocks below.
 # `talhelper gencommand upgrade` (task talos:upgrade) turns each into a
