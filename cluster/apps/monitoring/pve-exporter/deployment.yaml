@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: pve-exporter
-          image: prompve/prometheus-pve-exporter:3.10.2
+          image: prompve/prometheus-pve-exporter:3.11.0
           ports:
             - name: metrics
               containerPort: 9221
