@@ -1,0 +1,36 @@
+---
+# CNPG Barman Cloud Plugin (CNPG-I) — the supported backup path. Wave 2: after the
+# operator (wave 1), before any Cluster that references plugin "barman-cloud" (wave 5).
+# Installs the ObjectStore CRD (barmancloud.cnpg.io) + the barman-cloud Deployment
+# in cnpg-system. Uses cert-manager for plugin<->operator TLS (already installed).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg-barman-plugin
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://cloudnative-pg.github.io/charts
+      chart: plugin-barman-cloud
+      targetRevision: 0.8.1
+      helm:
+        valueFiles:
+          - $values/cluster/apps/cnpg/plugin/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cnpg-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
