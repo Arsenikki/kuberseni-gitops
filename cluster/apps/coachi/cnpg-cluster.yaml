@@ -1,0 +1,172 @@
+---
+# ============================================================================
+# coachi CloudNativePG pilot (Phase 1). Requires Phase 0 (PR #705: operator +
+# barman plugin + longhorn-cnpg StorageClass) merged and Healthy FIRST.
+#
+# ⚠️ MERGING THIS PR CREATES THE CLUSTER, WHICH IMMEDIATELY RUNS AN OFFLINE
+#    pg_dump IMPORT FROM THE LIVE coachi-postgres. Freeze coachi writes (scale
+#    coachi-api/coachi-mcp/coachi-paseo to 0) BEFORE you merge — see CNPG-RUNBOOK.md.
+#
+# Does NOT repoint the app yet (that's the separate cutover PR). The old
+# coachi-postgres StatefulSet stays running as the import source + rollback anchor.
+# ============================================================================
+#
+# App DB credential for the new cluster — reuses the EXISTING coachi password so
+# coachi-api/mcp keep working after only a host change. basic-auth format is what
+# CNPG's bootstrap.initdb.secret expects (keys: username, password).
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: coachi-pg-app
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: coachi-pg-app
+    creationPolicy: Owner
+    template:
+      engineVersion: v2
+      type: kubernetes.io/basic-auth
+      data:
+        username: "coachi"
+        password: "{{ .password }}"
+  data:
+    - secretKey: password
+      remoteRef:
+        key: "coachi"
+        property: postgres_password
+---
+# SeaweedFS S3 creds for the Barman ObjectStore (same 1Password item the rest of
+# the cluster uses), exposed under the key names the ObjectStore references.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: cnpg-seaweedfs-s3
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: cnpg-seaweedfs-s3
+    creationPolicy: Owner
+  data:
+    - secretKey: ACCESS_KEY_ID
+      remoteRef:
+        key: "seaweedfs-s3"
+        property: access_key
+    - secretKey: ACCESS_SECRET_KEY
+      remoteRef:
+        key: "seaweedfs-s3"
+        property: secret_key
+---
+# Barman backup target = SeaweedFS, under the existing backups/ prefix so the
+# offsite rclone job (PR #700) mirrors CNPG backups to Google Drive unchanged.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: coachi-backup-store
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  retentionPolicy: "30d"
+  configuration:
+    destinationPath: s3://coachi-media/backups/cnpg/coachi   # bucket + prefix here
+    endpointURL: http://seaweedfs-s3.monitoring:8333         # host only, plain HTTP
+    s3Credentials:
+      accessKeyId:
+        name: cnpg-seaweedfs-s3
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: cnpg-seaweedfs-s3
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+  # REQUIRED for SeaweedFS: boto3 >=1.36 sends CRC32 checksums SeaweedFS rejects
+  # (barman-cloud-wal-archive: exit 4; plugin issue #679).
+  instanceSidecarConfiguration:
+    env:
+      - name: AWS_REQUEST_CHECKSUM_CALCULATION
+        value: when_required
+      - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+        value: when_required
+---
+# The coachi database cluster. Single instance (no safe HA quorum on 2 workers —
+# adopted for declarative lifecycle + WAL archiving + PITR, not HA).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: coachi-pg
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  instances: 1
+  # imageName intentionally omitted → operator's default operand image (guaranteed
+  # to pull; offline import supports the major-version jump). To keep PG16 for the
+  # pilot instead, set e.g. imageName: ghcr.io/cloudnative-pg/postgresql:16.x (pin by
+  # @sha256) after verifying an available tag.
+  enableSuperuserAccess: false
+  storage:
+    storageClass: longhorn-cnpg
+    size: 8Gi                      # > source 5Gi (import stages the dump inside PGDATA)
+  postgresql:
+    parameters:
+      archive_timeout: "10min"     # quiet DB otherwise never flushes last WAL → PITR-to-now fails
+  bootstrap:
+    initdb:
+      database: coachi             # BOTH database AND owner required, or the DB silently becomes 'app'
+      owner: coachi
+      secret:
+        name: coachi-pg-app        # new role gets the EXISTING password
+      import:
+        type: microservice
+        databases:
+          - coachi                 # selects the SOURCE database to import
+        source:
+          externalCluster: old-coachi
+  externalClusters:
+    - name: old-coachi
+      connectionParameters:
+        host: coachi-postgres.coachi.svc
+        user: coachi
+        dbname: coachi
+        sslmode: prefer
+      password:
+        name: coachi-pg-app
+        key: password
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: coachi-backup-store
+        serverName: coachi-pg-v1   # bump to -v2/... only if you ever re-bootstrap into the same path
+---
+# Nightly base backup (replaces the hand-rolled pg_dump CronJob once validated).
+# CNPG cron is 6-field (seconds first); 03:00:00 UTC mirrors the old job.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: coachi-nightly
+  namespace: coachi
+  labels:
+    app.kubernetes.io/part-of: coachi
+spec:
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: coachi-pg
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
