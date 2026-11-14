@@ -6,6 +6,12 @@ metadata:
   namespace: home-automation
 data:
   configuration.yaml: |
+    # Version-controlled automations etc. live in packages/ (one file per
+    # package, each a key below in this ConfigMap). UI-made automations still
+    # go to automations.yaml on the PVC.
+    homeassistant:
+      packages: !include_dir_named packages
+
     # Loads default set of integrations. Do not remove.
     default_config:
 
@@ -265,3 +271,50 @@ data:
       take_over_control: true
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
+
+  # ── Packages (mounted at /config/packages/<name>.yaml) ──────────────────────
+  bedroom_speakers.yaml: |
+    # Power the bedroom active speakers (Zigbee plug) when Music Assistant plays
+    # to Bedroom; switch them off once nothing has played for 10 minutes.
+    # Resuming playback within the 10 minutes resets the timer (the for: never
+    # completes). Also turns off a plug switched on by hand but never used.
+    automation:
+      - id: bedroom_speakers_follow_music_assistant
+        alias: Bedroom speakers follow Music Assistant
+        mode: queued
+        triggers:
+          - trigger: state
+            entity_id: media_player.bedroom
+            to: [playing, buffering]
+            id: start
+          - trigger: state
+            entity_id: media_player.bedroom
+            not_to: [playing, buffering]
+            for: "00:10:00"
+            id: idle
+          - trigger: state
+            entity_id: switch.bedroom_speakers
+            to: "on"
+            for: "00:10:00"
+            id: idle
+        actions:
+          - choose:
+              - conditions:
+                  - condition: trigger
+                    id: start
+                sequence:
+                  - action: switch.turn_on
+                    target:
+                      entity_id: switch.bedroom_speakers
+              - conditions:
+                  - condition: trigger
+                    id: idle
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: media_player.bedroom
+                        state: [playing, buffering]
+                sequence:
+                  - action: switch.turn_off
+                    target:
+                      entity_id: switch.bedroom_speakers

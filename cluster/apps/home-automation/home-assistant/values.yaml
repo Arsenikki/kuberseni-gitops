@@ -60,6 +60,14 @@ persistence:
     mountPath: /config/adaptive_lighting_config.yaml
     subPath: adaptive_lighting_config.yaml
     readOnly: true
+  # HA packages: add one block per package key in the ConfigMap.
+  package-bedroom-speakers:
+    enabled: true
+    type: configMap
+    name: home-assistant-config-yaml
+    mountPath: /config/packages/bedroom_speakers.yaml
+    subPath: bedroom_speakers.yaml
+    readOnly: true
 
 resources:
   requests:
