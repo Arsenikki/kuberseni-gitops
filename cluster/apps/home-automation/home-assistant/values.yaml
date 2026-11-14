@@ -60,14 +60,48 @@ persistence:
     mountPath: /config/adaptive_lighting_config.yaml
     subPath: adaptive_lighting_config.yaml
     readOnly: true
-  # HA packages: add one block per package key in the ConfigMap.
-  package-bedroom-speakers:
+  # HA packages (packages/*.yaml → ConfigMap home-assistant-packages). Mounted as
+  # a whole directory, NOT subPath, so the kubelet updates files in place; the
+  # packages-reload sidecar then asks HA to reload. Reloader ignores this
+  # ConfigMap (annotation in kustomization.yaml), so package edits never restart HA.
+  packages:
     enabled: true
     type: configMap
-    name: home-assistant-config-yaml
-    mountPath: /config/packages/bedroom_speakers.yaml
-    subPath: bedroom_speakers.yaml
+    name: home-assistant-packages
+    mountPath: /config/packages
     readOnly: true
+
+# Reloads HA when the packages ConfigMap changes. The kubelet swaps the
+# ..data symlink atomically on every update; on change, POST HA's local-only
+# webhook (packages/system_reload.yaml), retrying until HA answers.
+sidecars:
+  packages-reload:
+    image: busybox:1.38
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        last="$(readlink /packages/..data)"
+        echo "watching /packages (current: $last)"
+        while sleep 5; do
+          cur="$(readlink /packages/..data)"
+          [ "$cur" = "$last" ] && continue
+          if wget -q -O /dev/null --post-data="" http://127.0.0.1:8123/api/webhook/reload_yaml_packages; then
+            echo "packages changed ($last -> $cur): reload requested"
+            last="$cur"
+          else
+            echo "packages changed but HA not reachable yet; retrying"
+          fi
+        done
+    volumeMounts:
+      - name: packages
+        mountPath: /packages
+        readOnly: true
+    resources:
+      requests:
+        cpu: 1m
+        memory: 8Mi
+      limits:
+        memory: 32Mi
 
 resources:
   requests:

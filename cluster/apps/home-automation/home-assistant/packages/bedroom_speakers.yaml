@@ -1,0 +1,45 @@
+---
+# Power the bedroom active monitors (Zigbee plug) when Music Assistant plays to
+# Bedroom (bedroom-pi, Sendspin). Off once nothing has played for 10 minutes;
+# resuming within that window resets the timer (the for: never completes).
+# A plug switched on by hand but never used also goes off after 10 minutes.
+automation:
+  - id: bedroom_speakers_follow_music_assistant
+    alias: "Bedroom: speakers follow Music Assistant"
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: media_player.bedroom
+        to: [playing, buffering]
+        id: start
+      - trigger: state
+        entity_id: media_player.bedroom
+        not_to: [playing, buffering]
+        for: "00:10:00"
+        id: idle
+      - trigger: state
+        entity_id: switch.bedroom_speakers
+        to: "on"
+        for: "00:10:00"
+        id: idle
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: start
+            sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.bedroom_speakers
+          - conditions:
+              - condition: trigger
+                id: idle
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: media_player.bedroom
+                    state: [playing, buffering]
+            sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.bedroom_speakers

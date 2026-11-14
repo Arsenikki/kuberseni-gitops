@@ -1,0 +1,35 @@
+name: Home Assistant config
+on:  # yamllint disable-line rule:truthy
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - cluster/apps/home-automation/home-assistant/**
+      - .github/workflows/home-assistant.yaml
+permissions:
+  contents: read
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    env:
+      HA_DIR: cluster/apps/home-automation/home-assistant
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every package is listed in kustomization.yaml
+        run: |
+          rc=0
+          for f in "$HA_DIR"/packages/*.yaml; do
+            rel="packages/$(basename "$f")"
+            if ! yq -e ".configMapGenerator[] | select(.name == \"home-assistant-packages\") | .files[] | select(. == \"$rel\")" "$HA_DIR/kustomization.yaml" >/dev/null; then
+              echo "::error file=$f::$rel is not listed in kustomization.yaml (it would never reach Home Assistant)"
+              rc=1
+            fi
+          done
+          exit $rc
+      - name: hass check_config (same version as the cluster)
+        run: |
+          tag="$(yq '.image.tag' "$HA_DIR/values.yaml")"
+          cfg="$(mktemp -d)"
+          cp -r "$HA_DIR/packages" "$cfg/packages"
+          printf 'homeassistant:\n  packages: !include_dir_named packages\n' > "$cfg/configuration.yaml"
+          docker run --rm -v "$cfg:/config" "ghcr.io/home-assistant/home-assistant:$tag" \
+            python -m homeassistant --script check_config --config /config --fail-on-warnings

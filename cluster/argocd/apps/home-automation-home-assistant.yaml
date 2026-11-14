@@ -22,9 +22,8 @@ spec:
       ref: values
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: main
+      # kustomize (kustomization.yaml): manifests + the generated packages ConfigMap.
       path: cluster/apps/home-automation/home-assistant
-      directory:
-        exclude: "values.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: home-automation
