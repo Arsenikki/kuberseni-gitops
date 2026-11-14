@@ -61,6 +61,7 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
 - **Network**: OPNSense (WAN + DHCP). DNS via Cloudflare external-dns. Apps behind Cilium LoadBalancer.
 - **Storage**: TrueNAS Scale over NFS.
 - **SSH to Proxmox nodes**: requires `IdentityAgent=none` — the 1Password SSH agent intercepts otherwise and signing fails.
+- **Proxmox host access is paseo-generic only.** Only the paseo-generic agent has the SSH key (`/var/run/secrets/ssh`, 1Password `paseo-ssh`, root on every node) and the Proxmox API token (`/var/run/secrets/proxmox`). Jeeves, paseo-jeeves and paseo-apps have neither, on purpose: they act on untrusted content. If a change needs anything on the hosts (`task tofu:apply`, `ssh`, `apt` upgrades, reboots, `qm`/`pvesh`, editing `/etc/pve`), don't try to do it. Commit the code and list the host steps in the PR body under **"Manual steps (owner or paseo-generic)"**, as exact commands with the node they run on. The owner or paseo-generic runs them after review.
 
 ## Repo layout
 
