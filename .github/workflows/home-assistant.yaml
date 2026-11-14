@@ -31,5 +31,16 @@ jobs:
           cfg="$(mktemp -d)"
           cp -r "$HA_DIR/packages" "$cfg/packages"
           printf 'homeassistant:\n  packages: !include_dir_named packages\n' > "$cfg/configuration.yaml"
-          docker run --rm -v "$cfg:/config" "ghcr.io/home-assistant/home-assistant:$tag" \
-            python -m homeassistant --script check_config --config /config --fail-on-warnings
+          set +e
+          out="$(docker run --rm -v "$cfg:/config" "ghcr.io/home-assistant/home-assistant:$tag" \
+            python -m homeassistant --script check_config --config /config --fail-on-warnings 2>&1)"
+          rc=$?
+          set -e
+          echo "$out"
+          # check_config exits 0 for automations it had to disable (bad trigger,
+          # condition, ...); those only show up as ERROR log lines. Fail on them too.
+          if grep -qE "^(ERROR|CRITICAL):" <<<"$out"; then
+            grep -E "^(ERROR|CRITICAL):" <<<"$out" | sed "s/^/::error::/"
+            rc=1
+          fi
+          exit $rc
