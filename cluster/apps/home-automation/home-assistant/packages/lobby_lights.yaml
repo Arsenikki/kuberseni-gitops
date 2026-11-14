@@ -1,0 +1,25 @@
+---
+# Lobby candle lights follow the front-door motion sensor. Ported from the
+# Node-RED "Lights" tab (front_door_motion_sensor): on with motion, off 2 minutes
+# after motion clears; new motion within those 2 minutes keeps them on.
+automation:
+  - id: lobby_lights_follow_motion
+    alias: "Lobby: lights follow front door motion"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        to: "on"
+        id: motion
+      - trigger: state
+        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        to: "off"
+        for: "00:02:00"
+        id: clear
+    actions:
+      - action: "light.turn_{{ 'on' if trigger.id == 'motion' else 'off' }}"
+        target:
+          entity_id:
+            - light.lobby_candle_light_01
+            - light.lobby_candle_light_02
+            - light.lobby_candle_light_03

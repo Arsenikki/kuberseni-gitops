@@ -1,0 +1,48 @@
+---
+# input_select.adaptive_lighting_level picks which Adaptive Lighting profile
+# (switch.adaptive_lighting_<level>, see adaptive_lighting_config.yaml) is active,
+# then re-applies it to all lights. Ported from the Node-RED "Lights" tab.
+automation:
+  - id: adaptive_lighting_level_select
+    alias: "Adaptive lighting: apply selected level"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.adaptive_lighting_level
+        to: [low, medium, high, maximum]
+    variables:
+      level: "{{ trigger.to_state.state }}"
+    actions:
+      - repeat:
+          for_each: [low, medium, high, maximum]
+          sequence:
+            - action: "switch.turn_{{ 'on' if repeat.item == level else 'off' }}"
+              target:
+                entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
+      - delay:
+          seconds: 1
+      - action: adaptive_lighting.apply
+        data:
+          lights: >-
+            {{ states.light | rejectattr('state', 'in', ['unavailable', 'unknown'])
+               | map(attribute='entity_id') | list }}
+        continue_on_error: true
+
+  - id: lights_nightly_reset
+    alias: "Lights: nightly reset (04:00)"
+    description: Scene back to normal and adaptive lighting back to medium every night.
+    mode: single
+    triggers:
+      - trigger: time
+        at: "04:00:00"
+    actions:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.scene
+        data:
+          option: normal
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.adaptive_lighting_level
+        data:
+          option: medium
