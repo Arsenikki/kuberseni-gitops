@@ -10,6 +10,10 @@ metadata:
     app.kubernetes.io/part-of: digests
 spec:
   schedule: "30 6 * * *"
+  # Paused: paseo-apps agents can still run commands / read files despite the agy
+  # sandbox, and the pod has open egress, so a prompt-injected email could exfiltrate.
+  # Unpause once the agy lockdown (paseo-homelab card) and a dedicated daemon land.
+  suspend: true
   timeZone: Europe/London
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 3600

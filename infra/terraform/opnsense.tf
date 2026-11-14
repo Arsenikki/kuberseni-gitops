@@ -173,6 +173,16 @@ resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
   description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
 }
 
+# Raspberry Pi 4 in the bedroom: NixOS, gitops-managed from Arsenikki/nixos-homelab
+# (Music Assistant "Bedroom" Sendspin player). Wired MAC (end0); trusted static block.
+resource "opnsense_kea_dhcpv4_reservation" "bedroom_pi" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "dc:a6:32:a9:a8:ff"
+  ip_address  = "192.168.1.50"
+  hostname    = "bedroom-pi"
+  description = "Raspberry Pi 4, NixOS (Arsenikki/nixos-homelab)"
+}
+
 # ── IoT / home-automation devices ──────────────────────────────────────────────
 # Addressing scheme (flat 192.168.1.0/24 today; blocks chosen to map cleanly onto
 # future VLANs — keep the last octet when a block migrates to its own subnet):
