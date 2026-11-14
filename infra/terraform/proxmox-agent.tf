@@ -3,7 +3,7 @@
 # start/stop on the VMs in proxmox_agent_power_vmids only. Cannot power-manage other VMs,
 # reconfigure VMs, touch hosts, or delete backups. (Snapshot rollback comes with
 # VM.Snapshot — see the role below.) Host maintenance goes over SSH instead
-# (1Password item paseo-generic-ssh, mounted at /var/run/secrets/ssh).
+# (1Password item paseo-ssh, mounted at /var/run/secrets/ssh).
 #
 # Delivery: the token value (sensitive output below) goes into 1Password item
 # `paseo-generic-proxmox-token` (homelab vault, field `credential`, format
