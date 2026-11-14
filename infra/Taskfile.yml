@@ -144,7 +144,6 @@ tasks:
       - sops exec-file secrets.tfvars 'tofu destroy -var-file={} -auto-approve'
 
 
-
   # ── Talos ─────────────────────────────────────────────────────────────────
 
   talos:gensecret:

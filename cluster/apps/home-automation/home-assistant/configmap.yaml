@@ -47,11 +47,6 @@ data:
               - feature: toggle_mute
 
     light:
-    # Configure specified switches to report as lights
-      - platform: switch
-        name: living_room_christmas_lights
-        entity_id: switch.living_room_christmas_lights
-
     # Group lights into single entities
       - platform: group
         name: "kitchen_all_lights"
@@ -61,7 +56,6 @@ data:
       - platform: group
         name: "living_room_all_lights"
         entities:
-          - light.living_room_christmas_lights
           - light.living_room_corner_light_01
           - light.living_room_corner_light_02
       - platform: group
@@ -197,10 +191,6 @@ data:
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
-
-  automations.yaml: "[]"
-  scenes.yaml: "[]"
-  scripts.yaml: "{}"
 
   adaptive_lighting_config.yaml: |
     - name: "Low"

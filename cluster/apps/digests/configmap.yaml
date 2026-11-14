@@ -1,0 +1,63 @@
+---
+# digests config (schema: config.home.example.yaml in the app repo). Personal
+# profile only. The work calendar arrives as free/busy-only blocks ("Busy (work)", no
+# titles), and work email is never read here; that lives in the laptop /good-morning skill.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digests
+  namespace: digests
+  labels:
+    app.kubernetes.io/part-of: digests
+data:
+  config.yaml: |
+    timezone: Europe/London
+    about_me: ""
+
+    actions:
+      enabled: false  # flip once a week of proposed replies/tasks in the notes look right
+      create_tasks: true
+      task_list_name: AI suggested
+
+    profiles:
+      personal:
+        kind: personal
+        token_file: /secrets/google/personal.json
+        include_email: true
+        drafts_enabled: true
+        gmail_query: "newer_than:1d -category:promotions -category:social -category:forums"
+        max_emails: 40
+        vip_senders: []
+        # Add the work calendar once it's shared to this account as free/busy only:
+        # busy_only_calendars: [you@work.example.com]
+        busy_only_calendars: []
+
+    news:
+      max_items: 8
+      interests:
+        - home lab / self-hosting
+        - kubernetes
+        - AI tooling
+      feeds:
+        - https://hnrss.org/frontpage
+      hacker_news_top: 30
+
+    # AI runs on paseo-apps (antigravity = Gemini on the AI Pro login), like resepti.
+    models:
+      triage: antigravity/gemini-3.8-flash-low
+      writer: antigravity/gemini-3.8-flash-high
+    paseo:
+      host: paseo-apps.paseo-apps.svc.cluster.local
+      port: 6767
+
+    delivery:
+      obsidian:
+        enabled: true
+        repo_url: https://github.com/Arsenikki/daily-digests.git
+        branch: main
+        folder: Daily
+        commit_author: "Arsenikki <42617129+Arsenikki@users.noreply.github.com>"  # contribution-graph credit
+        # Telegram only taps http(s) links; GitHub opens in the GitHub app.
+        note_url: https://github.com/Arsenikki/daily-digests/blob/main/{path}
+      telegram:
+        enabled: true

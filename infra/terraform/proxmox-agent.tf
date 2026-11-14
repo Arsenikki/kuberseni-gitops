@@ -57,7 +57,7 @@ resource "proxmox_virtual_environment_role" "agent_snapshot" {
 # replaces the /vms grant for that VM, so the snapshot privileges are repeated here.
 resource "proxmox_virtual_environment_role" "agent_power" {
   role_id = "AgentPower"
-  privileges = concat(proxmox_virtual_environment_role.agent_snapshot.privileges, [
+  privileges = setunion(proxmox_virtual_environment_role.agent_snapshot.privileges, [
     "VM.PowerMgmt",
   ])
 }
