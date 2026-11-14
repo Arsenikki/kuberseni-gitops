@@ -1,7 +1,7 @@
 ---
 # input_select.adaptive_lighting_level picks which Adaptive Lighting profile
 # (switch.adaptive_lighting_<level>, see adaptive_lighting_config.yaml) is active,
-# then re-applies it to all lights. Ported from the Node-RED "Lights" tab.
+# then re-applies it to that profile's lights. Ported from the Node-RED "Lights" tab.
 automation:
   - id: adaptive_lighting_level_select
     alias: "Adaptive lighting: apply selected level"
@@ -21,11 +21,12 @@ automation:
                 entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
       - delay:
           seconds: 1
+      # Apply the selected profile to the lights it is configured for. (Node-RED
+      # passed every light, which also adapted lights Adaptive Lighting does not
+      # manage, e.g. the bedroom light and the light groups.)
       - action: adaptive_lighting.apply
         data:
-          lights: >-
-            {{ states.light | rejectattr('state', 'in', ['unavailable', 'unknown'])
-               | map(attribute='entity_id') | list }}
+          entity_id: "switch.adaptive_lighting_{{ level }}"
         continue_on_error: true
 
   - id: lights_nightly_reset

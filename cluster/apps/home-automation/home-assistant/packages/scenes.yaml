@@ -45,6 +45,32 @@ automation:
         data:
           option: normal
 
+  # The 1-hour for: above is lost on restart / reload of that automation. Re-arm it.
+  - id: scene_cleaning_timeout_after_restart
+    alias: "Scene: cleaning ends within 1 hour after restart"
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    conditions:
+      - condition: state
+        entity_id: input_select.scene
+        state: cleaning
+    actions:
+      - wait_template: "{{ not is_state('input_select.scene', 'cleaning') }}"
+        timeout: "01:00:00"
+        continue_on_timeout: true
+      - if:
+          - "{{ not wait.completed }}"
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.scene
+            data:
+              option: normal
+
   - id: scene_away
     alias: "Scene: away"
     description: All lights off, then one living room corner light and one lobby candle on.

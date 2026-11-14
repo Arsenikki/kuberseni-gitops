@@ -1,15 +1,15 @@
 ---
 # Low-battery reminders. Ported from the Node-RED "Notifications" tab: any
 # sensor.*_battery at or below 40% gets a persistent notification (one per
-# sensor; re-creating it just updates it). Node-RED reacted to every battery
-# state change; an hourly sweep plus one at startup is equivalent for batteries.
+# sensor). Checked once a day and at startup: re-creating the notification
+# re-shows it, so an hourly sweep would bring back a dismissed reminder every hour.
 automation:
   - id: low_battery_notifications
     alias: "Notifications: low battery (<= 40%)"
     mode: single
     triggers:
-      - trigger: time_pattern
-        minutes: 0
+      - trigger: time
+        at: "09:00:00"
       - trigger: homeassistant
         event: start
     actions:
