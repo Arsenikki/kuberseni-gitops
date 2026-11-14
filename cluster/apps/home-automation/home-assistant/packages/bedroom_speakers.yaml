@@ -43,3 +43,34 @@ automation:
               - action: switch.turn_off
                 target:
                   entity_id: switch.bedroom_speakers
+
+  # for: timers live in memory, so a restart (or reloading the automation above)
+  # drops a pending "off in 10 min". Re-arm it: if the speakers are on and nothing
+  # plays, give playback 10 minutes to start, otherwise switch them off.
+  - id: bedroom_speakers_off_after_restart
+    alias: "Bedroom: speakers off after restart if unused"
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    conditions:
+      - condition: state
+        entity_id: switch.bedroom_speakers
+        state: "on"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: media_player.bedroom
+            state: [playing, buffering]
+    actions:
+      - wait_template: "{{ is_state('media_player.bedroom', ['playing', 'buffering']) }}"
+        timeout: "00:10:00"
+        continue_on_timeout: true
+      - if:
+          - "{{ not wait.completed and is_state('switch.bedroom_speakers', 'on') }}"
+        then:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.bedroom_speakers

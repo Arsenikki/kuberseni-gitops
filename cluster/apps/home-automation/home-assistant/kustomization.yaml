@@ -20,7 +20,6 @@ configMapGenerator:
       - packages/lobby_lights.yaml
       - packages/notifications.yaml
       - packages/scenes.yaml
-      - packages/system_reload.yaml
       - packages/wall_switches.yaml
     options:
       disableNameSuffixHash: true
