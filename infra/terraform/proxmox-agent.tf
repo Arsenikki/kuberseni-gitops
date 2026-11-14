@@ -1,7 +1,9 @@
 # Scoped Proxmox API access for the paseo-generic agent (claude@pve!paseo)
-# Read-only across the whole cluster, plus VM snapshots and vzdump backups. Cannot
-# power-manage, reconfigure VMs, touch hosts, or delete backups. (Snapshot rollback
-# comes with VM.Snapshot — see the role below.)
+# Read-only across the whole cluster, plus VM snapshots and vzdump backups, plus
+# start/stop on the VMs in proxmox_agent_power_vmids only. Cannot power-manage other VMs,
+# reconfigure VMs, touch hosts, or delete backups. (Snapshot rollback comes with
+# VM.Snapshot — see the role below.) Host maintenance goes over SSH instead
+# (1Password item paseo-generic-ssh, mounted at /var/run/secrets/ssh).
 #
 # Delivery: the token value (sensitive output below) goes into 1Password item
 # `paseo-generic-proxmox-token` (homelab vault, field `credential`, format
@@ -28,7 +30,7 @@ resource "proxmox_virtual_environment_user" "agent" {
 resource "proxmox_user_token" "agent" {
   user_id               = proxmox_virtual_environment_user.agent.user_id
   token_name            = "paseo"
-  comment               = "paseo-generic: read-only + snapshot/backup"
+  comment               = "paseo-generic: read-only + snapshot/backup + power on listed VMs"
   privileges_separation = true
 }
 
@@ -50,13 +52,32 @@ resource "proxmox_virtual_environment_role" "agent_snapshot" {
 # A privilege-separated token's effective permissions are the INTERSECTION of its own
 # ACLs and its user's, so every grant goes on both. The user has no password, so its
 # grants are only reachable through the token.
+# Snapshot/backup plus start/stop/shutdown, granted only on the VMs listed in
+# proxmox_agent_power_vmids (e.g. the on-demand UniFi OS Server VM). An ACL on /vms/<id>
+# replaces the /vms grant for that VM, so the snapshot privileges are repeated here.
+resource "proxmox_virtual_environment_role" "agent_power" {
+  role_id = "AgentPower"
+  privileges = concat(proxmox_virtual_environment_role.agent_snapshot.privileges, [
+    "VM.PowerMgmt",
+  ])
+}
+
 locals {
-  proxmox_agent_grants = {
-    # Read-only view of everything: nodes, VMs, configs, storage, tasks, cluster status.
-    audit            = { path = "/", role_id = "PVEAuditor" }
-    snapshot_vms     = { path = "/vms", role_id = proxmox_virtual_environment_role.agent_snapshot.role_id }
-    snapshot_storage = { path = "/storage/${local.proxmox_agent_backup_storage}", role_id = proxmox_virtual_environment_role.agent_snapshot.role_id }
-  }
+  # VMs the agent may power-manage.
+  #   110 = unifi-os-server on minipc (on-demand UniFi controller; onboot=0)
+  proxmox_agent_power_vmids = [110]
+
+  proxmox_agent_grants = merge(
+    {
+      # Read-only view of everything: nodes, VMs, configs, storage, tasks, cluster status.
+      audit            = { path = "/", role_id = "PVEAuditor" }
+      snapshot_vms     = { path = "/vms", role_id = proxmox_virtual_environment_role.agent_snapshot.role_id }
+      snapshot_storage = { path = "/storage/${local.proxmox_agent_backup_storage}", role_id = proxmox_virtual_environment_role.agent_snapshot.role_id }
+    },
+    { for id in local.proxmox_agent_power_vmids :
+      "power_vm_${id}" => { path = "/vms/${id}", role_id = proxmox_virtual_environment_role.agent_power.role_id }
+    },
+  )
 }
 
 resource "proxmox_acl" "agent_user" {

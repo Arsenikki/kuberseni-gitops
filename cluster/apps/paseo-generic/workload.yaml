@@ -191,6 +191,10 @@ spec:
             - name: proxmox-token
               mountPath: /var/run/secrets/proxmox
               readOnly: true
+            # SSH key for the Proxmox nodes as files (see secrets.yaml paseo-ssh).
+            - name: ssh-key
+              mountPath: /var/run/secrets/ssh
+              readOnly: true
       volumes:
         - name: workspaces
           persistentVolumeClaim:
@@ -206,6 +210,11 @@ spec:
         - name: proxmox-token
           secret:
             secretName: paseo-proxmox
+            optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
+            defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+        - name: ssh-key
+          secret:
+            secretName: paseo-ssh
             optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
             defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
   volumeClaimTemplates:
