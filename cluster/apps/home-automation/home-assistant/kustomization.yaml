@@ -13,7 +13,6 @@ configMapGenerator:
     namespace: home-automation
     files:
       - packages/bedroom_speakers.yaml
-      - packages/system_reload.yaml
     options:
       disableNameSuffixHash: true
       annotations:

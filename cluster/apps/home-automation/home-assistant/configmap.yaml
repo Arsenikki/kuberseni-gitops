@@ -8,7 +8,8 @@ data:
   configuration.yaml: |
     # Version-controlled automations/scripts live in packages/ — one file per
     # package under cluster/apps/home-automation/home-assistant/packages/, shipped
-    # as the home-assistant-packages ConfigMap and reloaded live (no restart).
+    # as the home-assistant-packages ConfigMap and reloaded live by the
+    # packages-reload sidecar (check_config, then per-domain reloads; no restart).
     # UI-made automations still go to automations.yaml on the PVC.
     homeassistant:
       packages: !include_dir_named packages
