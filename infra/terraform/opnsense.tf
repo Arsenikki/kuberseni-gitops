@@ -70,6 +70,8 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
+    opnsense_kea_dhcpv4_reservation.bedroom_pi,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
   ]
 }
 
