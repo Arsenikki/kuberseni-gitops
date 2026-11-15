@@ -52,7 +52,10 @@ in
             v4 = "100.64.0.0/10";
             v6 = "fd7a:115c:a1e0::/48";
           };
-          dns.base_domain = "tailnet";
+          dns = {
+            base_domain = "tailnet";
+            override_local_dns = false;
+          };
           derp = {
             urls = [ ];
             server = {
