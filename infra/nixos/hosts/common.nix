@@ -18,6 +18,8 @@
   proxmox = {
     qemuConf = {
       name = config.networking.hostName;
+      # Restored VMs otherwise come up with an empty boot order.
+      boot = "order=virtio0";
       cores = lib.mkDefault 2;
       # Enough for `nixos-rebuild` to evaluate and build on the box (see deploy.sh).
       memory = lib.mkDefault 2048;

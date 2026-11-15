@@ -50,7 +50,7 @@ The Proxmox console (`qm terminal`) and VM snapshots are the last-resort way bac
 
 ## Plan
 
-1. **Staging.** Create an isolated bridge `vmbr99` (no ports) on a node with spare RAM. Restore `gw-staging` from its `.vma.zst` (`qmrestore`) and add a test VM on `vmbr99`. Check DHCP, NAT and the port forward against real hardware.
+1. **Staging** (running since 2026-11-15 on `nas`): VM 990 `gw-staging` (WAN 192.168.1.108 via DHCP) and container 991 `gw-staging-client` on `vmbr99`. `vmbr99` was created at runtime (`ip link add vmbr99 type bridge`), so it is gone after a `nas` reboot; recreate it before starting 990/991. To restore from an image: `qmrestore <file>.vma.zst <vmid> --storage local-lvm`, then `qm set <vmid> --delete ide2` (an unused cloud-init drive the image adds).
 2. **Before cutover:**
    - Copy OPNSense's port forwards and any other rules into `hosts/gw/default.nix`.
    - Restore `gw` (stopped) on the `router` node.
