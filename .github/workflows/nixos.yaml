@@ -42,15 +42,6 @@ jobs:
       # Enables KVM on the runner, so the router VM test runs at native speed.
       - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
 
-      - name: Lock inputs if flake.lock isn't committed yet
-        run: test -f flake.lock || nix flake lock
-
-      - name: Upload flake.lock
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: flake.lock
-          path: infra/nixos/flake.lock
-
       - name: Build hosts and run the router VM test
         run: nix flake check --print-build-logs
 
