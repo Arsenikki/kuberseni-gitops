@@ -1,0 +1,29 @@
+---
+# Shared light helpers. Ported from the Node-RED subflow "Sync entity states [on / off]".
+script:
+  lights_sync_toggle:
+    alias: "Lights: toggle a group together"
+    description: >-
+      Treat several lights as one: if every light is off, turn them all on,
+      otherwise turn them all off (so a half-on group goes off first).
+    mode: parallel
+    fields:
+      entities:
+        description: Light entity IDs to toggle together.
+        required: true
+        selector:
+          entity:
+            domain: light
+            multiple: true
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ entities | reject('is_state', 'off') | list | length == 0 }}"
+        then:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ entities }}"
+        else:
+          - action: light.turn_off
+            target:
+              entity_id: "{{ entities }}"
