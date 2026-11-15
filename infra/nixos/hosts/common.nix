@@ -12,6 +12,8 @@
   nixpkgs.hostPlatform = "x86_64-linux";
   system.stateVersion = "26.05";
 
+  virtualisation.diskSize = 8192; # MiB
+
   # Shape of the VM in the .vma image; NICs are set per host.
   proxmox = {
     qemuConf = {
@@ -19,7 +21,6 @@
       cores = 2;
       # Enough for `nixos-rebuild` to evaluate and build on the box (see deploy.sh).
       memory = 2048;
-      diskSize = "8192";
     };
     cloudInit.enable = false;
   };
