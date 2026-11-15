@@ -60,6 +60,83 @@ persistence:
     mountPath: /config/adaptive_lighting_config.yaml
     subPath: adaptive_lighting_config.yaml
     readOnly: true
+  # HA packages (packages/*.yaml → ConfigMap home-assistant-packages). Mounted as
+  # a whole directory, NOT subPath, so the kubelet updates files in place; the
+  # packages-reload sidecar then asks HA to reload. Reloader ignores this
+  # ConfigMap (annotation in kustomization.yaml), so package edits never restart HA.
+  packages:
+    enabled: true
+    type: configMap
+    name: home-assistant-packages
+    mountPath: /config/packages
+    readOnly: true
+
+# Reloads HA when the packages ConfigMap changes. The kubelet swaps the
+# ..data symlink atomically on every update; on change the sidecar calls HA's
+# REST API directly (no HA automation in the loop, so a reload can never
+# cancel itself): check_config first, and only if it is valid, reload each YAML
+# domain packages use, helpers first and automations last. Only automations whose
+# config changed are restarted, so pending for: timers elsewhere survive.
+# Any failure is logged and retried on the next tick; nothing is reloaded from
+# an invalid config. Needs HA_TOKEN (externalsecrets.yaml); until it exists the
+# sidecar only logs that it is waiting.
+sidecars:
+  packages-reload:
+    image: busybox:1.38
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        HA=http://127.0.0.1:8123
+        DOMAINS="input_boolean input_button input_datetime input_number input_select input_text timer script scene automation"
+        api() { wget -q -O - --header="Authorization: Bearer $HA_TOKEN" --header="Content-Type: application/json" --post-data="{}" "$HA/api/$1"; }
+        last="$(readlink /packages/..data)"
+        echo "watching /packages (current: $last)"
+        while sleep 5; do
+          cur="$(readlink /packages/..data)"
+          [ "$cur" = "$last" ] && continue
+          if [ -z "${HA_TOKEN:-}" ]; then
+            echo "packages changed ($cur) but HA_TOKEN is not set (1Password home-assistant/packages_reload_token); not reloading"
+            last="$cur"
+            continue
+          fi
+          if ! check="$(api config/core/check_config)"; then
+            echo "packages changed but HA API not reachable yet; retrying"
+            continue
+          fi
+          if ! echo "$check" | grep -q '"result": *"valid"'; then
+            echo "packages changed ($cur) but check_config is NOT valid, refusing to reload: $check"
+            last="$cur"
+            continue
+          fi
+          failed=""
+          for d in $DOMAINS; do
+            # Stop at the first failure: later domains (automations) may depend on earlier ones.
+            api "services/$d/reload" >/dev/null || { failed="$d"; break; }
+          done
+          if [ -n "$failed" ]; then
+            echo "reload of $failed failed (later domains skipped); retrying"
+            continue
+          fi
+          echo "packages changed ($last -> $cur): config valid, reloaded: $DOMAINS"
+          last="$cur"
+        done
+    env:
+      - name: HA_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: home-assistant-packages-reload
+            key: HA_TOKEN
+            optional: true
+    volumeMounts:
+      - name: packages
+        mountPath: /packages
+        readOnly: true
+    resources:
+      requests:
+        cpu: 1m
+        memory: 8Mi
+      limits:
+        memory: 32Mi
 
 # Household-critical: rank HA last for kubelet node-pressure eviction (it was
 # evicted alongside paseo-generic when worker-01 hit DiskPressure 2026-11-10)

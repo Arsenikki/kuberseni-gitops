@@ -32,6 +32,12 @@ data:
         # busy_only_calendars: [you@work.example.com]
         busy_only_calendars: []
 
+    # "What got built": merged PRs from the Jeeves board activity log (no AI).
+    jeeves:
+      enabled: true
+      board_url: http://flock.flock.svc.cluster.local:8099/api/v1
+      lookback_hours: 24
+
     news:
       max_items: 8
       interests:

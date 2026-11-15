@@ -21,8 +21,15 @@ spec:
       labels:
         app: philips-bridge
     spec:
-      # Must run on control-plane-01: the only node that reliably receives the
-      # purifier's fragmented CoAP status stream (project_philips_coap_fragmentation).
+      # The purifier's CoAP status reply is a large, IP-fragmented UDP datagram.
+      # On the pod network it goes through Cilium's BPF masquerade (vxlan), which
+      # cannot reverse-NAT the non-first fragments (no UDP ports in them), so the
+      # status never arrives: small replies (ping, /sys/dev/sync) work, status
+      # times out (verified 2026-11-15). Host networking skips the NAT and lets the
+      # node kernel reassemble the fragments, like home-assistant (also hostNetwork).
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet  # still resolve mosquitto.*.svc
+      # Historically pinned here; kept so only one node talks to the purifier.
       nodeSelector:
         kubernetes.io/hostname: control-plane-01
       tolerations:
