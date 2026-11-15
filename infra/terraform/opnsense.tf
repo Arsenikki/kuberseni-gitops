@@ -63,6 +63,8 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.controlplane,
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
+    opnsense_kea_dhcpv4_reservation.usw_flex_mini,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
@@ -122,6 +124,25 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
+# UniFi OS Server — VM 110 on minipc, the UniFi Network controller for the U6-Pro
+# AP (network-infra block). Was created by hand in OPNsense; imported 2026-11-15.
+resource "opnsense_kea_dhcpv4_reservation" "unifi_os_server" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "bc:24:11:e4:9a:5d"
+  ip_address  = "192.168.1.4"
+  hostname    = "unifi-os-server"
+  description = "UniFi OS Server VM 110 (minipc), on-demand UniFi controller"
+}
+
+# UniFi USW Flex Mini switch (added 2026-11-15), network-infra block (.2-.9).
+resource "opnsense_kea_dhcpv4_reservation" "usw_flex_mini" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "58:d6:1f:50:c2:79"
+  ip_address  = "192.168.1.5"
+  hostname    = "usw-flex-mini"
+  description = "UniFi USW Flex Mini switch"
+}
+
 # ── Personal/home devices ──────────────────────────────────────────────────────
 
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
@@ -156,10 +177,12 @@ resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
   description = ""
 }
 
+# Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
+# #782 but was never applied; Kea then leased .105 to the new USW Flex Mini.
 resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "ca:e0:0e:6c:cf:c1"
-  ip_address  = "192.168.1.105"
+  ip_address  = "192.168.1.51"
   hostname    = "bazzite-chromebook"
   description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
 }
