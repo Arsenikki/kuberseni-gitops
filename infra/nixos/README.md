@@ -41,10 +41,13 @@ The stack is IPv4 only for now.
 
 Run `task nixos:deploy HOST=gw` (or `scripts/deploy.sh gw <rev>`). It deploys only commits on `origin/main` to `gw` (any pushed commit to `gw-staging`) and needs nothing but SSH. Steps:
 
-1. Arm a 10-minute reboot timer on the host.
-2. Run `nixos-rebuild test` from GitHub at that commit. This doesn't touch the bootloader.
-3. Confirm that SSH and internet access still work.
-4. If they do, disarm the timer and run `switch`. If they don't, the timer reboots the host into the previous generation.
+1. Build the commit on the host (`nixos-rebuild build`). This changes nothing; if it fails, the script stops.
+2. Arm a 10-minute reboot timer on the host (`DEADMAN=` to change).
+3. Activate with `nixos-rebuild test`. This doesn't touch the bootloader.
+4. Confirm that SSH and internet access still work.
+5. If they do, disarm the timer and run `switch`. If they don't, the timer reboots the host into the previous generation.
+
+Tried on `gw-staging` on 2026-11-15: a deploy takes about 2 minutes, and the timer's reboot brought the host back cleanly.
 
 The Proxmox console (`qm terminal`) and VM snapshots are the last-resort way back in.
 
