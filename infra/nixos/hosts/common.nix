@@ -18,9 +18,9 @@
   proxmox = {
     qemuConf = {
       name = config.networking.hostName;
-      cores = 2;
+      cores = lib.mkDefault 2;
       # Enough for `nixos-rebuild` to evaluate and build on the box (see deploy.sh).
-      memory = 2048;
+      memory = lib.mkDefault 2048;
     };
     cloudInit.enable = false;
   };
