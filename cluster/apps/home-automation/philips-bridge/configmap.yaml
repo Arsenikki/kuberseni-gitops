@@ -4,7 +4,8 @@
 # fragmented CoAP status stream — see memory project_philips_coap_fragmentation).
 # Publishes HA MQTT discovery so HA auto-creates entities (fan + display-light
 # select + PM2.5 + 2 filter sensors) with live status, and turns commands into
-# CoAP SET. Node-RED automates fan.set_preset_mode on the Octopus schedule.
+# CoAP SET. (The Node-RED Octopus-schedule automation was retired 2026-11; see
+# docs/archive/node-red/octopus-purifier.json if it is ever wanted in HA.)
 apiVersion: v1
 kind: ConfigMap
 metadata:
