@@ -19,6 +19,8 @@ in
     isp = {
       virtualisation.vlans = [ 1 ];
       networking.firewall.enable = false;
+      # Otherwise dhcpcd adds a default route via QEMU's user-mode eth0.
+      networking.useDHCP = false;
       networking.interfaces.eth1.ipv4.addresses = lib.mkForce [ ];
 
       environment.etc = {
@@ -113,6 +115,7 @@ in
     client = {
       virtualisation.vlans = [ 2 ];
       networking.firewall.enable = false;
+      networking.useDHCP = false;
       networking.interfaces.eth1 = {
         ipv4.addresses = lib.mkForce [ ];
         useDHCP = true;

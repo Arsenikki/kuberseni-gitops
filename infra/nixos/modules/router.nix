@@ -170,6 +170,8 @@ in
               iifname "lo" accept
               iifname "${lanIf}" jump lan_input
               ${cfg.extraInputRules}
+              # Broadcast/multicast chatter (LLMNR, mDNS, the ISP's DHCP) isn't worth logging.
+              meta pkttype { broadcast, multicast } drop
               limit rate 5/second log prefix "nft-drop-input: " level info
             }
 
@@ -315,5 +317,9 @@ in
       enable = true;
       targets = [ "/run/kea/dhcp4.sock" ];
     };
+    # Kea 3 refuses a control socket in a directory looser than 0750, and the
+    # exporter also declares /run/kea (default 0755), so whichever starts first wins.
+    systemd.services.kea-dhcp4-server.serviceConfig.RuntimeDirectoryMode = "0750";
+    systemd.services.prometheus-kea-exporter.serviceConfig.RuntimeDirectoryMode = "0750";
   };
 }
