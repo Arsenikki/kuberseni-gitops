@@ -141,13 +141,13 @@ in
 
     with subtest("LAN reaches the internet through NAT"):
         isp.wait_for_open_port(80)
-        client.wait_until_succeeds("curl -fsS --max-time 5 http://192.0.2.1/ | grep -q internet", timeout=60)
+        client.wait_until_succeeds("curl -fsS --max-time 5 http://192.0.2.1/ | grep internet >/dev/null", timeout=60)
         # The ISP only sees the router's WAN address.
         isp.succeed("journalctl -u web | grep -q '192.0.2.2 - -'")
 
     with subtest("Port forward from WAN reaches the LAN host"):
         client.wait_for_open_port(8080)
-        isp.succeed("curl -fsS --max-time 5 http://192.0.2.2/ | grep -q lan")
+        isp.succeed("curl -fsS --max-time 5 http://192.0.2.2/ | grep lan >/dev/null")
 
     with subtest("WAN can't reach the router or the LAN directly"):
         isp.fail("nc -z -w 3 192.0.2.2 22")
@@ -160,6 +160,6 @@ in
     with subtest("LAN can manage the router and scrape Kea"):
         client.succeed("nc -z -w 3 192.168.1.1 22")
         router.wait_for_open_port(9547)
-        client.succeed("curl -fsS --max-time 5 http://192.168.1.1:9547/metrics | grep -q '^kea_dhcp4'")
+        client.succeed("curl -fsS --max-time 5 http://192.168.1.1:9547/metrics | grep '^kea_dhcp4' >/dev/null")
   '';
 }
