@@ -44,7 +44,6 @@ initContainers:
         # -c creates/overwrites the file for the first user, then append the rest.
         mosquitto_passwd -b -c "$PASSWD" "$HOMEASSISTANT_USERNAME" "$HOMEASSISTANT_PASSWORD"
         mosquitto_passwd -b    "$PASSWD" "$ZIGBEE2MQTT_USERNAME"   "$ZIGBEE2MQTT_PASSWORD"
-        mosquitto_passwd -b    "$PASSWD" "$NODERED_USERNAME"       "$NODERED_PASSWORD"
         mosquitto_passwd -b    "$PASSWD" "$PHILIPS_USERNAME"       "$PHILIPS_PASSWORD"
         chmod 0600 "$PASSWD"
     envFrom:
