@@ -64,7 +64,6 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
     opnsense_kea_dhcpv4_reservation.desktop_main,
-    opnsense_kea_dhcpv4_reservation.netgear_ap,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
     opnsense_kea_dhcpv4_reservation.vm_hub,
@@ -135,14 +134,6 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   description = "Windows Desktop"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "netgear_ap" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "94:18:65:41:1e:05"
-  ip_address  = "192.168.1.110"
-  hostname    = "NETGEAR411E05"
-  description = "Netgear WAX220 Access Point"
-}
-
 resource "opnsense_kea_dhcpv4_reservation" "laptop" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "6c:7e:67:c8:b5:a5"
@@ -176,10 +167,11 @@ resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
 }
 
 # Raspberry Pi 4 in the bedroom: NixOS, gitops-managed from Arsenikki/nixos-homelab
-# (Music Assistant "Bedroom" Sendspin player). Wired MAC (end0); trusted static block.
+# (Music Assistant "Bedroom" Sendspin player). Wi-Fi MAC (wlan0; it runs without the
+# Ethernet cable since 2026-11-14); trusted static block.
 resource "opnsense_kea_dhcpv4_reservation" "bedroom_pi" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "dc:a6:32:a9:a8:ff"
+  mac_address = "dc:a6:32:a9:a9:00"
   ip_address  = "192.168.1.50"
   hostname    = "bedroom-pi"
   description = "Raspberry Pi 4, NixOS (Arsenikki/nixos-homelab)"

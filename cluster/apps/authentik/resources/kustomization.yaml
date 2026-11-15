@@ -26,7 +26,6 @@ configMapGenerator:
       - blueprints/app-lidarr.yaml
       - blueprints/app-longhorn.yaml
       - blueprints/app-music-assistant.yaml
-      - blueprints/app-nodered.yaml
       - blueprints/app-overseerr.yaml
       - blueprints/app-prowlarr.yaml
       - blueprints/app-qbittorrent.yaml
