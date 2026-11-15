@@ -6,6 +6,7 @@
 - bridged LAN
 - NAT and the nftables firewall
 - Kea DHCP with the LAN's reservations
+- Tailscale: subnet router for the LAN and an exit node, replacing Tailscale on OPNSense
 - exporters
 
 **Status: not deployed.** OPNSense is still the router, and `infra/terraform/opnsense.tf` is still the source of truth for DHCP.
@@ -16,7 +17,7 @@
 | `hosts/common.nix` | Shared by all hosts: Proxmox image, SSH keys, node-exporter, nix gc |
 | `hosts/gw/` | The real router: NIC layout matching OPNSense, PPPoE, reservations |
 | `hosts/gw-staging/` | Same router on a throwaway VM, with DHCP WAN and an isolated LAN (`vmbr99`) |
-| `tests/router.nix` | VM test: PPPoE/CHAP to a fake ISP, DHCP reservation, NAT, port forward, WAN→LAN blocked, drop logging, Kea exporter |
+| `tests/router.nix` | VM test: PPPoE/CHAP to a fake ISP, DHCP reservation, NAT, port forward, WAN→LAN blocked, drop logging, Kea exporter, and Tailscale via headscale (remote device → LAN, exit node) |
 | `scripts/deploy.sh` | Deploy with a dead-man switch (`task nixos:deploy HOST=gw`) |
 | `scripts/check-reservations.py` | CI check that `hosts/gw/dhcp-reservations.json` matches OpenTofu |
 
@@ -27,6 +28,7 @@ Both directions drop by default.
 - **The router** accepts SSH (22), node-exporter (9100) and kea-exporter (9547) from the LAN only, plus DHCP and ICMP.
 - **LAN → WAN** is allowed and masqueraded.
 - **WAN → LAN** is allowed only for `portForwards`.
+- **Tailscale:** tailnet → LAN (masqueraded, so LAN hosts see 192.168.1.1), tailnet → internet (exit node), and LAN → tailnet are allowed. UDP 41641 is open on the WAN for direct connections. tailscaled runs with `--netfilter-mode=off`; these rules are in our ruleset instead.
 - **Drops** are logged at a limited rate with the prefixes `nft-drop-input:` and `nft-drop-forward:`.
 
 The stack is IPv4 only for now.
@@ -53,13 +55,19 @@ The Proxmox console (`qm terminal`) and VM snapshots are the last-resort way bac
    - Copy OPNSense's port forwards and any other rules into `hosts/gw/default.nix`.
    - Restore `gw` (stopped) on the `router` node.
    - Add its age key to `.sops.yaml`.
-   - Create `hosts/gw/secrets.yaml` with the PPPoE credentials:
+   - In the Tailscale admin console, create a **tagged auth key** for `tag:router`. In the tailnet policy, add `autoApprovers` so the routes need no clicking:
+     ```json
+     "tagOwners": { "tag:router": ["autogroup:admin"] },
+     "autoApprovers": { "routes": { "192.168.1.0/24": ["tag:router"] }, "exitNode": ["tag:router"] }
+     ```
+   - Create `hosts/gw/secrets.yaml` with the PPPoE credentials and that key:
      ```yaml
      pppoe: |
        user "..."
        password "..."
+     tailscale_authkey: tskey-auth-...
      ```
-3. **Cutover.** Snapshot and stop OPNSense (VM 100), then start `gw`. The `router` node can't run both: OPNSense takes 8 GB of its 15 GB.
+3. **Cutover.** Snapshot and stop OPNSense (VM 100), then start `gw`. Afterwards, remove the old OPNSense node from the tailnet. The `router` node can't run both: OPNSense takes 8 GB of its 15 GB.
 4. **Rollback.** Stop `gw` and start VM 100.
 5. **After cutover:**
    - Remove the OPNSense resources from OpenTofu and make `dhcp-reservations.json` the source of truth.

@@ -1,10 +1,13 @@
 # The home router: PPPoE (or DHCP) uplink, a bridged LAN, NAT, an nftables
-# firewall, Kea DHCP and its exporter. IPv4 only for now.
+# firewall, Kea DHCP and its exporter, and optionally Tailscale (subnet router for
+# the LAN + exit node). IPv4 only for now.
 #
 # Firewall policy: drop by default in both directions.
 #   - The router accepts management traffic only from the LAN (lan.allowedTCPPorts).
 #   - LAN -> WAN is allowed and masqueraded.
 #   - WAN -> LAN is allowed only for portForwards.
+#   - Tailscale: tailnet -> LAN/WAN (subnet router, exit node) and LAN -> tailnet are
+#     allowed. The tailnet's own policy decides which peers may use them.
 #   - Drops are logged (rate-limited) to the kernel log with an "nft-drop-" prefix.
 { config, lib, ... }:
 let
@@ -15,6 +18,15 @@ let
   lanIf = "br-lan";
   prefixLength = lib.last (lib.splitString "/" cfg.lan.subnet);
   ports = ps: lib.concatMapStringsSep ", " toString ps;
+
+  ts = cfg.tailscale;
+  tsIf = "tailscale0";
+  # Applied on every start (`tailscale set`), so changes here reach a logged-in node.
+  tsFlags = [
+    "--advertise-routes=${cfg.lan.subnet}"
+    "--accept-dns=false"
+  ]
+  ++ lib.optional ts.exitNode "--advertise-exit-node";
 
   forwardRules = lib.concatMapStrings (f: ''
     iifname "${wanIf}" ${f.proto} dport ${toString f.port} dnat to ${f.to}:${toString (if f.toPort == null then f.port else f.toPort)}${lib.optionalString (f.description != "") " comment \"${f.description}\""}
@@ -141,6 +153,35 @@ in
       default = [ ];
     };
 
+    tailscale = {
+      enable = lib.mkEnableOption "Tailscale: subnet router for the LAN and (optionally) an exit node";
+      authKeyFile = mkOption {
+        type = types.str;
+        description = ''
+          Runtime file (sops) with a tagged auth key, used only for the first login.
+          The node then stays logged in via /var/lib/tailscale.
+        '';
+      };
+      loginServer = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Control server URL; null means Tailscale's own.";
+      };
+      exitNode = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Advertise the router as an exit node.";
+      };
+      snatSubnetRoutes = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Masquerade tailnet traffic into the LAN, so LAN hosts see the router's address
+          rather than a 100.64.0.0/10 one. Tailscale's default, and what OPNSense did.
+        '';
+      };
+    };
+
     extraInputRules = mkOption {
       type = types.lines;
       default = "";
@@ -151,7 +192,6 @@ in
   config = lib.mkIf cfg.enable {
     boot.kernel.sysctl = {
       "net.ipv4.conf.all.forwarding" = 1;
-      "net.ipv6.conf.all.forwarding" = 0;
     };
 
     networking = {
@@ -169,6 +209,11 @@ in
               ct state vmap { established : accept, related : accept, invalid : drop }
               iifname "lo" accept
               iifname "${lanIf}" jump lan_input
+              ${lib.optionalString ts.enable ''
+                iifname "${tsIf}" jump lan_input
+                # Direct (peer-to-peer) WireGuard connections instead of DERP relays.
+                iifname "${wanIf}" udp dport ${toString config.services.tailscale.port} accept
+              ''}
               ${cfg.extraInputRules}
               # Broadcast/multicast chatter (LLMNR, mDNS, the ISP's DHCP) isn't worth logging.
               meta pkttype { broadcast, multicast } drop
@@ -187,6 +232,11 @@ in
               tcp flags syn tcp option maxseg size set rt mtu
               ct state vmap { established : accept, related : accept, invalid : drop }
               iifname "${lanIf}" oifname "${wanIf}" accept
+              ${lib.optionalString ts.enable ''
+                iifname "${tsIf}" oifname "${lanIf}" accept
+                iifname "${lanIf}" oifname "${tsIf}" accept
+                ${lib.optionalString ts.exitNode ''iifname "${tsIf}" oifname "${wanIf}" accept''}
+              ''}
               # Port forwards (DNAT'd in table ip nat).
               ct status dnat accept
               limit rate 5/second log prefix "nft-drop-forward: " level info
@@ -202,6 +252,11 @@ in
             chain postrouting {
               type nat hook postrouting priority srcnat; policy accept;
               oifname "${wanIf}" masquerade
+              ${lib.optionalString ts.enable ''
+                # LAN -> tailnet: peers only route 100.64.0.0/10 back, not the LAN subnet.
+                oifname "${tsIf}" masquerade
+                ${lib.optionalString ts.snatSubnetRoutes ''oifname "${lanIf}" ip saddr 100.64.0.0/10 masquerade''}
+              ''}
             }
           }
         '';
@@ -311,6 +366,19 @@ in
           }
         ];
       };
+    };
+
+    # --netfilter-mode=off: tailscaled would otherwise write its own nftables rules,
+    # which the NixOS ruleset reload flushes. The rules it needs are in the ruleset above.
+    services.tailscale = lib.mkIf ts.enable {
+      enable = true;
+      useRoutingFeatures = "server";
+      inherit (ts) authKeyFile;
+      extraUpFlags =
+        tsFlags
+        ++ [ "--netfilter-mode=off" ]
+        ++ lib.optional (ts.loginServer != null) "--login-server=${ts.loginServer}";
+      extraSetFlags = tsFlags;
     };
 
     services.prometheus.exporters.kea = {

@@ -57,11 +57,19 @@ in
     };
     # TODO before cutover: copy OPNSense's port forwards (Firewall > NAT > Port Forward).
     portForwards = [ ];
+    # Replaces Tailscale on OPNSense: advertises the LAN and is an exit node. The tailnet
+    # policy should auto-approve both for tag:router (see README).
+    tailscale = {
+      enable = true;
+      authKeyFile = "/run/secrets/tailscale_authkey";
+    };
   };
 
-  # secrets.yaml holds `pppoe: |` with the pppd `user "..."` and `password "..."` lines.
-  # It's created once the host's age key exists (README). Without it, pppd can't log in.
+  # secrets.yaml (created once the host's age key exists; see README) holds:
+  #   pppoe: the pppd `user "..."` and `password "..."` lines. Without it, no internet.
+  #   tailscale_authkey: a tag:router auth key. Without it, Tailscale stays logged out.
   sops.secrets = lib.mkIf (builtins.pathExists ./secrets.yaml) {
     pppoe.sopsFile = ./secrets.yaml;
+    tailscale_authkey.sopsFile = ./secrets.yaml;
   };
 }
