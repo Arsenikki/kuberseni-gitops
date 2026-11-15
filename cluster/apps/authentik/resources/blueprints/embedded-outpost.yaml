@@ -27,11 +27,6 @@ entries:
   - model: authentik_blueprints.metaapplyblueprint
     attrs:
       identifiers:
-        name: nodered
-      required: true
-  - model: authentik_blueprints.metaapplyblueprint
-    attrs:
-      identifiers:
         name: overseerr
       required: true
   - model: authentik_blueprints.metaapplyblueprint
