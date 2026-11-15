@@ -63,6 +63,7 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.controlplane,
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
@@ -120,6 +121,16 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   ip_address  = "192.168.1.2"
   hostname    = "truenas-scale"
   description = "TrueNAS Scale (primary NAS, static .2)"
+}
+
+# UniFi OS Server — VM 110 on minipc, the UniFi Network controller for the U6-Pro
+# AP (storage/network-infra block). Was created by hand; imported 2026-11-15.
+resource "opnsense_kea_dhcpv4_reservation" "unifi_os_server" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "bc:24:11:e4:9a:5d"
+  ip_address  = "192.168.1.4"
+  hostname    = "unifi-os-server"
+  description = "UniFi OS Server VM 110 (minipc), on-demand UniFi controller"
 }
 
 # ── Personal/home devices ──────────────────────────────────────────────────────
