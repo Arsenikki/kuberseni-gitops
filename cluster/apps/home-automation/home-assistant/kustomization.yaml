@@ -12,7 +12,15 @@ configMapGenerator:
   - name: home-assistant-packages
     namespace: home-automation
     files:
+      - packages/adaptive_lighting.yaml
       - packages/bedroom_speakers.yaml
+      - packages/gaming.yaml
+      - packages/light_webhooks.yaml
+      - packages/lights_common.yaml
+      - packages/lobby_lights.yaml
+      - packages/notifications.yaml
+      - packages/scenes.yaml
+      - packages/wall_switches.yaml
     options:
       disableNameSuffixHash: true
       annotations:

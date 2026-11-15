@@ -1,0 +1,50 @@
+---
+# GET webhooks that toggle lights (e.g. from phone shortcuts). Same webhook IDs
+# as the Node-RED "Lights" tab, so existing callers keep working:
+#   GET /api/webhook/kitchen_lights_toggle
+#   GET /api/webhook/living_room_corner_lights_toggle
+#   GET /api/webhook/living_room_christmas_lights_toggle
+# local_only: these IDs are public in this repo, so only LAN clients may call them.
+automation:
+  - id: light_webhooks
+    alias: "Lights: toggle webhooks"
+    mode: queued
+    triggers:
+      - trigger: webhook
+        webhook_id: kitchen_lights_toggle
+        allowed_methods: [GET]
+        local_only: true
+        id: kitchen
+      - trigger: webhook
+        webhook_id: living_room_corner_lights_toggle
+        allowed_methods: [GET]
+        local_only: true
+        id: living_room_corner
+      - trigger: webhook
+        webhook_id: living_room_christmas_lights_toggle
+        allowed_methods: [GET]
+        local_only: true
+        id: christmas
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: kitchen
+            sequence:
+              - action: script.lights_sync_toggle
+                data:
+                  entities: [light.kitchen_led_strip_01, light.kitchen_led_strip_02]
+          - conditions:
+              - condition: trigger
+                id: living_room_corner
+            sequence:
+              - action: script.lights_sync_toggle
+                data:
+                  entities: [light.living_room_corner_light_01, light.living_room_corner_light_02]
+          - conditions:
+              - condition: trigger
+                id: christmas
+            sequence:
+              - action: light.toggle
+                target:
+                  entity_id: light.living_room_christmas_lights
