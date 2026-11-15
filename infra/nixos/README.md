@@ -39,7 +39,7 @@ The stack is IPv4 only for now.
 
 ## Deploying
 
-Run `task nixos:deploy HOST=gw` (or `scripts/deploy.sh gw <rev>`). It only deploys commits on `origin/main` and needs nothing but SSH. Steps:
+Run `task nixos:deploy HOST=gw` (or `scripts/deploy.sh gw <rev>`). It deploys only commits on `origin/main` to `gw` (any pushed commit to `gw-staging`) and needs nothing but SSH. Steps:
 
 1. Arm a 10-minute reboot timer on the host.
 2. Run `nixos-rebuild test` from GitHub at that commit. This doesn't touch the bootloader.

@@ -3,6 +3,9 @@
 #
 #   infra/nixos/scripts/deploy.sh <host> [rev]      # rev defaults to origin/main
 #
+# gw only takes commits on origin/main. gw-staging takes any pushed commit, so a PR
+# can be tried on it before merge.
+#
 # Needs only ssh here: the host builds its own closure from GitHub. Steps:
 #   1. Arm a timer on the host that reboots it in $DEADMAN (default 10min).
 #   2. `nixos-rebuild test`: activate the new config, leave the bootloader alone.
@@ -18,9 +21,9 @@ case $host in
   *) echo "unknown host: $host" >&2; exit 1 ;;
 esac
 
-git fetch -q origin main
+git fetch -q origin
 rev=$(git rev-parse "${2:-origin/main}")
-if ! git merge-base --is-ancestor "$rev" origin/main; then
+if [ "$host" != gw-staging ] && ! git merge-base --is-ancestor "$rev" origin/main; then
   echo "$rev is not on origin/main: review and merge it first" >&2
   exit 1
 fi
