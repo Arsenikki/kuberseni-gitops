@@ -1,0 +1,70 @@
+name: NixOS
+on: # yamllint disable-line rule:truthy
+  pull_request:
+    paths:
+      - infra/nixos/**
+      - infra/terraform/opnsense.tf
+      - infra/terraform/vms.tf
+      - infra/terraform/truenas-scale.tf
+      - .github/workflows/nixos.yaml
+  push:
+    branches: [main]
+    paths:
+      - infra/nixos/**
+      - .github/workflows/nixos.yaml
+  workflow_dispatch:
+    inputs:
+      images:
+        description: Also build the Proxmox .vma images and upload them
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nixos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: infra/nixos
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: DHCP reservations match OpenTofu
+        run: python3 scripts/check-reservations.py
+
+      # Enables KVM on the runner, so the router VM test runs at native speed.
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+
+      - name: Lock inputs if flake.lock isn't committed yet
+        run: test -f flake.lock || nix flake lock
+
+      - name: Upload flake.lock
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: flake.lock
+          path: infra/nixos/flake.lock
+
+      - name: Build hosts and run the router VM test
+        run: nix flake check --print-build-logs
+
+      - name: Build Proxmox images
+        if: github.event_name == 'workflow_dispatch' && inputs.images
+        run: |
+          nix build --print-build-logs --out-link vma-gw .#gw-vma
+          nix build --print-build-logs --out-link vma-gw-staging .#gw-staging-vma
+
+      - name: Upload Proxmox images
+        if: github.event_name == 'workflow_dispatch' && inputs.images
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: proxmox-images
+          path: infra/nixos/vma-*/*.vma.zst
+          retention-days: 14
+          compression-level: 0 # already zstd
