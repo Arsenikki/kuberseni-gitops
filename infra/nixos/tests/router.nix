@@ -6,7 +6,7 @@
 { self }:
 { lib, pkgs, ... }:
 let
-  qemu-common = import "${pkgs.path}/nixos/lib/qemu-common.nix" { inherit lib pkgs; };
+  qemu-common = pkgs.callPackage "${pkgs.path}/nixos/lib/qemu-common.nix" { };
   webServer = port: text: {
     wantedBy = [ "multi-user.target" ];
     script = "exec ${pkgs.python3}/bin/python3 -m http.server ${toString port} --directory ${pkgs.writeTextDir "index.html" text}";
