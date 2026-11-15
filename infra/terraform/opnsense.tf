@@ -64,7 +64,6 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
     opnsense_kea_dhcpv4_reservation.desktop_main,
-    opnsense_kea_dhcpv4_reservation.netgear_ap,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
     opnsense_kea_dhcpv4_reservation.vm_hub,
@@ -131,14 +130,6 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   ip_address  = "192.168.1.100"
   hostname    = "DESKTOP-Q0E7TOC"
   description = "Windows Desktop"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "netgear_ap" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "94:18:65:41:1e:05"
-  ip_address  = "192.168.1.110"
-  hostname    = "NETGEAR411E05"
-  description = "Netgear WAX220 Access Point"
 }
 
 resource "opnsense_kea_dhcpv4_reservation" "laptop" {
