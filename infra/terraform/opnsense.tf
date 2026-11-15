@@ -174,10 +174,11 @@ resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
 }
 
 # Raspberry Pi 4 in the bedroom: NixOS, gitops-managed from Arsenikki/nixos-homelab
-# (Music Assistant "Bedroom" Sendspin player). Wired MAC (end0); trusted static block.
+# (Music Assistant "Bedroom" Sendspin player). Wi-Fi MAC (wlan0; it runs without the
+# Ethernet cable since 2026-11-14); trusted static block.
 resource "opnsense_kea_dhcpv4_reservation" "bedroom_pi" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "dc:a6:32:a9:a8:ff"
+  mac_address = "dc:a6:32:a9:a9:00"
   ip_address  = "192.168.1.50"
   hostname    = "bedroom-pi"
   description = "Raspberry Pi 4, NixOS (Arsenikki/nixos-homelab)"

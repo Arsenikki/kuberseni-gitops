@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zigbee-serial-proxy
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: zigbee-serial-proxy
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zigbee-serial-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zigbee-serial-proxy
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: "control-plane-01"
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: "Exists"
+        - key: node-role.kubernetes.io/control-plane
+          operator: "Exists"
+      containers:
+        - name: ser2net
+          image: ghcr.io/jippi/docker-ser2net:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          ports:
+            - name: serial-tcp
+              containerPort: 8888
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/ser2net/ser2net.yaml
+              subPath: ser2net.yaml
+              readOnly: true
+            - name: usb
+              mountPath: /dev/serial/by-id
+      volumes:
+        - name: config
+          configMap:
+            name: zigbee-serial-proxy-config
+        - name: usb
+          hostPath:
+            path: /dev/serial/by-id
+            type: Directory
