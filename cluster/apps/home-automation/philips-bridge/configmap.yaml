@@ -1,7 +1,7 @@
 ---
 # CoAP <-> MQTT bridge for the Philips AC3220 air purifier.
-# Runs on control-plane-01 (the only node that reliably receives the purifier's
-# fragmented CoAP status stream — see memory project_philips_coap_fragmentation).
+# Runs with hostNetwork (pinned to control-plane-01) so the purifier's
+# fragmented CoAP status reply is reassembled by the node, not dropped by NAT.
 # Publishes HA MQTT discovery so HA auto-creates entities (fan + display-light
 # select + PM2.5 + 2 filter sensors) with live status, and turns commands into
 # CoAP SET. (The Node-RED Octopus-schedule automation was retired 2026-11; see
