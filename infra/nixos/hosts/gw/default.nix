@@ -1,14 +1,18 @@
 # gw: the home router, a VM on the Proxmox `router` node replacing OPNSense (VM 100).
 # Same NIC layout as OPNSense: net0 = WAN (vmbr0, PPPoE), net1-3 = LAN ports
 # (vmbr1-3), bridged together into br-lan like OPNSense's LAN bridge.
+#
+# The NICs and br-lan reuse OPNSense's MACs, so to the ISP and to every LAN device
+# (ARP caches for 192.168.1.1) the switchover is invisible. The two VMs never run
+# at the same time (scripts/cutover.sh).
 { config, lib, ... }:
 let
-  # Fixed MACs so the NICs get stable names whatever order they probe in.
+  # OPNSense's NIC MACs (qm config 100): vtnet0 = WAN, vtnet1-3 = LAN bridge members.
   nics = {
-    wan = "BC:24:11:9A:00:01";
-    lan0 = "BC:24:11:9A:00:02";
-    lan1 = "BC:24:11:9A:00:03";
-    lan2 = "BC:24:11:9A:00:04";
+    wan = "22:AE:AC:99:B5:F0";
+    lan0 = "16:41:56:35:70:0E";
+    lan1 = "EE:8B:DA:BF:38:E4";
+    lan2 = "52:DE:96:AA:D8:6E";
   };
 in
 {
@@ -48,6 +52,8 @@ in
       ];
       subnet = "192.168.1.0/24";
       address = "192.168.1.1";
+      # OPNSense's bridge0.
+      macAddress = "58:9c:fc:10:f1:79";
     };
     dhcp = {
       pool = "192.168.1.100 - 192.168.1.199";
@@ -55,21 +61,14 @@ in
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
       reservations = lib.importJSON ./dhcp-reservations.json;
     };
-    # TODO before cutover: copy OPNSense's port forwards (Firewall > NAT > Port Forward).
+    # OPNSense had no port forwards (checked in its config.xml, 2026-11-15).
     portForwards = [ ];
-    # Replaces Tailscale on OPNSense: advertises the LAN and is an exit node. The tailnet
-    # policy should auto-approve both for tag:router (see README).
-    tailscale = {
-      enable = true;
-      authKeyFile = "/run/secrets/tailscale_authkey";
-    };
+    # Replaces Tailscale on OPNSense (node "opnsense", 192.168.1.0/24). scripts/cutover.sh
+    # copies that node's tailscaled.state, so gw takes over the same node and its
+    # already-approved route. The exit node is new and needs approving once.
+    tailscale.enable = true;
   };
 
-  # secrets.yaml (created once the host's age key exists; see README) holds:
-  #   pppoe: the pppd `user "..."` and `password "..."` lines. Without it, no internet.
-  #   tailscale_authkey: a tag:router auth key. Without it, Tailscale stays logged out.
-  sops.secrets = lib.mkIf (builtins.pathExists ./secrets.yaml) {
-    pppoe.sopsFile = ./secrets.yaml;
-    tailscale_authkey.sopsFile = ./secrets.yaml;
-  };
+  # pppoe: the pppd `user "..."` and `password "..."` lines (from OPNSense's config).
+  sops.secrets.pppoe.sopsFile = ./secrets.yaml;
 }

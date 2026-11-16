@@ -108,6 +108,7 @@ in
       systemd.services.web = webServer 80 "internet";
       environment.systemPackages = [
         pkgs.curl
+        pkgs.dnsutils
         pkgs.headscale
         pkgs.jq
         pkgs.netcat
@@ -192,6 +193,7 @@ in
       systemd.services.web = webServer 8080 "lan";
       environment.systemPackages = [
         pkgs.curl
+        pkgs.dnsutils
         pkgs.netcat
       ];
     };
@@ -250,6 +252,11 @@ in
         client.succeed("nc -z -w 3 192.168.1.1 22")
         router.wait_for_open_port(9547)
         client.succeed("curl -fsS --max-time 5 http://192.168.1.1:9547/metrics | grep '^kea_dhcp4' >/dev/null")
+
+    with subtest("The router answers DNS on the LAN, not the WAN"):
+        router.wait_for_unit("unbound.service")
+        client.wait_until_succeeds("dig +short +time=2 +tries=1 @192.168.1.1 localhost | grep -q 127.0.0.1")
+        isp.fail("dig +time=2 +tries=1 @192.0.2.2 localhost")
 
     with subtest("Tailscale: router logs in and advertises the LAN and an exit node"):
         isp.wait_for_unit("headscale.service")

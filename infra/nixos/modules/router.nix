@@ -1,9 +1,9 @@
 # The home router: PPPoE (or DHCP) uplink, a bridged LAN, NAT, an nftables
-# firewall, Kea DHCP and its exporter, and optionally Tailscale (subnet router for
-# the LAN + exit node). IPv4 only for now.
+# firewall, Kea DHCP and its exporter, an Unbound DNS forwarder, and optionally
+# Tailscale (subnet router for the LAN + exit node). IPv4 only for now.
 #
 # Firewall policy: drop by default in both directions.
-#   - The router accepts management traffic only from the LAN (lan.allowedTCPPorts).
+#   - The router accepts management traffic and DNS only from the LAN (lan.allowedTCPPorts).
 #   - LAN -> WAN is allowed and masqueraded.
 #   - WAN -> LAN is allowed only for portForwards.
 #   - Tailscale: tailnet -> LAN/WAN (subnet router, exit node) and LAN -> tailnet are
@@ -77,6 +77,14 @@ in
         type = types.str;
         example = "192.168.1.1";
         description = "The router's address on the LAN, i.e. the clients' gateway.";
+      };
+      macAddress = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          MAC address for br-lan. Reusing the old router's LAN MAC means clients'
+          ARP caches for the gateway stay valid across a switchover.
+        '';
       };
       allowedTCPPorts = mkOption {
         type = types.listOf types.port;
@@ -156,10 +164,12 @@ in
     tailscale = {
       enable = lib.mkEnableOption "Tailscale: subnet router for the LAN and (optionally) an exit node";
       authKeyFile = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
+        default = null;
         description = ''
           Runtime file (sops) with a tagged auth key, used only for the first login.
-          The node then stays logged in via /var/lib/tailscale.
+          The node then stays logged in via /var/lib/tailscale. null: log in some other
+          way, e.g. by copying an existing node's tailscaled.state.
         '';
       };
       loginServer = mkOption {
@@ -223,6 +233,7 @@ in
             chain lan_input {
               meta l4proto { icmp, ipv6-icmp } accept
               udp dport 67 accept
+              meta l4proto { tcp, udp } th dport 53 accept
               ${lib.optionalString (cfg.lan.allowedTCPPorts != [ ]) "tcp dport { ${ports cfg.lan.allowedTCPPorts} } accept"}
             }
 
@@ -268,7 +279,8 @@ in
       netdevs."20-br-lan".netdevConfig = {
         Kind = "bridge";
         Name = lanIf;
-      };
+      }
+      // lib.optionalAttrs (cfg.lan.macAddress != null) { MACAddress = cfg.lan.macAddress; };
       networks = {
         "10-wan" = {
           matchConfig.Name = cfg.wan.interface;
@@ -322,6 +334,34 @@ in
         mtu ${toString cfg.wan.pppoe.mtu}
         mru ${toString cfg.wan.pppoe.mtu}
       '';
+    };
+
+    # DNS forwarder on the LAN address. DHCP clients get dhcp.dnsServers directly, but
+    # hosts with static config (the Proxmox nodes) use the router for DNS.
+    services.unbound = {
+      enable = true;
+      resolveLocalQueries = false;
+      settings = {
+        server = {
+          interface = [
+            "127.0.0.1"
+            cfg.lan.address
+          ];
+          # br-lan may not have its address yet when Unbound starts.
+          ip-freebind = true;
+          access-control = [
+            "127.0.0.0/8 allow"
+            "${cfg.lan.subnet} allow"
+            "100.64.0.0/10 allow"
+          ];
+        };
+        forward-zone = [
+          {
+            name = ".";
+            forward-addr = cfg.dhcp.dnsServers;
+          }
+        ];
+      };
     };
 
     services.kea.dhcp4 = {

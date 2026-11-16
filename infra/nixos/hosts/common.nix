@@ -43,9 +43,12 @@
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB+pln2J9FmCVKkhts28Y+cWuQeAw0YnVxtZyw2xRs1r"
   ];
 
-  # sops-nix decrypts with the host's SSH key (converted to age); add its age
-  # recipient to .sops.yaml after the first boot. See README.
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  # Each host has its own age key, written into the VM disk before first boot (see
+  # scripts/install-age-key.sh); its private half is in hosts/<host>/age-key.sops.
+  sops.age = {
+    keyFile = "/var/lib/sops-nix/key.txt";
+    sshKeyPaths = [ ];
+  };
 
   services.prometheus.exporters.node = {
     enable = true;
