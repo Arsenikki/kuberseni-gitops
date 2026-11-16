@@ -22,10 +22,10 @@ JSON_PATH = NIXOS / "hosts" / "gw" / "dhcp-reservations.json"
 
 
 def from_tofu():
-    found = {}
+    found = []
 
     def add(hostname, mac, ip):
-        found[ip] = {"hostname": hostname, "mac": mac.lower(), "ip": ip}
+        found.append({"hostname": hostname, "mac": mac.lower(), "ip": ip})
 
     for line in (TF / "vms.tf").read_text().splitlines():
         m = re.match(r'\s*([\w-]+)\s*=\s*\{.*\bip\s*=\s*"([\d.]+)".*\bmac\s*=\s*"([0-9A-Fa-f:]+)"', line)
@@ -48,11 +48,16 @@ def from_tofu():
         else:
             sys.exit(f"don't know the MAC for reservation {hostname.group(1)}; teach this script")
 
-    return sorted(found.values(), key=lambda r: tuple(int(o) for o in r["ip"].split(".")))
+    return sorted(found, key=lambda r: tuple(int(o) for o in r["ip"].split(".")))
 
 
 def main():
     want = from_tofu()
+    for field in ("ip", "mac"):
+        seen = [r[field] for r in want]
+        dups = sorted({v for v in seen if seen.count(v) > 1})
+        if dups:
+            sys.exit(f"duplicate {field} in OpenTofu reservations: {dups} (Kea would reject its whole config)")
     if "--write" in sys.argv:
         JSON_PATH.write_text(json.dumps(want, indent=2) + "\n")
         print(f"wrote {len(want)} reservations to {JSON_PATH.relative_to(NIXOS)}")

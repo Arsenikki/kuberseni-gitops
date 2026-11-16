@@ -44,7 +44,7 @@
   ];
 
   # Each host has its own age key, written into the VM disk before first boot (see
-  # scripts/install-age-key.sh); its private half is in hosts/<host>/age-key.sops.
+  # scripts/proxmox/gw-prepare.sh); its private half is in hosts/<host>/age-key.sops.json.
   sops.age = {
     keyFile = "/var/lib/sops-nix/key.txt";
     sshKeyPaths = [ ];

@@ -86,14 +86,20 @@ Checked in OPNSense's config.xml on 2026-11-15:
 
 ### If something goes wrong and there's no internet
 
-You don't need a cable or a monitor.
+You don't need a monitor. Whether you need a cable depends on where your device connects.
 
-- **The LAN and Wi-Fi keep working without the router.** The switch and the U6 Pro don't depend on it, and your devices keep their DHCP address for days (7-day leases).
-- **On a laptop or phone on Wi-Fi**, open **https://192.168.1.10:8006** (the Proxmox web UI for the `router` node). Then either:
+**Topology catch (as of 2026-11-16):**
+- The U6 Pro hangs off `router`'s `enp4s0` (`vmbr2`).
+- The Proxmox host (.10), the Flex Mini and the servers are on `enp3s0` (`vmbr1`).
+- Only the router VM's LAN bridge joins the two sides. So **Wi-Fi can reach Proxmox only while a router VM (OPNSense or gw) is running.** If gw runs but PPPoE fails, that's fine. If neither router VM runs, it isn't.
+
+**What to do:**
+- **From Wi-Fi, if a router VM is up**, or **from a device cabled to the Flex Mini** in any case: open **https://192.168.1.10:8006** (the Proxmox web UI for the `router` node). Then either:
   - **router → Shell**, and run `/root/gw/gw-rollback.sh`; or
   - VM 101 `gw` → **Stop**, then VM 100 `OPNSense` → **Start**.
-- **If a device has no IP address**, give it a manual one: 192.168.1.250, mask 255.255.255.0, no gateway needed.
+- **Devices keep their DHCP address for days** (7-day leases). If a device has none, give it a manual one: 192.168.1.250, mask 255.255.255.0, no gateway needed.
 - **OPNSense is unchanged.** It was only shut down, and its pre-switchover snapshot `pre-gw-cutover` is there too.
+- **gw-cutover.sh rolls back by itself** and needs none of this.
 
 ### Staging
 

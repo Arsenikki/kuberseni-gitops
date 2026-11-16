@@ -200,6 +200,29 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # Kea rejects its whole config on a duplicate reservation, which stops DHCP for
+    # everyone (happened on OPNSense on 2026-11-14). Fail the build instead.
+    assertions =
+      let
+        dups =
+          key:
+          lib.attrNames (
+            lib.filterAttrs (_: n: n > 1) (
+              lib.foldl' (acc: r: acc // { ${key r} = (acc.${key r} or 0) + 1; }) { } cfg.dhcp.reservations
+            )
+          );
+      in
+      [
+        {
+          assertion = dups (r: r.ip) == [ ];
+          message = "homelab.router.dhcp.reservations: duplicate IPs: ${toString (dups (r: r.ip))}";
+        }
+        {
+          assertion = dups (r: lib.toLower r.mac) == [ ];
+          message = "homelab.router.dhcp.reservations: duplicate MACs: ${toString (dups (r: lib.toLower r.mac))}";
+        }
+      ];
+
     boot.kernel.sysctl = {
       "net.ipv4.conf.all.forwarding" = 1;
     };
