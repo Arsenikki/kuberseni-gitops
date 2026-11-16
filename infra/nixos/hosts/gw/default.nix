@@ -24,8 +24,8 @@ in
       net1 = "virtio=${nics.lan0},bridge=vmbr1";
       net2 = "virtio=${nics.lan1},bridge=vmbr2";
       net3 = "virtio=${nics.lan2},bridge=vmbr3";
-      onboot = 1;
-      startup = "order=1";
+      # No onboot/startup here: OPNSense (same MACs, same IP) starts on boot until
+      # scripts/proxmox/gw-cutover.sh succeeds, and only that script flips it.
     };
   };
 

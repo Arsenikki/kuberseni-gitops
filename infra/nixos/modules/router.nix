@@ -22,9 +22,13 @@ let
   ts = cfg.tailscale;
   tsIf = "tailscale0";
   # Applied on every start (`tailscale set`), so changes here reach a logged-in node.
+  # --netfilter-mode=off: tailscaled would otherwise write its own nftables rules,
+  # which a reload of our ruleset flushes. It has to be in the `set` flags: the up
+  # flags only run when logging in with an auth key, and gw takes over an existing node.
   tsFlags = [
     "--advertise-routes=${cfg.lan.subnet}"
     "--accept-dns=false"
+    "--netfilter-mode=off"
   ]
   ++ lib.optional ts.exitNode "--advertise-exit-node";
 
@@ -250,8 +254,13 @@ in
               ${cfg.extraInputRules}
               # Broadcast/multicast chatter (LLMNR, mDNS, the ISP's DHCP) isn't worth logging.
               meta pkttype { broadcast, multicast } drop
+              # The internet scans the WAN address all day: count those drops instead
+              # of logging them (`nft list counter inet filter wan_drops`).
+              iifname "${wanIf}" counter name wan_drops drop
               limit rate 5/second log prefix "nft-drop-input: " level info
             }
+
+            counter wan_drops { }
 
             chain lan_input {
               meta l4proto { icmp, ipv6-icmp } accept
@@ -262,8 +271,12 @@ in
 
             chain forward {
               type filter hook forward priority filter; policy drop;
-              # PPPoE has a smaller MTU: clamp the TCP MSS so large packets don't black-hole.
-              tcp flags syn tcp option maxseg size set rt mtu
+              # PPPoE has a smaller MTU: clamp the TCP MSS both ways, so neither end
+              # sends segments that only fit through PMTU discovery.
+              ${if cfg.wan.type == "pppoe" then ''
+                oifname "${wanIf}" tcp flags syn tcp option maxseg size set ${toString (cfg.wan.pppoe.mtu - 40)}
+                iifname "${wanIf}" tcp flags syn tcp option maxseg size set ${toString (cfg.wan.pppoe.mtu - 40)}
+              '' else "tcp flags syn tcp option maxseg size set rt mtu"}
               ct state vmap { established : accept, related : accept, invalid : drop }
               iifname "${lanIf}" oifname "${wanIf}" accept
               ${lib.optionalString ts.enable ''
@@ -335,6 +348,33 @@ in
         };
       };
     };
+
+    # A nixos-rebuild evaluating nixpkgs on this small VM must not take the router
+    # down with it: compressed swap, and the kernel kills anything before these.
+    zramSwap.enable = true;
+    systemd.services = lib.mkMerge [
+      (lib.genAttrs (
+        [
+          "kea-dhcp4-server"
+          "unbound"
+          "systemd-networkd"
+        ]
+        ++ lib.optional (cfg.wan.type == "pppoe") "pppd-wan"
+        ++ lib.optional ts.enable "tailscaled"
+      ) (_: { serviceConfig.OOMScoreAdjust = -900; }))
+      (lib.mkIf (cfg.wan.type == "pppoe") {
+        # The ISP can take minutes to accept a new session (e.g. while it still holds
+        # the old one), and pppd is ordered before network.target: don't let systemd
+        # kill it every 90s while it waits.
+        pppd-wan.serviceConfig.TimeoutStartSec = "10min";
+      })
+      {
+        # Kea 3 refuses a control socket in a directory looser than 0750, and the
+        # exporter also declares /run/kea (default 0755), so whichever starts first wins.
+        kea-dhcp4-server.serviceConfig.RuntimeDirectoryMode = "0750";
+        prometheus-kea-exporter.serviceConfig.RuntimeDirectoryMode = "0750";
+      }
+    ];
 
     # pppd brings up ppp0 and its default route; networkd leaves ppp0 alone.
     services.pppd = lib.mkIf (cfg.wan.type == "pppoe") {
@@ -431,15 +471,13 @@ in
       };
     };
 
-    # --netfilter-mode=off: tailscaled would otherwise write its own nftables rules,
-    # which the NixOS ruleset reload flushes. The rules it needs are in the ruleset above.
+    # The rules tailscaled needs are in the ruleset above (see tsFlags).
     services.tailscale = lib.mkIf ts.enable {
       enable = true;
       useRoutingFeatures = "server";
       inherit (ts) authKeyFile;
       extraUpFlags =
         tsFlags
-        ++ [ "--netfilter-mode=off" ]
         ++ lib.optional (ts.loginServer != null) "--login-server=${ts.loginServer}";
       extraSetFlags = tsFlags;
     };
@@ -448,9 +486,5 @@ in
       enable = true;
       targets = [ "/run/kea/dhcp4.sock" ];
     };
-    # Kea 3 refuses a control socket in a directory looser than 0750, and the
-    # exporter also declares /run/kea (default 0755), so whichever starts first wins.
-    systemd.services.kea-dhcp4-server.serviceConfig.RuntimeDirectoryMode = "0750";
-    systemd.services.prometheus-kea-exporter.serviceConfig.RuntimeDirectoryMode = "0750";
   };
 }

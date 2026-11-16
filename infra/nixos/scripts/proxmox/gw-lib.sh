@@ -6,14 +6,15 @@ GW=${GW:-101}   # gw (NixOS)
 
 log() { echo "[$(date +%T)] $*"; }
 
-# Read a file from inside a running VM via the QEMU guest agent.
+# Read a file from inside a running VM via the QEMU guest agent. Fails unless the
+# command finished, succeeded and the output wasn't truncated.
 guest_cat() {
   qm guest exec "$1" --timeout 30 -- cat "$2" | python3 -c '
 import json, sys
 d = json.load(sys.stdin)
-if d.get("exitcode"):
-    sys.exit(d.get("err-data", "guest exec failed"))
-sys.stdout.write(d.get("out-data", ""))'
+if not d.get("exited") or d.get("exitcode") != 0 or d.get("out-truncated"):
+    sys.exit("guest exec of cat %s failed: %s" % (sys.argv[1], d.get("err-data", d)))
+sys.stdout.write(d.get("out-data", ""))' "$2"
 }
 
 # Run a shell command inside a VM via the guest agent; exit status is the command's.
@@ -32,6 +33,7 @@ sys.exit(d.get("exitcode", 255))'
 
 # Copy files into gw's root filesystem while the VM is stopped:
 #   with_gw_root <command...>   runs the command with $ROOT set to the mounted root.
+# The command runs in an || context, where set -e is off: chain its steps with &&.
 with_gw_root() {
   [ "$(qm status $GW | awk '{print $2}')" = stopped ] || { log "VM $GW must be stopped"; return 1; }
   local disk loop part rc=0

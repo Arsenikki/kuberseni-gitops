@@ -15,7 +15,8 @@ key=$(cat)
 grep -q '^AGE-SECRET-KEY-' <<<"$key" || { log "stdin is not an age key"; exit 1; }
 
 if qm status $GW >/dev/null 2>&1; then
-  log "VM $GW exists; replacing it (it must be stopped)"
+  qm config $GW | grep -qx 'name: gw' || { log "VM $GW exists and isn't gw: refusing"; exit 1; }
+  log "VM $GW (gw) exists; replacing it (it must be stopped)"
   [ "$(qm status $GW | awk '{print $2}')" = stopped ] || { log "VM $GW is running: refusing"; exit 1; }
   qm destroy $GW --purge 0
 fi
@@ -23,11 +24,13 @@ fi
 qmrestore "$vma" $GW --storage local-lvm --unique 0
 # The image adds an unused cloud-init drive. onboot stays 0 until the cutover succeeds,
 # so OPNSense and gw (same MACs, same IP) can never both start at boot.
-qm set $GW --delete ide2 --onboot 0 --boot order=virtio0 --description "gw: NixOS router (infra/nixos in kuberseni-gitops)"
+qm set $GW --delete ide2 2>/dev/null || true
+qm set $GW --onboot 0 --boot order=virtio0 --description "gw: NixOS router (infra/nixos in kuberseni-gitops)"
 
 install_key() {
-  install -d -m 700 "$ROOT/var/lib/sops-nix"
-  (umask 077 && printf '%s\n' "$key" >"$ROOT/var/lib/sops-nix/key.txt")
+  install -d -m 700 "$ROOT/var/lib/sops-nix" &&
+    (umask 077 && printf '%s\n' "$key" >"$ROOT/var/lib/sops-nix/key.txt") &&
+    grep -q '^AGE-SECRET-KEY-' "$ROOT/var/lib/sops-nix/key.txt"
 }
 with_gw_root install_key
 

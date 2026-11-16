@@ -106,6 +106,16 @@ in
         '';
       };
       systemd.services.web = webServer 80 "internet";
+      # The ISP's resolver: the router's Unbound forwards to it.
+      services.dnsmasq = {
+        enable = true;
+        resolveLocalQueries = false;
+        settings = {
+          bind-dynamic = true;
+          no-resolv = true;
+          address = "/internet.test/192.0.2.1";
+        };
+      };
       environment.systemPackages = [
         pkgs.curl
         pkgs.dnsutils
@@ -126,6 +136,8 @@ in
         networking.interfaces.eth1.ipv4.addresses = lib.mkForce [ ];
         networking.interfaces.eth2.ipv4.addresses = lib.mkForce [ ];
         services.openssh.enable = true;
+        # The fake ISP's resolver doesn't do DNSSEC.
+        services.unbound.settings.server.domain-insecure = [ "test" ];
         networking.hosts."192.0.2.1" = [ "headscale" ];
         security.pki.certificateFiles = [ "${tls}/cert.pem" ];
 
@@ -151,6 +163,7 @@ in
           };
           dhcp = {
             pool = "192.168.1.100 - 192.168.1.199";
+            dnsServers = [ "192.0.2.1" ];
             reservations = [
               {
                 hostname = "client";
@@ -253,10 +266,10 @@ in
         router.wait_for_open_port(9547)
         client.succeed("curl -fsS --max-time 5 http://192.168.1.1:9547/metrics | grep '^kea_dhcp4' >/dev/null")
 
-    with subtest("The router answers DNS on the LAN, not the WAN"):
+    with subtest("The router forwards DNS for the LAN, not for the WAN"):
         router.wait_for_unit("unbound.service")
-        client.wait_until_succeeds("dig +short +time=2 +tries=1 @192.168.1.1 localhost | grep -q 127.0.0.1")
-        isp.fail("dig +time=2 +tries=1 @192.0.2.2 localhost")
+        client.wait_until_succeeds("dig +short +time=2 +tries=1 @192.168.1.1 internet.test | grep -q 192.0.2.1", timeout=60)
+        isp.fail("dig +time=2 +tries=1 @192.0.2.2 internet.test")
 
     with subtest("Tailscale: router logs in and advertises the LAN and an exit node"):
         isp.wait_for_unit("headscale.service")
@@ -289,5 +302,13 @@ in
         remote.wait_until_succeeds("curl -sS --max-time 5 -o /dev/null http://192.0.2.1/exit-check", timeout=60)
         # Through the exit node, the internet sees the router's WAN address, not 203.0.113.2.
         isp.succeed("journalctl -u web | grep -q '192.0.2.2 - - .*GET /exit-check'")
+
+    with subtest("PPPoE drops and comes back: the LAN gets internet again"):
+        remote.succeed("tailscale set --exit-node=")
+        isp.succeed("systemctl restart pppoe-server")
+        router.wait_until_fails("ip -4 addr show ppp0 | grep -q 'inet 192.0.2.2'", timeout=120)
+        router.wait_until_succeeds("ip -4 addr show ppp0 | grep -q 'inet 192.0.2.2'", timeout=180)
+        router.succeed("ip route show default | grep -q ppp0")
+        client.wait_until_succeeds("curl -fsS --max-time 5 http://192.0.2.1/ | grep internet >/dev/null", timeout=60)
   '';
 }

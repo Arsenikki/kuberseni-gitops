@@ -31,12 +31,21 @@ fi
 flake="github:Arsenikki/kuberseni-gitops/$rev?dir=infra/nixos#$host"
 ssh=(ssh -o ConnectTimeout=10 -o BatchMode=yes "root@$addr")
 
-# Transient units don't get the system PATH.
+# Transient units don't get the system PATH. The memory cap keeps an evaluation of
+# nixpkgs from pushing the router's own services (pppd, Kea) into OOM.
 run_unit() {
   local unit=$1; shift
   "${ssh[@]}" "systemd-run --wait --pipe --collect --unit=$unit \
+    -p MemoryHigh=1G -p MemoryMax=1400M \
     --setenv=PATH=/run/current-system/sw/bin:/run/wrappers/bin --working-directory=/tmp $*"
 }
+
+# What "still works" means before a change is made permanent. The ping from here
+# goes through the router when deploying gw.
+checks="! systemctl is-active -q deploy-test && test -e /run/deploy-ok \
+  && ping -c1 -W3 1.1.1.1 >/dev/null \
+  && systemctl is-active -q nftables kea-dhcp4-server unbound \
+  && [ -z \"\$(systemctl --failed --no-legend)\" ]"
 
 echo "building $rev on $host"
 if ! run_unit deploy-build nixos-rebuild build --flake "'$flake'"; then
@@ -56,12 +65,18 @@ echo "nixos-rebuild test $rev"
 
 for _ in $(seq 1 30); do
   state=$("${ssh[@]}" "if systemctl is-active -q deploy-test; then echo running
-    elif test -e /run/deploy-ok && ping -c1 -W3 1.1.1.1 >/dev/null; then echo ok
+    elif $checks; then echo ok
     elif test -e /run/deploy-failed; then echo failed
     else echo unknown; fi" 2>/dev/null || echo unreachable)
   case $state in
     ok)
-      "${ssh[@]}" "systemctl stop deploy-deadman.timer && cd /tmp && nixos-rebuild switch --flake '$flake'"
+      if [ "$host" = gw ] && ! ping -c1 -W3 1.1.1.1 >/dev/null 2>&1; then
+        echo "gw is up but this machine can't reach the internet through it; not confirming" >&2
+        sleep 10
+        continue
+      fi
+      "${ssh[@]}" "systemctl stop deploy-deadman.timer" &&
+        run_unit deploy-switch nixos-rebuild switch --flake "'$flake'"
       echo "deployed $rev to $host"
       exit 0
       ;;
