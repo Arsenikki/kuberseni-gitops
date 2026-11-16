@@ -139,8 +139,12 @@ in
         networking.interfaces.eth1.ipv4.addresses = lib.mkForce [ ];
         networking.interfaces.eth2.ipv4.addresses = lib.mkForce [ ];
         services.openssh.enable = true;
-        # The fake ISP's resolver doesn't do DNSSEC.
-        services.unbound.settings.server.domain-insecure = [ "test" ];
+        # The fake ISP's resolver doesn't do DNSSEC, and Unbound answers the reserved
+        # .test TLD (RFC 6761) itself unless told not to.
+        services.unbound.settings.server = {
+          domain-insecure = [ "test" ];
+          local-zone = [ "test. nodefault" ];
+        };
         networking.hosts."192.0.2.1" = [ "headscale" ];
         security.pki.certificateFiles = [ "${tls}/cert.pem" ];
 
