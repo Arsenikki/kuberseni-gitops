@@ -31,7 +31,7 @@ automation:
       speed: "{{ press.split('_')[-1] }}"
       volume_steps: {step: 0.02, slow: 0.04, fast: 0.08}
       # z2m brightness_step is on the 0-254 scale.
-      brightness_steps: {step: 10, slow: 25, fast: 50}
+      brightness_steps: {step: 15, slow: 35, fast: 70}
     actions:
       - choose:
           - conditions: "{{ press == 'button_1_press_release' }}"
@@ -85,11 +85,16 @@ automation:
 
           # Step the brightness on the light itself (z2m brightness_step) rather
           # than via light.turn_on, which reads HA's state and lags a fast spin.
-          # Turning right switches an off light on; turning left leaves it off.
+          # Turning right switches an off light on. Turning left stops at the
+          # minimum (1): stepping below it can bounce the bulb back to its last
+          # on-level, so skip left turns there and while the light is off.
           - conditions: "{{ press.startswith('dial_rotate_') }}"
             sequence:
               - condition: template
-                value_template: "{{ direction > 0 or is_state('light.bedroom_light_01', 'on') }}"
+                value_template: >-
+                  {{ direction > 0 or
+                     (is_state('light.bedroom_light_01', 'on')
+                      and state_attr('light.bedroom_light_01', 'brightness') | int(0) > 1) }}
               - action: mqtt.publish
                 data:
                   topic: zigbee2mqtt/bedroom_light_01/set
