@@ -41,7 +41,12 @@ The stack is IPv4 only for now.
 
 ## Deploying
 
-Run `task nixos:deploy HOST=gw` (or `scripts/deploy.sh gw <rev>`). It deploys only commits on `origin/main` to `gw` (any pushed commit to `gw-staging`) and needs nothing but SSH. Steps:
+Run `task nixos:deploy HOST=gw` (or `scripts/deploy.sh gw <rev>`). It needs SSH and `gh`.
+
+- **`gw`:** only commits from a PR **merged by the owner** (Arsenikki). Jeeves can auto-merge low-risk PRs and `main` requires no reviews, so being on `main` isn't enough.
+- **`gw-staging`:** any pushed commit.
+
+Steps:
 
 1. Build the commit on the host (`nixos-rebuild build`). This changes nothing; if it fails, the script stops.
 2. Arm a 10-minute reboot timer on the host (`DEADMAN=` to change).

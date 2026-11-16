@@ -28,6 +28,20 @@ if [ "$host" != gw-staging ] && ! git merge-base --is-ancestor "$rev" origin/mai
   echo "$rev is not on origin/main: review and merge it first" >&2
   exit 1
 fi
+
+# The live router only runs what its owner merged: Jeeves auto-merges low-risk PRs
+# and main has no required reviews, so "on main" alone isn't enough. The commit
+# must belong to a PR merged by the owner (squash merges make that the PR itself).
+owner=Arsenikki
+if [ "$host" = gw ]; then
+  pr=$(gh api "repos/$owner/kuberseni-gitops/commits/$rev/pulls" -q '[.[] | select(.merged_at != null)][0].number // empty')
+  merged_by=$([ -n "$pr" ] && gh api "repos/$owner/kuberseni-gitops/pulls/$pr" -q .merged_by.login || true)
+  if [ "$merged_by" != "$owner" ]; then
+    echo "$rev isn't from a PR merged by $owner (PR: ${pr:-none}, merged by: ${merged_by:-nobody}); not deploying to gw" >&2
+    exit 1
+  fi
+  echo "deploying PR #$pr, merged by $owner"
+fi
 flake="github:Arsenikki/kuberseni-gitops/$rev?dir=infra/nixos#$host"
 ssh=(ssh -o ConnectTimeout=10 -o BatchMode=yes "root@$addr")
 
