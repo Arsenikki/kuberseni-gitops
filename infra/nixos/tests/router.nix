@@ -258,7 +258,8 @@ in
         isp.succeed("ip route add 192.168.1.0/24 dev ppp0")
         isp.fail("curl -fsS --max-time 5 http://192.168.1.50:8080/")
         isp.fail("nc -z -w 3 192.168.1.1 22")
-        router.succeed("journalctl -k | grep -q 'nft-drop-input: '")
+        # WAN drops are counted, not logged (internet scan noise); forward drops are logged.
+        router.succeed("nft list counter inet filter wan_drops | grep -qv 'packets 0 '")
         router.succeed("journalctl -k | grep -q 'nft-drop-forward: '")
 
     with subtest("LAN can manage the router and scrape Kea"):
