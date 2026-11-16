@@ -64,7 +64,7 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
     opnsense_kea_dhcpv4_reservation.unifi_os_server,
-    opnsense_kea_dhcpv4_reservation.usw_flex_mini,
+    opnsense_kea_dhcpv4_reservation.usw_flex,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
@@ -72,6 +72,7 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
+    opnsense_kea_dhcpv4_reservation.bedroom_pi,
   ]
 }
 
@@ -124,23 +125,14 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
-# UniFi OS Server — VM 110 on minipc, the UniFi Network controller for the U6-Pro
-# AP (network-infra block). Was created by hand in OPNsense; imported 2026-11-15.
-resource "opnsense_kea_dhcpv4_reservation" "unifi_os_server" {
+# UniFi USW Flex 2.5G switch (2026-11-16), network-infra block (.2-.9). It took over
+# .5 from the 1 GbE USW Flex Mini (58:d6:1f:50:c2:79), which was returned.
+resource "opnsense_kea_dhcpv4_reservation" "usw_flex" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:e4:9a:5d"
-  ip_address  = "192.168.1.4"
-  hostname    = "unifi-os-server"
-  description = "UniFi OS Server VM 110 (minipc), on-demand UniFi controller"
-}
-
-# UniFi USW Flex Mini switch (added 2026-11-15), network-infra block (.2-.9).
-resource "opnsense_kea_dhcpv4_reservation" "usw_flex_mini" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "58:d6:1f:50:c2:79"
+  mac_address = "74:f9:2c:98:9d:b3"
   ip_address  = "192.168.1.5"
-  hostname    = "usw-flex-mini"
-  description = "UniFi USW Flex Mini switch"
+  hostname    = "usw-flex-2-5g"
+  description = "UniFi USW Flex 2.5G switch"
 }
 
 # ── Personal/home devices ──────────────────────────────────────────────────────
