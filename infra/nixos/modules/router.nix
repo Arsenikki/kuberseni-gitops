@@ -388,6 +388,16 @@ in
         enable = true;
         ruleset = ''
           table inet filter {
+            # Strict reverse-path check: drop packets whose source isn't routed back out
+            # the interface they came in on (spoofing across zones/WAN). DHCP clients
+            # start from 0.0.0.0; tailscale0 uses policy routing, so it's exempt.
+            chain rpfilter {
+              type filter hook prerouting priority raw; policy accept;
+              ip saddr 0.0.0.0 udp dport 67 accept
+              ${lib.optionalString ts.enable ''iifname "${tsIf}" accept''}
+              fib saddr . iif oif missing counter drop
+            }
+
             chain input {
               type filter hook input priority filter; policy drop;
               ct state vmap { established : accept, related : accept, invalid : drop }
@@ -611,12 +621,26 @@ in
             "100.64.0.0/10 allow"
           ]
           ++ map (s: "${s} allow") allSubnets;
+          # DNS rebinding protection: public names may not resolve to internal addresses
+          # (except the local zone, via private-domain).
+          private-address = [
+            "10.0.0.0/8"
+            "172.16.0.0/12"
+            "192.168.0.0/16"
+            "169.254.0.0/16"
+            "100.64.0.0/10"
+          ];
         }
         // lib.optionalAttrs (zone.enable && zone.serve) {
           # The local zone is unsigned (the public one may be signed), and served by Knot
           # on localhost, which Unbound refuses to query by default.
           domain-insecure = [ zone.name ];
           do-not-query-localhost = false;
+        }
+        # Even before Unbound serves the local zone itself, its public answers are
+        # internal addresses: exempt it from the rebinding protection.
+        // lib.optionalAttrs zone.enable {
+          private-domain = [ zone.name ];
         };
         stub-zone = lib.optional (zone.enable && zone.serve) {
           name = zone.name;
@@ -741,6 +765,13 @@ in
           action = [
             "update"
             "transfer"
+          ];
+          # external-dns writes these; it never needs to touch SOA/NS.
+          update-type = [
+            "A"
+            "AAAA"
+            "CNAME"
+            "TXT"
           ];
         };
         template.default = {
