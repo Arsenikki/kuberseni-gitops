@@ -3,6 +3,7 @@
 #            a headscale control server (Tailscale stand-in), and 203.0.113.0/24 on vlan 3
 #   router - modules/router.nix with PPPoE on eth1 (vlan 1) and the LAN on eth2 (vlan 2)
 #   client - a LAN host on DHCP, running a web server that's port-forwarded from the WAN
+#   iotclient - a host on the tagged IoT VLAN (20) of the same LAN segment
 #   remote - a tailnet device out on the internet (vlan 3), using the router as subnet
 #            router and exit node
 # Run: nix build .#checks.x86_64-linux.router -L
@@ -17,6 +18,8 @@ let
       -subj /CN=headscale -addext subjectAltName=DNS:headscale \
       -keyout $out/key.pem -out $out/cert.pem
   '';
+  # TSIG key for updates to the local zone (test-only secret).
+  tsigSecret = "dGVzdC10c2lnLXNlY3JldC0wMTIzNDU2Nzg5YWJjZGVm";
   webServer = port: text: {
     wantedBy = [ "multi-user.target" ];
     script = "exec ${pkgs.python3}/bin/python3 -m http.server ${toString port} --directory ${pkgs.writeTextDir "index.html" text}";
@@ -148,6 +151,16 @@ in
         networking.hosts."192.0.2.1" = [ "headscale" ];
         security.pki.certificateFiles = [ "${tls}/cert.pem" ];
 
+        environment.etc."knot-tsig.conf" = {
+          mode = "0440";
+          group = "knot";
+          text = ''
+            key:
+              - id: external-dns
+                algorithm: hmac-sha256
+                secret: ${tsigSecret}
+          '';
+        };
         environment.etc."pppoe-options" = {
           mode = "0400";
           text = ''
@@ -168,9 +181,23 @@ in
             subnet = "192.168.1.0/24";
             address = "192.168.1.1";
           };
+          dns = {
+            upstreams = [ "192.0.2.1" ];
+            localZone = {
+              enable = true;
+              name = "home.test";
+              updateKeyFile = "/etc/knot-tsig.conf";
+            };
+          };
+          vlans.iot = {
+            id = 20;
+            subnet = "192.168.20.0/24";
+            address = "192.168.20.1";
+            pool = "192.168.20.100 - 192.168.20.199";
+          };
           dhcp = {
             pool = "192.168.1.100 - 192.168.1.199";
-            dnsServers = [ "192.0.2.1" ];
+            dnsServers = [ "192.168.1.1" ];
             reservations = [
               {
                 hostname = "client";
@@ -211,6 +238,24 @@ in
         useDHCP = true;
       };
       systemd.services.web = webServer 8080 "lan";
+      environment.systemPackages = [
+        pkgs.curl
+        pkgs.dnsutils
+        pkgs.netcat
+      ];
+    };
+
+    iotclient = {
+      virtualisation.vlans = [ 2 ];
+      networking.firewall.enable = false;
+      networking.useDHCP = false;
+      networking.interfaces.eth1.ipv4.addresses = lib.mkForce [ ];
+      networking.vlans.iot = {
+        id = 20;
+        interface = "eth1";
+      };
+      networking.interfaces.iot.useDHCP = true;
+      systemd.services.web = webServer 8080 "iot";
       environment.systemPackages = [
         pkgs.curl
         pkgs.dnsutils
@@ -278,6 +323,32 @@ in
         router.wait_for_unit("unbound.service")
         client.wait_until_succeeds("dig +short +time=2 +tries=1 @192.168.1.1 internet.test | grep -q 192.0.2.1", timeout=60)
         isp.fail("dig +time=2 +tries=1 @192.0.2.2 internet.test")
+
+    with subtest("VLAN zone: an IoT client gets an address on its VLAN and reaches the internet"):
+        iotclient.wait_until_succeeds("ip -4 addr show iot | grep -q 'inet 192.168.20.'", timeout=120)
+        iotclient.succeed("ip route show default | grep -q 'via 192.168.20.1'")
+        iotclient.wait_until_succeeds("curl -fsS --max-time 5 http://192.0.2.1/ | grep internet >/dev/null", timeout=60)
+        iotclient.succeed("dig +short +time=2 +tries=1 @192.168.20.1 internet.test | grep -q 192.0.2.1")
+
+    with subtest("VLAN zone: IoT can't reach the LAN or manage the router; the LAN reaches IoT"):
+        iot_ip = iotclient.succeed("ip -4 -o addr show iot | awk '{print $4}' | cut -d/ -f1").strip()
+        iotclient.wait_for_open_port(8080)
+        client.succeed(f"curl -fsS --max-time 5 http://{iot_ip}:8080/ | grep iot >/dev/null")
+        iotclient.fail("curl -fsS --max-time 5 http://192.168.1.50:8080/")
+        iotclient.fail("nc -z -w 3 192.168.20.1 22")
+        iotclient.fail("nc -z -w 3 192.168.1.1 22")
+
+    with subtest("Local zone: a TSIG-signed update from the LAN is served to every zone"):
+        router.wait_for_unit("knot.service")
+        router.wait_for_open_port(5300, "192.168.1.1")
+        update = "printf 'server 192.168.1.1 5300\\nzone home.test\\nupdate add app.home.test 300 A 192.168.1.222\\nsend\\n'"
+        client.fail(f"{update} | nsupdate")
+        client.succeed(f"{update} | nsupdate -y hmac-sha256:external-dns:${tsigSecret}")
+        client.wait_until_succeeds("dig +short +time=2 +tries=1 @192.168.1.1 app.home.test | grep -q 192.168.1.222")
+        iotclient.succeed("dig +short +time=2 +tries=1 @192.168.20.1 app.home.test | grep -q 192.168.1.222")
+        # Knot's port isn't reachable from the WAN or from IoT.
+        isp.fail("dig +time=2 +tries=1 -p 5300 @192.0.2.2 home.test SOA")
+        iotclient.fail("dig +time=2 +tries=1 -p 5300 @192.168.20.1 home.test SOA")
 
     with subtest("Tailscale: router logs in and advertises the LAN and an exit node"):
         isp.wait_for_unit("headscale.service")

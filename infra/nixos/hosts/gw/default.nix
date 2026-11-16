@@ -54,6 +54,8 @@ in
       address = "192.168.1.1";
       # OPNSense's bridge0.
       macAddress = "58:9c:fc:10:f1:79";
+      # MGMT zone: infra, Proxmox, k8s (incl. Home Assistant, which must reach IoT).
+      mdns = true;
     };
     dhcp = {
       pool = "192.168.1.100 - 192.168.1.199";
@@ -61,6 +63,45 @@ in
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
       reservations = lib.importJSON ./dhcp-reservations.json;
     };
+    # Zones from the address plan (codex network/README.md). Inert until the
+    # Flex Mini and the U6 Pro tag traffic with these VLAN ids; devices then move
+    # over keeping their last octet (e.g. purifier 192.168.1.150 -> 192.168.20.150).
+    vlans = {
+      trusted = {
+        id = 10;
+        subnet = "192.168.10.0/24";
+        address = "192.168.10.1";
+        pool = "192.168.10.100 - 192.168.10.149";
+        # Phones and laptops: use the cluster's services, cast to IoT, manage the router.
+        canReach = [
+          "lan"
+          "iot"
+          "tailnet"
+        ];
+        mdns = true;
+        allowedTCPPorts = [ 22 ];
+      };
+      iot = {
+        id = 20;
+        subnet = "192.168.20.0/24";
+        address = "192.168.20.1";
+        pool = "192.168.20.180 - 192.168.20.199";
+        # Internet only; HA (in the LAN zone) and trusted devices open connections in.
+        mdns = true;
+      };
+    };
+
+    # Split-horizon arsenikki.casa: external-dns in the cluster writes every internal
+    # name here (RFC 2136, TSIG), so the LAN resolves its own services without the
+    # internet and without publishing private IPs to Cloudflare. `serve` stays off
+    # until the zone is populated (kdig @127.0.0.1 -p 5300 arsenikki.casa AXFR).
+    dns.localZone = {
+      enable = true;
+      serve = false;
+      name = "arsenikki.casa";
+      updateKeyFile = config.sops.secrets.knot_tsig.path;
+    };
+
     # OPNSense had no port forwards (checked in its config.xml, 2026-11-15).
     portForwards = [ ];
     # Replaces Tailscale on OPNSense (node "opnsense", 192.168.1.0/24). scripts/cutover.sh
@@ -71,4 +112,10 @@ in
 
   # pppoe: the pppd `user "..."` and `password "..."` lines (from OPNSense's config).
   sops.secrets.pppoe.sopsFile = ./secrets.yaml;
+  # knot_tsig: Knot `key:` section for external-dns's TSIG key (same secret as the
+  # cluster's external-dns-internal; see README).
+  sops.secrets.knot_tsig = {
+    sopsFile = ./secrets.yaml;
+    owner = "knot";
+  };
 }
