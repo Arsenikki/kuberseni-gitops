@@ -65,6 +65,7 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.truenas_scale,
     opnsense_kea_dhcpv4_reservation.unifi_os_server,
     opnsense_kea_dhcpv4_reservation.usw_flex,
+    opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
@@ -133,6 +134,15 @@ resource "opnsense_kea_dhcpv4_reservation" "usw_flex" {
   ip_address  = "192.168.1.5"
   hostname    = "usw-flex-2-5g"
   description = "UniFi USW Flex 2.5G switch"
+}
+
+# UniFi U6 Pro access point, network-infra block (.2-.9). Was dynamic at .122.
+resource "opnsense_kea_dhcpv4_reservation" "u6_pro" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "ac:8b:a9:2f:9b:8e"
+  ip_address  = "192.168.1.6"
+  hostname    = "u6-pro"
+  description = "UniFi U6 Pro access point"
 }
 
 # ── Personal/home devices ──────────────────────────────────────────────────────
