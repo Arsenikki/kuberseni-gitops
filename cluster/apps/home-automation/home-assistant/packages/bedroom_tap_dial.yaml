@@ -102,3 +102,15 @@ automation:
                   payload: >-
                     {{ {'brightness_step': direction * brightness_steps[speed],
                         'transition': 0.6} | to_json }}
+              # Adaptive Lighting manages this light and doesn't see changes made
+              # outside HA (detect_non_ha_changes: false), so it would reset the
+              # brightness on its next 90 s tick. Mark the light manually controlled;
+              # Adaptive Lighting releases it again once the light is turned off.
+              - wait_template: "{{ is_state('light.bedroom_light_01', 'on') }}"
+                timeout: "00:00:02"
+              - action: adaptive_lighting.set_manual_control
+                data:
+                  entity_id: "switch.adaptive_lighting_{{ states('input_select.adaptive_lighting_level') }}"
+                  lights: light.bedroom_light_01
+                  manual_control: true
+                continue_on_error: true
