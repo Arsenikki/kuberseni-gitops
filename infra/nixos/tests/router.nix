@@ -111,6 +111,9 @@ in
         enable = true;
         resolveLocalQueries = false;
         settings = {
+          # Naming the interface also turns off dnsmasq's default local-service mode,
+          # which ignores the router: a PPP peer isn't on a directly connected subnet.
+          interface = "ppp0";
           bind-dynamic = true;
           no-resolv = true;
           address = "/internet.test/192.0.2.1";
