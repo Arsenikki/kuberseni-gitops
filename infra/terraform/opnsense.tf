@@ -63,6 +63,9 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.controlplane,
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
+    opnsense_kea_dhcpv4_reservation.usw_flex,
+    opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.desktop_secondary,
@@ -71,7 +74,6 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
     opnsense_kea_dhcpv4_reservation.bedroom_pi,
-    opnsense_kea_dhcpv4_reservation.unifi_os_server,
   ]
 }
 
@@ -124,6 +126,25 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
+# UniFi USW Flex 2.5G switch (2026-11-16), network-infra block (.2-.9). It took over
+# .5 from the 1 GbE USW Flex Mini (58:d6:1f:50:c2:79), which was returned.
+resource "opnsense_kea_dhcpv4_reservation" "usw_flex" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "74:f9:2c:98:9d:b3"
+  ip_address  = "192.168.1.5"
+  hostname    = "usw-flex-2-5g"
+  description = "UniFi USW Flex 2.5G switch"
+}
+
+# UniFi U6 Pro access point, network-infra block (.2-.9). Was dynamic at .122.
+resource "opnsense_kea_dhcpv4_reservation" "u6_pro" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "ac:8b:a9:2f:9b:8e"
+  ip_address  = "192.168.1.6"
+  hostname    = "u6-pro"
+  description = "UniFi U6 Pro access point"
+}
+
 # ── Personal/home devices ──────────────────────────────────────────────────────
 
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
@@ -158,10 +179,12 @@ resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
   description = ""
 }
 
+# Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
+# #782 but was never applied; Kea then leased .105 to the new USW Flex Mini.
 resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "ca:e0:0e:6c:cf:c1"
-  ip_address  = "192.168.1.105"
+  ip_address  = "192.168.1.51"
   hostname    = "bazzite-chromebook"
   description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
 }
