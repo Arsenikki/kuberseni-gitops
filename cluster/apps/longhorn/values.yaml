@@ -36,7 +36,7 @@ defaultSettings:
   # (the overloaded nas host). Explicitly empty: an absent key would leave the old
   # value in the Setting. A change here only takes effect once EVERY Longhorn
   # volume is detached (longhorn-manager setting controller), so it needs a
-  # maintenance window, see PR #936.
+  # maintenance window, see PR #938.
   taintToleration: ""
 
 longhornManager:
