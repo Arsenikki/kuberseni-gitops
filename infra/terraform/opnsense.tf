@@ -211,13 +211,13 @@ resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
   description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
 }
 
-# MAC is Android's per-SSID randomized one (stable unless the projector forgets the
-# network or is reset), not the device MAC 38:54:39:6c:bc:de. It changed from
-# 26:78:d3:6e:2d:42 when the projector rejoined the Wi-Fi recreated by UniFi OS
-# (2026-11-15).
+# The projector's hardware Wi-Fi MAC: MAC randomization is off for uuno-express
+# since 2026-11-17, because its per-SSID random MAC changed whenever it rejoined
+# the Wi-Fi. HA's androidtv_remote identifies it by 38:54:39:6c:bc:de, a different
+# interface. Also the wake-on-Wi-Fi target in HA's packages/projector.yaml.
 resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "9e:db:0d:85:f1:a0"
+  mac_address = "38:54:39:6c:bc:dd"
   ip_address  = "192.168.1.151"
   hostname    = "formovie-projector"
   description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"
