@@ -8,7 +8,11 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   subnet      = "192.168.1.0/24"
   description = "LAN"
 
-  pools       = ["192.168.1.100-192.168.1.199"]
+  # Dynamic ranges of the address plan (Arsenikki/codex network/README.md):
+  # trusted dynamic .100-.149 and IoT dynamic .180-.199. The IoT static block
+  # .150-.179 is left out so Kea never leases a reserved-block address to
+  # something else.
+  pools       = ["192.168.1.100-192.168.1.149", "192.168.1.180-192.168.1.199"]
   routers     = ["192.168.1.1"]
   dns_servers = ["1.1.1.1", "8.8.8.8"]
 
@@ -68,8 +72,6 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
-    opnsense_kea_dhcpv4_reservation.desktop_secondary,
-    opnsense_kea_dhcpv4_reservation.vm_hub,
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
@@ -146,11 +148,13 @@ resource "opnsense_kea_dhcpv4_reservation" "u6_pro" {
 }
 
 # ── Personal/home devices ──────────────────────────────────────────────────────
+# Trusted static block (.50-.99). The gaming PC and laptop sat at .100 and .111,
+# inside the dynamic pool, until 2026-11-17.
 
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "2c:f0:5d:7c:93:6c"
-  ip_address  = "192.168.1.100"
+  ip_address  = "192.168.1.52"
   hostname    = "DESKTOP-Q0E7TOC"
   description = "Windows Desktop"
 }
@@ -158,25 +162,9 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
 resource "opnsense_kea_dhcpv4_reservation" "laptop" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "6c:7e:67:c8:b5:a5"
-  ip_address  = "192.168.1.111"
+  ip_address  = "192.168.1.53"
   hostname    = "AutLaptopALMBP2"
   description = "Laptop"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "desktop_secondary" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:02:18:80"
-  ip_address  = "192.168.1.124"
-  hostname    = "DESKTOP-L9VHPP0"
-  description = ""
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:7c:51:a9"
-  ip_address  = "192.168.1.125"
-  hostname    = "arseni-vm-hub"
-  description = ""
 }
 
 # Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
