@@ -5,3 +5,10 @@ machine:
   kernel:
     modules:
       - name: rbd
+  # Start image GC well before the 15% imagefs.available hard-eviction threshold.
+  # Defaults (85/80) coincide with eviction, so a big image pull evicted pods
+  # (paseo-generic, 2026-11-14 and 2026-11-17) before GC had a chance to run.
+  kubelet:
+    extraConfig:
+      imageGCHighThresholdPercent: 70
+      imageGCLowThresholdPercent: 60
