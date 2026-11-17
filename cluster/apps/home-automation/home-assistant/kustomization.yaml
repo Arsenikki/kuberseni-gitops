@@ -20,6 +20,7 @@ configMapGenerator:
       - packages/lights_common.yaml
       - packages/lobby_lights.yaml
       - packages/notifications.yaml
+      - packages/projector.yaml
       - packages/scenes.yaml
       - packages/wall_switches.yaml
     options:
