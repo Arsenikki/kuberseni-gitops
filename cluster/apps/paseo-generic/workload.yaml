@@ -74,7 +74,7 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-5
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-6
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
