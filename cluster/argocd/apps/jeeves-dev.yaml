@@ -11,6 +11,9 @@ metadata:
   name: jeeves-dev
   namespace: argocd
   annotations:
+    # Diff via server-side dry-run: SSA apps otherwise show permanent OutOfSync
+    # on server-defaulted fields (ESO nullBytePolicy, STS maxUnavailable).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
     argocd.argoproj.io/sync-wave: "6"
     # Private source repo → the in-CI ArgoCD diff preview can't list its refs.
     # Skip it here (same as the prod jeeves app); the live ArgoCD has the repo cred.
