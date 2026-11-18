@@ -74,11 +74,16 @@ spec:
                     values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-2
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-5
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). Kernel login lives in ~/.gemini on the PVC.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom:
                 secretKeyRef:
