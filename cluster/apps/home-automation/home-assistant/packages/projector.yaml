@@ -55,10 +55,22 @@ script:
         data:
           mac: "38:54:39:6c:bc:dd"
           broadcast_address: 192.168.1.255
-      # The magic packet powers it fully on; wait for androidtv_remote to reconnect.
-      - wait_template: "{{ states('media_player.living_room_tv') not in ['unavailable', 'unknown'] }}"
-        timeout: "00:00:45"
-        continue_on_timeout: true
+      # The magic packet wakes it within ~5 s, but androidtv_remote only notices on
+      # its next reconnect attempt, which backs off to over a minute. Reload the
+      # integration until it connects, so a turn_off right after works too.
+      - if:
+          - condition: template
+            value_template: "{{ states('media_player.living_room_tv') in ['unavailable', 'unknown'] }}"
+        then:
+          - repeat:
+              sequence:
+                - delay: 3
+                - action: homeassistant.reload_config_entry
+                  target:
+                    entity_id: media_player.living_room_tv
+                - wait_template: "{{ states('media_player.living_room_tv') not in ['unavailable', 'unknown'] }}"
+                  timeout: 5
+              until: "{{ wait.completed or repeat.index >= 8 }}"
       # Already awake (or woken but still reporting off): use the normal power-on.
       - if:
           - condition: state
