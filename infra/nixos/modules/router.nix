@@ -500,7 +500,8 @@ in
               ${lib.concatStrings (lib.mapAttrsToList (n: v: lib.concatMapStrings (a:
                 let
                   head = ''iifname "${n}" oifname "${zoneIf.${a.to}}" ip daddr ${addrSet a.addresses}'';
-                  note = lib.optionalString (a.description != "") '' comment "${a.description}"'';
+                  # A plain string: an indented '' string would strip the leading space.
+                  note = lib.optionalString (a.description != "") " comment \"${a.description}\"";
                 in
                 if a.tcpPorts == [ ] && a.udpPorts == [ ] then ''
                   ${head} accept${note}
