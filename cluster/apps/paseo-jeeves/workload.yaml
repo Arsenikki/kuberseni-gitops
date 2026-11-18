@@ -102,7 +102,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-1
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-6
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -146,17 +146,22 @@ spec:
             - name: PATH
               value: /opt/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             # Generic git hook (honored by the shared entrypoint): wire the App-token
-            # credential helper + the Jeeves commit identity.
+            # credential helper + the commit identity. The email is the paseo-homelab[bot]
+            # App's ID-based noreply; the old login-based @jeeves one credited a stranger.
             - name: GIT_CREDENTIAL_HELPER
               value: "!jeeves git-credential"
             - name: GIT_AUTHOR_NAME
               value: Jeeves
             - name: GIT_AUTHOR_EMAIL
-              value: jeeves@users.noreply.github.com
+              value: "296313966+paseo-homelab[bot]@users.noreply.github.com"
             - name: GIT_COMMITTER_NAME
               value: Jeeves
             - name: GIT_COMMITTER_EMAIL
-              value: jeeves@users.noreply.github.com
+              value: "296313966+paseo-homelab[bot]@users.noreply.github.com"
+            # Co-authored-by trailer on every git commit (paseo-homelab >= 0.15.4-3): the
+            # agent stays the author, Arsenikki gets contribution-graph credit.
+            - name: GIT_COAUTHOR
+              value: "Arsenikki <42617129+Arsenikki@users.noreply.github.com>"
             # Go module + build caches on a PVC (warm across runs, #140) — the 50Gi
             # workspaces volume, not the 5Gi data volume: that one holds the repo clones,
             # every worktree, agent state and the daemon logs, and agents' builds filled

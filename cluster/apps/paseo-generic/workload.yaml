@@ -151,6 +151,10 @@ spec:
               value: "credential.https://github.com.helper"
             - name: GIT_CONFIG_VALUE_0
               value: "!gh auth git-credential"
+            # Co-authored-by trailer on every git commit (paseo-homelab >= 0.15.4-3): the
+            # agent stays the author, Arsenikki gets contribution-graph credit.
+            - name: GIT_COAUTHOR
+              value: "Arsenikki <42617129+Arsenikki@users.noreply.github.com>"
             # Global mise tools (adb), installed by the entrypoint on start. See config.yaml.
             - name: MISE_GLOBAL_CONFIG_FILE
               value: /etc/paseo-mise/config.toml
