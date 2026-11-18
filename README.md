@@ -33,7 +33,7 @@ A newcomer's map of the tree:
 │   └── apps/               # workload manifests, grouped by namespace
 ├── infra/                  # infrastructure layer
 │   ├── terraform/          # OpenTofu — Talos VMs on Proxmox, OPNSense, TrueNAS
-│   ├── talos/              # Talhelper-managed Talos machine config
+│   ├── talos/              # topf-managed Talos machine config
 │   ├── scripts/            # bootstrap / helper scripts
 │   └── Taskfile.yml        # go-task workflows
 ├── .github/                # CI workflows, Renovate config, CODEOWNERS, yamllint config
@@ -52,7 +52,7 @@ A newcomer's map of the tree:
 
 - **infra** directory contains the infrastructure layer:
   - **terraform** provisions the Talos VMs on Proxmox (plus OPNSense and TrueNAS Scale config) with [OpenTofu](https://opentofu.org/); the encrypted Terraform state is committed to this repo.
-  - **talos** holds the [Talhelper](https://github.com/budimanjojo/talhelper)-managed Talos machine configuration (`talconfig.yaml`, patches and secrets).
+  - **talos** holds the [topf](https://github.com/postfinance/topf)-managed Talos machine configuration (`topf.yaml`, patches in `all/`, `control-plane/`, `worker/`, `node/<host>/`, and the secrets bundle). It replaced the archived talhelper.
   - **scripts** / **Taskfile.yml** wrap the bootstrap workflow (`infra/scripts/bootstrap-cluster.sh` installs Cilium, Argo CD, External Secrets Operator and 1Password Connect onto a fresh cluster).
 - **cluster** directory contains the Kubernetes GitOps tree with following sub-dirs:
   - **bootstrap** holds the Helm values for the components installed once during cluster bootstrap (Argo CD and External Secrets Operator), before GitOps takes over.
@@ -66,7 +66,7 @@ A newcomer's map of the tree:
 Secret management is split between two layers:
 
 - **In-cluster application secrets** are delivered by the [External Secrets Operator](https://external-secrets.io/), which pulls values from a [1Password](https://1password.com/) `homelab` vault via a self-hosted 1Password Connect server (`ClusterSecretStore` named `onepassword`). Nothing sensitive for the running workloads is committed to Git.
-- **Infrastructure secrets at rest** (Talos machine secrets in `infra/talos/talsecret.yaml`, the Terraform state and `secrets.tfvars`) are encrypted with [sops](https://github.com/getsops/sops) using [age](https://github.com/FiloSottile/age) before being committed, per the rules in [.sops.yaml](.sops.yaml).
+- **Infrastructure secrets at rest** (Talos machine secrets in `infra/talos/secrets.yaml`, the Terraform state and `secrets.tfvars`) are encrypted with [sops](https://github.com/getsops/sops) using [age](https://github.com/FiloSottile/age) before being committed, per the rules in [.sops.yaml](.sops.yaml).
 
 ---
 
