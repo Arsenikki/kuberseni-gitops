@@ -22,7 +22,7 @@ clusterMetrics:
   enabled: true
   collector: alloy-metrics
   destinations: [mimir]
-  # Talos exposes these on 0.0.0.0 via the talconfig patch (controllerManager/scheduler).
+  # Talos exposes these on 0.0.0.0 via the infra/talos/control-plane/01-controlplane.yaml patch (controllerManager/scheduler).
   kubeControllerManager:
     enabled: true
     port: 10257

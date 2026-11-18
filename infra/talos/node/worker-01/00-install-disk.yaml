@@ -1,0 +1,8 @@
+# Select by size instead of /dev/sdX: worker-01 has an OS disk + a 500GB Longhorn disk.
+# FIXME: the OS disk was grown 51 -> ~80 GB on 2026-11-17, so "<= 60GB" no longer matches
+# it; an install/upgrade would find no disk. Kept as-is so this migration renders
+# identically to talhelper; fixed in a follow-up commit.
+machine:
+  install:
+    diskSelector:
+      size: "<= 60GB"

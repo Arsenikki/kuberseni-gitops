@@ -45,7 +45,7 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
 ## Tooling
 
 - **IaC: OpenTofu** (`tofu`), not terraform. Providers from `registry.opentofu.org`. Secrets in `infra/tofu/secrets.tfvars` are sops-encrypted — inject via `sops exec-file secrets.tfvars 'tofu <cmd> -var-file={}'`.
-- **mise** manages tool versions (pin, never `latest`); **go-task** runs workflows (`infra/Taskfile.yml`); **talhelper** renders Talos config (`infra/talos/talconfig.yaml`).
+- **mise** manages tool versions (pin, never `latest`); **go-task** runs workflows (`infra/Taskfile.yml`); **topf** renders and applies Talos config (`infra/talos/topf.yaml` + patch folders; `task talos:diff` / `talos:apply`).
 - **ha-mcp**: controls Home Assistant via `.mcp.json` → `op run -- uvx ha-mcp`.
 
 ## Common commands
@@ -66,7 +66,7 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
 ## Repo layout
 
 - `cluster/` — ArgoCD apps: `bootstrap/`, `argocd/`, `core/` (cilium, cert-manager, traefik, longhorn, eso, authentik), `apps/` (user apps by namespace).
-- `infra/tofu/` — OpenTofu (Proxmox VMs, OPNSense). `infra/talos/` — talhelper config + patches.
+- `infra/tofu/` — OpenTofu (Proxmox VMs, OPNSense). `infra/talos/` — topf config (`topf.yaml`, patch folders, SOPS `secrets.yaml`).
 
 ## Gotchas
 
