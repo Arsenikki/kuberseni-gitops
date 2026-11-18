@@ -194,6 +194,15 @@ in
             subnet = "192.168.20.0/24";
             address = "192.168.20.1";
             pool = "192.168.20.100 - 192.168.20.199";
+            # One LAN service only, by address and port.
+            allow = [
+              {
+                to = "lan";
+                addresses = [ "192.168.1.50" ];
+                tcpPorts = [ 8080 ];
+                description = "client web server";
+              }
+            ];
           };
           dhcp = {
             pool = "192.168.1.100 - 192.168.1.199";
@@ -330,11 +339,13 @@ in
         iotclient.wait_until_succeeds("curl -fsS --max-time 5 http://192.0.2.1/ | grep internet >/dev/null", timeout=60)
         iotclient.succeed("dig +short +time=2 +tries=1 @192.168.20.1 internet.test | grep -q 192.0.2.1")
 
-    with subtest("VLAN zone: IoT can't reach the LAN or manage the router; the LAN reaches IoT"):
+    with subtest("VLAN zone: IoT reaches only its allowed LAN service; can't manage the router; the LAN reaches IoT"):
         iot_ip = iotclient.succeed("ip -4 -o addr show iot | awk '{print $4}' | cut -d/ -f1").strip()
         iotclient.wait_for_open_port(8080)
         client.succeed(f"curl -fsS --max-time 5 http://{iot_ip}:8080/ | grep iot >/dev/null")
-        iotclient.fail("curl -fsS --max-time 5 http://192.168.1.50:8080/")
+        iotclient.succeed("curl -fsS --max-time 5 http://192.168.1.50:8080/ | grep lan >/dev/null")
+        iotclient.fail("ping -c1 -W2 192.168.1.50")
+        iotclient.fail("curl -fsS --max-time 5 http://192.168.1.1:9100/metrics")
         iotclient.fail("nc -z -w 3 192.168.20.1 22")
         iotclient.fail("nc -z -w 3 192.168.1.1 22")
 

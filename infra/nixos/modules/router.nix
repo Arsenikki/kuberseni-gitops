@@ -166,7 +166,7 @@ in
               example = "192.168.20.1";
             };
             pool = mkOption {
-              type = types.str;
+              type = types.either types.str (types.listOf types.str);
               example = "192.168.20.100 - 192.168.20.199";
             };
             reservations = mkOption {
@@ -181,6 +181,39 @@ in
               type = types.listOf types.str;
               default = [ ];
               description = ''Zones this one may open connections to ("lan", other VLANs, "tailnet").'';
+            };
+            allow = mkOption {
+              default = [ ];
+              description = ''
+                Narrower than canReach: specific addresses (and optionally ports) in another
+                zone that this one may open connections to.
+              '';
+              type = types.listOf (
+                types.submodule {
+                  options = {
+                    to = mkOption {
+                      type = types.str;
+                      description = "Target zone.";
+                    };
+                    addresses = mkOption {
+                      type = types.listOf types.str;
+                      example = [ "192.168.1.220-192.168.1.229" ];
+                    };
+                    tcpPorts = mkOption {
+                      type = types.listOf types.port;
+                      default = [ ];
+                    };
+                    udpPorts = mkOption {
+                      type = types.listOf types.port;
+                      default = [ ];
+                    };
+                    description = mkOption {
+                      type = types.str;
+                      default = "";
+                    };
+                  };
+                }
+              );
             };
             mdns = mkOption {
               type = types.bool;
@@ -246,8 +279,12 @@ in
 
     dhcp = {
       pool = mkOption {
-        type = types.str;
-        example = "192.168.1.100 - 192.168.1.199";
+        type = types.either types.str (types.listOf types.str);
+        example = [
+          "192.168.1.100 - 192.168.1.149"
+          "192.168.1.180 - 192.168.1.199"
+        ];
+        description = "Dynamic range(s) handed out by Kea.";
       };
       dnsServers = mkOption {
         type = types.listOf types.str;
@@ -368,6 +405,10 @@ in
           message = "homelab.router.vlans: names are interface names (max 15 chars) and can't be lan/tailnet";
         }
         {
+          assertion = lib.all (v: lib.all (a: lib.elem a.to ([ "lan" ] ++ vlanNames)) v.allow) (lib.attrValues cfg.vlans);
+          message = "homelab.router.vlans.<name>.allow: \"to\" must be lan or a VLAN zone";
+        }
+        {
           assertion = lib.all (z: lib.all (t: lib.elem t knownZones) z.canReach) (lib.attrValues zones);
           message = "homelab.router: canReach names an unknown zone (known: ${toString knownZones})";
         }
@@ -456,6 +497,18 @@ in
               ${lib.concatStrings (lib.mapAttrsToList (n: z: lib.concatMapStrings (t: ''
                 iifname "${zoneIf.${n}}" oifname "${if t == "tailnet" then tsIf else zoneIf.${t}}" accept
               '') (lib.filter (t: t != "tailnet" || ts.enable) z.canReach)) zones)}
+              ${lib.concatStrings (lib.mapAttrsToList (n: v: lib.concatMapStrings (a:
+                let
+                  head = ''iifname "${n}" oifname "${zoneIf.${a.to}}" ip daddr ${addrSet a.addresses}'';
+                  note = lib.optionalString (a.description != "") '' comment "${a.description}"'';
+                in
+                if a.tcpPorts == [ ] && a.udpPorts == [ ] then ''
+                  ${head} accept${note}
+                '' else ''
+                  ${lib.optionalString (a.tcpPorts != [ ]) "${head} tcp dport { ${ports a.tcpPorts} } accept${note}"}
+                  ${lib.optionalString (a.udpPorts != [ ]) "${head} udp dport { ${ports a.udpPorts} } accept${note}"}
+                ''
+              ) v.allow) cfg.vlans)}
               ${lib.optionalString ts.enable ''
                 iifname "${tsIf}" oifname ${ifSet allZoneIfs} accept
                 iifname "${lanIf}" oifname "${tsIf}" accept
@@ -689,7 +742,7 @@ in
               {
                 inherit id subnet;
                 interface = ifname;
-                pools = [ { inherit pool; } ];
+                pools = map (p: { pool = p; }) (lib.toList pool);
                 option-data = [
                   {
                     name = "routers";

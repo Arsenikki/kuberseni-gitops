@@ -58,7 +58,12 @@ in
       mdns = true;
     };
     dhcp = {
-      pool = "192.168.1.100 - 192.168.1.199";
+      # The address plan's dynamic blocks: trusted .100-.149, IoT .180-.199. Must match
+      # opnsense.tf until the switchover (scripts/check-reservations.py checks it).
+      pool = [
+        "192.168.1.100 - 192.168.1.149"
+        "192.168.1.180 - 192.168.1.199"
+      ];
       # Copied from infra/terraform (opnsense.tf + VM MACs); CI checks they stay in sync
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
       reservations = lib.importJSON ./dhcp-reservations.json;
@@ -72,14 +77,32 @@ in
         subnet = "192.168.10.0/24";
         address = "192.168.10.1";
         pool = "192.168.10.100 - 192.168.10.149";
-        # Phones and laptops: use the cluster's services, cast to IoT, manage the router.
+        # Phones, tablets, personal laptops. They use the cluster's user-facing services
+        # and cast to IoT, but can't reach MGMT's admin planes (Proxmox, TrueNAS UI,
+        # k8s API, router SSH). Admin machines (desktop .52, laptop .53) stay in MGMT.
         canReach = [
-          "lan"
           "iot"
           "tailnet"
         ];
+        allow = [
+          {
+            to = "lan";
+            # Cilium LoadBalancer IPs: Plex .220, Traefik ingress .222, Music
+            # Assistant .223, spare .224-.229. Not MQTT (.221): no auth on it.
+            addresses = [
+              "192.168.1.220"
+              "192.168.1.222-192.168.1.229"
+            ];
+            description = "k8s services";
+          }
+          {
+            to = "lan";
+            addresses = [ "192.168.1.2" ];
+            tcpPorts = [ 445 ];
+            description = "TrueNAS SMB";
+          }
+        ];
         mdns = true;
-        allowedTCPPorts = [ 22 ];
       };
       iot = {
         id = 20;

@@ -311,8 +311,35 @@ repoServer:
     timeoutSeconds: 10
     periodSeconds: 30
     failureThreshold: 6
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
+  # Placement: one replica per node, never on the Proxmox host nas. Both replicas
+  # used to sit on control-plane-03 (nas: 4 cores for 9 vCPUs), so every render
+  # after a merge saturated nas and starved everything else on it (Music Assistant
+  # stuttered), and losing nas would have stopped all renders. The control planes
+  # are short on memory (~650Mi free at worst over 7 days), so worker-01 (minipc,
+  # idle CPU, ~9Gi free) is allowed and preferred; the second replica lands on
+  # control-plane-01/02. Excluding nas by hostname until the nodes carry a
+  # topology.kubernetes.io/zone label per Proxmox host.
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [control-plane-03, worker-02]
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: [worker-01]
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      # count only the current ReplicaSet, so a rollout isn't blocked by old pods
+      matchLabelKeys: [pod-template-hash]
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists

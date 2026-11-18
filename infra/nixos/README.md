@@ -21,7 +21,7 @@
 | `tests/router.nix` | VM test: PPPoE/CHAP to a fake ISP, DHCP reservation, NAT, port forward, WAN→LAN blocked, drop logging, Kea exporter, and Tailscale via headscale (remote device → LAN, exit node) |
 | `scripts/deploy.sh` | Deploy with a dead-man switch (`task nixos:deploy HOST=gw`) |
 | `scripts/check-reservations.py` | CI check that `hosts/gw/dhcp-reservations.json` matches OpenTofu |
-| `scripts/proxmox/` | Run on the `router` node: `gw-prepare.sh`, `gw-cutover.sh`, `gw-rollback.sh` (see Switchover) |
+| `scripts/proxmox/` | Run on the `router` node: `router-host-net.sh` (host bridges/IPv6), `gw-prepare.sh`, `gw-cutover.sh`, `gw-rollback.sh` (see Switchover) |
 
 ## Firewall policy
 
@@ -78,6 +78,7 @@ Checked in OPNSense's config.xml on 2026-11-15:
 
 ### Steps
 
+0. **Host network (on the `router` node, before switching).** Run `/root/gw/router-host-net.sh harden`: IPv6 goes off on the WAN bridge and no router adverts are accepted, with no traffic impact. Then run `/root/gw/router-host-net.sh merge-bridges`: the Wi-Fi port joins the LAN bridge, Wi-Fi blips for about a second, and from then on Wi-Fi reaches Proxmox even with no router VM running. See the script header for why.
 1. **Prepare (no downtime).** `gw-prepare.sh <vzdump-qemu-gw.vma.zst> < age-key.txt` installs gw as VM 101, stopped, with its age key on its disk.
 2. **Switch (a few minutes without internet).** `systemd-run --unit=gw-cutover /root/gw/gw-cutover.sh`, then follow it with `journalctl -fu gw-cutover`. It:
    - snapshots OPNSense

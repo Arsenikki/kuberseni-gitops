@@ -61,25 +61,44 @@ deschedulerPolicy:
             nodeAffinityType:
               - requiredDuringSchedulingIgnoredDuringExecution
         - name: RemovePodsViolatingInterPodAntiAffinity
+        # Hard (DoNotSchedule) spread constraints only: evicts a pod left on the
+        # wrong side of its own spread, e.g. after a node came back.
+        - name: RemovePodsViolatingTopologySpreadConstraint
+          args:
+            namespaces:
+              exclude:
+                - jeeves-prod
+                - jeeves-dev
         - name: LowNodeUtilization
           args:
             # Evaluate utilization from real metrics (above) instead of the sum
             # of pod requests, so an overloaded-but-request-less node is seen.
             metricsUtilization:
               source: KubernetesMetrics
+            # A node is "under" only if below ALL thresholds and "over" if above
+            # ANY target. The old 20/50 (with pods) never fired: every node sits
+            # above 50% memory, so all five read as over and nothing moved. The
+            # control planes idle at ~80-86% memory, hence the 90% memory target.
+            # Today this reads worker-01 (~12% cpu, ~60% mem) as under and
+            # worker-02 (~80% cpu) as over.
             thresholds:
-              cpu: 20
-              memory: 20
-              pods: 20
+              cpu: 30
+              memory: 70
             targetThresholds:
-              cpu: 50
-              memory: 50
-              pods: 50
+              cpu: 60
+              memory: 90
+            # Jeeves places its own pods with hard per-node spread constraints;
+            # moving them would only bounce them back every run.
+            evictableNamespaces:
+              exclude:
+                - jeeves-prod
+                - jeeves-dev
       plugins:
         balance:
           enabled:
             - RemoveDuplicates
             - LowNodeUtilization
+            - RemovePodsViolatingTopologySpreadConstraint
         deschedule:
           enabled:
             - RemovePodsHavingTooManyRestarts

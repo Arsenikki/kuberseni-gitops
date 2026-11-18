@@ -5,6 +5,21 @@
     "ip": "192.168.1.2"
   },
   {
+    "hostname": "unifi-os-server",
+    "mac": "bc:24:11:e4:9a:5d",
+    "ip": "192.168.1.4"
+  },
+  {
+    "hostname": "usw-flex-2-5g",
+    "mac": "74:f9:2c:98:9d:b3",
+    "ip": "192.168.1.5"
+  },
+  {
+    "hostname": "u6-pro",
+    "mac": "ac:8b:a9:2f:9b:8e",
+    "ip": "192.168.1.6"
+  },
+  {
     "hostname": "control-plane-01",
     "mac": "bc:24:11:75:55:eb",
     "ip": "192.168.1.41"
@@ -35,29 +50,19 @@
     "ip": "192.168.1.50"
   },
   {
-    "hostname": "DESKTOP-Q0E7TOC",
-    "mac": "2c:f0:5d:7c:93:6c",
-    "ip": "192.168.1.100"
-  },
-  {
     "hostname": "bazzite-chromebook",
     "mac": "ca:e0:0e:6c:cf:c1",
-    "ip": "192.168.1.105"
+    "ip": "192.168.1.51"
+  },
+  {
+    "hostname": "DESKTOP-Q0E7TOC",
+    "mac": "2c:f0:5d:7c:93:6c",
+    "ip": "192.168.1.52"
   },
   {
     "hostname": "AutLaptopALMBP2",
     "mac": "6c:7e:67:c8:b5:a5",
-    "ip": "192.168.1.111"
-  },
-  {
-    "hostname": "DESKTOP-L9VHPP0",
-    "mac": "bc:24:11:02:18:80",
-    "ip": "192.168.1.124"
-  },
-  {
-    "hostname": "arseni-vm-hub",
-    "mac": "bc:24:11:7c:51:a9",
-    "ip": "192.168.1.125"
+    "ip": "192.168.1.53"
   },
   {
     "hostname": "philips-purifier",
@@ -66,7 +71,7 @@
   },
   {
     "hostname": "formovie-projector",
-    "mac": "26:78:d3:6e:2d:42",
+    "mac": "38:54:39:6c:bc:dd",
     "ip": "192.168.1.151"
   }
 ]
