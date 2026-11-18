@@ -107,6 +107,22 @@ You don't need a monitor. Whether you need a cable depends on where your device 
 - **OPNSense is unchanged.** It was only shut down, and its pre-switchover snapshot `pre-gw-cutover` is there too.
 - **gw-cutover.sh rolls back by itself** and needs none of this.
 
+### If the `router` Proxmox host dies
+
+The WAN cable (from the Draytek) only goes into that host, so gw can't simply move to another node. Pick a fallback by how long the box will be down:
+
+1. **Hours to days: let the Draytek route.** Switch the Draytek from bridge/modem mode to router mode with PPPoE, using the ISP login (1Password item `isp-pppoe`, see below). Give it 192.168.1.1/24 on its LAN side and connect it to the Flex Mini.
+   - The LAN, Wi-Fi and the cluster keep working, but there's no DHCP. Existing leases last 7 days, and the Draytek's own DHCP server can stand in.
+   - Tailscale is gone until gw is back.
+2. **Longer: run gw on `nas`.** Restore gw from its image (Actions → *NixOS* → Run workflow with *images*) with `gw-prepare.sh` on `nas`. Take one of `nas`'s four ports out of its LAN bridge and give it to gw as WAN, cabled to the Draytek. Update gw's MACs or NIC names in `hosts/gw` to match.
+3. **Whatever happens, keep these where they don't depend on this box:**
+   - **The ISP login, in 1Password.** sops alone isn't enough, because decrypting it needs the cluster or paseo-generic. One-time, from a machine with the repo's age key and `op`:
+     ```sh
+     sops -d --extract '["pppoe"]' infra/nixos/hosts/gw/secrets.yaml | sed -n 's/^user "\(.*\)"$/username=\1/p; s/^password "\(.*\)"$/password=\1/p' |
+       xargs op item create --vault homelab --category login --title isp-pppoe
+     ```
+   - **An offline copy of the repo's master age key** (`kuberseni-gitops-sops-age-key`). It decrypts gw's own key and every other secret.
+
 ### Staging
 
 Staging has run on `nas` since 2026-11-15:
