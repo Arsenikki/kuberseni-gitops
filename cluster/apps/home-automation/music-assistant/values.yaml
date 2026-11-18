@@ -6,17 +6,18 @@ controllers:
       main:
         image:
           repository: ghcr.io/music-assistant/server
-          tag: 2.10.11         # pin an explicit tag so Renovate can track it — never `latest`
+          tag: 2.10.12         # pin an explicit tag so Renovate can track it — never `latest`
           pullPolicy: IfNotPresent
         env:
           TZ: Europe/London
-        # The built-in Snapcast server is enabled in the Music Assistant UI
-        # (Settings -> Providers -> Snapcast -> built-in server). No env is needed, but the
-        # LoadBalancer below exposes 1704/1705 to the LAN so Snapcast clients can reach it.
-        # The per-stream source ports (4953-5153) stay intra-pod and are not exposed.
+        # The Snapcast provider is disabled in the Music Assistant UI: no clients, every
+        # player uses Sendspin. With hostNetwork its built-in snapserver would listen on
+        # 1704/1705 of the node IP whatever the Service below exposes.
         resources:
           requests:
-            cpu: 50m
+            # About its real use while streaming (0.2-0.5 cores), so the
+            # scheduler and CPU shares account for it.
+            cpu: 300m
             memory: 256Mi
           limits:
             # Leak fuse: MA 2.7.x has open OOM/RAM-ramp reports (#4263/#4991/#5089).
@@ -28,15 +29,19 @@ controllers:
 # on the pod network they are undiscoverable and AirPlay has NO manual-IP
 # fallback (unlike Sendspin). Mirrors home-assistant, which already runs
 # hostNetwork in this namespace (PSA is already `privileged`).
-# Pinned to worker-02 so the Published IP that AirPlay devices dial back to
-# (the node LAN IP 192.168.1.45) stays stable, and the Longhorn data stays local.
-# The LoadBalancer below keeps the stable 192.168.1.223 for web/Snapcast clients
-# (Spotify callback, Companion App) regardless of the node.
+# Pinned to one node so the Published IP that AirPlay devices dial back to (the
+# node LAN IP) stays stable. worker-01 (192.168.1.44, Proxmox host minipc) rather
+# than worker-02: worker-02 shares the 4-core nas host with control-plane-03 and
+# TrueNAS, and when that host saturates (e.g. ArgoCD renders after a merge) the
+# VM loses CPU to steal and Sendspin playback stutters. The Sendspin player finds
+# MA via mDNS, so moving nodes needs no client change. The LoadBalancer below
+# keeps the stable 192.168.1.223 for web clients (MA's base URL, Companion App)
+# regardless of the node.
 defaultPodOptions:
   hostNetwork: true
   dnsPolicy: ClusterFirstWithHostNet
   nodeSelector:
-    kubernetes.io/hostname: worker-02
+    kubernetes.io/hostname: worker-01
 
 service:
   main:
@@ -45,16 +50,12 @@ service:
     externalTrafficPolicy: Cluster
     annotations:
       # First free IP in the Cilium LB pool .220-.229 (.220 plex, .221 mosquitto,
-      # .222 traefik). Gives Snapcast clients one stable tcp://192.168.1.223 target
+      # .222 traefik). Gives web clients one stable http://192.168.1.223:8095
       # regardless of which node the pod lands on.
       io.cilium/lb-ipam-ips: "192.168.1.223"
     ports:
       http:
         port: 8095
-      snapcast-stream:
-        port: 1704
-      snapcast-control:
-        port: 1705
 
 ingress:
   main:

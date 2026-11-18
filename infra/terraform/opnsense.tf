@@ -8,7 +8,11 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   subnet      = "192.168.1.0/24"
   description = "LAN"
 
-  pools       = ["192.168.1.100-192.168.1.199"]
+  # Dynamic ranges of the address plan (Arsenikki/codex network/README.md):
+  # trusted dynamic .100-.149 and IoT dynamic .180-.199. The IoT static block
+  # .150-.179 is left out so Kea never leases a reserved-block address to
+  # something else.
+  pools       = ["192.168.1.100-192.168.1.149", "192.168.1.180-192.168.1.199"]
   routers     = ["192.168.1.1"]
   dns_servers = ["1.1.1.1", "8.8.8.8"]
 
@@ -63,13 +67,15 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.controlplane,
     opnsense_kea_dhcpv4_reservation.worker,
     opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
+    opnsense_kea_dhcpv4_reservation.usw_flex,
+    opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
     opnsense_kea_dhcpv4_reservation.laptop,
-    opnsense_kea_dhcpv4_reservation.desktop_secondary,
-    opnsense_kea_dhcpv4_reservation.vm_hub,
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
+    opnsense_kea_dhcpv4_reservation.bedroom_pi,
   ]
 }
 
@@ -122,12 +128,33 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
+# UniFi USW Flex 2.5G switch (2026-11-16), network-infra block (.2-.9). It took over
+# .5 from the 1 GbE USW Flex Mini (58:d6:1f:50:c2:79), which was returned.
+resource "opnsense_kea_dhcpv4_reservation" "usw_flex" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "74:f9:2c:98:9d:b3"
+  ip_address  = "192.168.1.5"
+  hostname    = "usw-flex-2-5g"
+  description = "UniFi USW Flex 2.5G switch"
+}
+
+# UniFi U6 Pro access point, network-infra block (.2-.9). Was dynamic at .122.
+resource "opnsense_kea_dhcpv4_reservation" "u6_pro" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "ac:8b:a9:2f:9b:8e"
+  ip_address  = "192.168.1.6"
+  hostname    = "u6-pro"
+  description = "UniFi U6 Pro access point"
+}
+
 # ── Personal/home devices ──────────────────────────────────────────────────────
+# Trusted static block (.50-.99). The gaming PC and laptop sat at .100 and .111,
+# inside the dynamic pool, until 2026-11-17.
 
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "2c:f0:5d:7c:93:6c"
-  ip_address  = "192.168.1.100"
+  ip_address  = "192.168.1.52"
   hostname    = "DESKTOP-Q0E7TOC"
   description = "Windows Desktop"
 }
@@ -135,31 +162,17 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
 resource "opnsense_kea_dhcpv4_reservation" "laptop" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "6c:7e:67:c8:b5:a5"
-  ip_address  = "192.168.1.111"
+  ip_address  = "192.168.1.53"
   hostname    = "AutLaptopALMBP2"
   description = "Laptop"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "desktop_secondary" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:02:18:80"
-  ip_address  = "192.168.1.124"
-  hostname    = "DESKTOP-L9VHPP0"
-  description = ""
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:7c:51:a9"
-  ip_address  = "192.168.1.125"
-  hostname    = "arseni-vm-hub"
-  description = ""
-}
-
+# Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
+# #782 but was never applied; Kea then leased .105 to the new USW Flex Mini.
 resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "ca:e0:0e:6c:cf:c1"
-  ip_address  = "192.168.1.105"
+  ip_address  = "192.168.1.51"
   hostname    = "bazzite-chromebook"
   description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
 }
@@ -198,11 +211,13 @@ resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
   description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
 }
 
-# MAC is Android's per-SSID randomized one (stable unless the projector forgets the
-# network or is reset), not the device MAC 38:54:39:6c:bc:de.
+# The projector's hardware Wi-Fi MAC: MAC randomization is off for uuno-express
+# since 2026-11-17, because its per-SSID random MAC changed whenever it rejoined
+# the Wi-Fi. HA's androidtv_remote identifies it by 38:54:39:6c:bc:de, a different
+# interface. Also the wake-on-Wi-Fi target in HA's packages/projector.yaml.
 resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "26:78:d3:6e:2d:42"
+  mac_address = "38:54:39:6c:bc:dd"
   ip_address  = "192.168.1.151"
   hostname    = "formovie-projector"
   description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"

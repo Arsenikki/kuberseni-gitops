@@ -46,8 +46,13 @@ data:
         filter:
           include_domains:
             - media_player
+          # Exposed through media_player.projector instead (packages/projector.yaml),
+          # which wakes the projector over Wi-Fi so Siri's "turn on" works from standby.
+          exclude_entities:
+            - media_player.living_room_tv
         entity_config:
-          media_player.living_room_tv:
+          media_player.projector:
+            name: Living Room TV
             feature_list:
               - feature: on_off
               - feature: play_pause
