@@ -6,8 +6,8 @@
 # media_player.projector wraps the androidtv_remote entity with that wake, and is
 # what HomeKit exposes as the TV.
 #
-# The MAC is Android's per-SSID random one (also the Kea reservation for .151 in
-# infra/terraform/opnsense.tf). It changes if the projector forgets the Wi-Fi.
+# The MAC is the projector's hardware Wi-Fi MAC (MAC randomization is off), also
+# the Kea reservation for .151 in infra/terraform/opnsense.tf.
 media_player:
   - platform: universal
     name: Projector
@@ -53,7 +53,7 @@ script:
     sequence:
       - action: wake_on_lan.send_magic_packet
         data:
-          mac: "9e:db:0d:85:f1:a0"
+          mac: "38:54:39:6c:bc:dd"
           broadcast_address: 192.168.1.255
       # The magic packet powers it fully on; wait for androidtv_remote to reconnect.
       - wait_template: "{{ states('media_player.living_room_tv') not in ['unavailable', 'unknown'] }}"
