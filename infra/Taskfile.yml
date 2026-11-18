@@ -242,3 +242,12 @@ tasks:
     dir: "{{.TALOS_DIR}}"
     cmds:
       - talhelper gencommand upgrade --talosconfig clusterconfig/talosconfig | grep "{{.HOSTNAME}}" | bash
+
+  # ── NixOS router (infra/nixos) ────────────────────────────────────────────
+
+  nixos:deploy:
+    desc: "Deploy a NixOS host from origin/main with a dead-man switch (task nixos:deploy HOST=gw [REV=<sha>])"
+    requires:
+      vars: [HOST]
+    cmds:
+      - bash {{.ROOT_DIR}}/nixos/scripts/deploy.sh {{.HOST}} {{.REV}}

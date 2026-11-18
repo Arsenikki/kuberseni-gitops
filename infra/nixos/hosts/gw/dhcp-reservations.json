@@ -1,0 +1,77 @@
+[
+  {
+    "hostname": "truenas-scale",
+    "mac": "bc:24:11:5c:a1:e0",
+    "ip": "192.168.1.2"
+  },
+  {
+    "hostname": "unifi-os-server",
+    "mac": "bc:24:11:e4:9a:5d",
+    "ip": "192.168.1.4"
+  },
+  {
+    "hostname": "usw-flex-2-5g",
+    "mac": "74:f9:2c:98:9d:b3",
+    "ip": "192.168.1.5"
+  },
+  {
+    "hostname": "u6-pro",
+    "mac": "ac:8b:a9:2f:9b:8e",
+    "ip": "192.168.1.6"
+  },
+  {
+    "hostname": "control-plane-01",
+    "mac": "bc:24:11:75:55:eb",
+    "ip": "192.168.1.41"
+  },
+  {
+    "hostname": "control-plane-02",
+    "mac": "bc:24:11:e5:85:2f",
+    "ip": "192.168.1.42"
+  },
+  {
+    "hostname": "control-plane-03",
+    "mac": "bc:24:11:70:e7:4e",
+    "ip": "192.168.1.43"
+  },
+  {
+    "hostname": "worker-01",
+    "mac": "bc:24:11:0f:1d:1d",
+    "ip": "192.168.1.44"
+  },
+  {
+    "hostname": "worker-02",
+    "mac": "bc:24:11:ee:72:f2",
+    "ip": "192.168.1.45"
+  },
+  {
+    "hostname": "bedroom-pi",
+    "mac": "dc:a6:32:a9:a9:00",
+    "ip": "192.168.1.50"
+  },
+  {
+    "hostname": "bazzite-chromebook",
+    "mac": "ca:e0:0e:6c:cf:c1",
+    "ip": "192.168.1.51"
+  },
+  {
+    "hostname": "DESKTOP-Q0E7TOC",
+    "mac": "2c:f0:5d:7c:93:6c",
+    "ip": "192.168.1.52"
+  },
+  {
+    "hostname": "AutLaptopALMBP2",
+    "mac": "6c:7e:67:c8:b5:a5",
+    "ip": "192.168.1.53"
+  },
+  {
+    "hostname": "philips-purifier",
+    "mac": "88:a6:8d:16:6e:ba",
+    "ip": "192.168.1.150"
+  },
+  {
+    "hostname": "formovie-projector",
+    "mac": "38:54:39:6c:bc:dd",
+    "ip": "192.168.1.151"
+  }
+]
