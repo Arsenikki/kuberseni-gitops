@@ -104,8 +104,12 @@ in
 
     dhcp = {
       pool = mkOption {
-        type = types.str;
-        example = "192.168.1.100 - 192.168.1.199";
+        type = types.either types.str (types.listOf types.str);
+        example = [
+          "192.168.1.100 - 192.168.1.149"
+          "192.168.1.180 - 192.168.1.199"
+        ];
+        description = "Dynamic range(s) handed out by Kea.";
       };
       dnsServers = mkOption {
         type = types.listOf types.str;
@@ -450,7 +454,7 @@ in
           {
             id = 1;
             subnet = cfg.lan.subnet;
-            pools = [ { pool = cfg.dhcp.pool; } ];
+            pools = map (pool: { inherit pool; }) (lib.toList cfg.dhcp.pool);
             option-data = [
               {
                 name = "routers";

@@ -56,7 +56,12 @@ in
       macAddress = "58:9c:fc:10:f1:79";
     };
     dhcp = {
-      pool = "192.168.1.100 - 192.168.1.199";
+      # The address plan's dynamic blocks: trusted .100-.149, IoT .180-.199. Must match
+      # opnsense.tf until the switchover (scripts/check-reservations.py checks it).
+      pool = [
+        "192.168.1.100 - 192.168.1.149"
+        "192.168.1.180 - 192.168.1.199"
+      ];
       # Copied from infra/terraform (opnsense.tf + VM MACs); CI checks they stay in sync
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
       reservations = lib.importJSON ./dhcp-reservations.json;

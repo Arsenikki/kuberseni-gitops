@@ -1,12 +1,8 @@
 name: NixOS
 on: # yamllint disable-line rule:truthy
+  # Every PR, so "NixOS router" can be a required check (branch protection and
+  # .jeeves.yaml); the job skips the heavy steps when nothing router-related changed.
   pull_request:
-    paths:
-      - infra/nixos/**
-      - infra/terraform/opnsense.tf
-      - infra/terraform/vms.tf
-      - infra/terraform/truenas-scale.tf
-      - .github/workflows/nixos.yaml
   push:
     branches: [main]
     paths:
@@ -28,6 +24,7 @@ concurrency:
 
 jobs:
   check:
+    name: NixOS router
     runs-on: ubuntu-latest
     timeout-minutes: 120
     defaults:
@@ -35,14 +32,34 @@ jobs:
         working-directory: infra/nixos
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
-      - name: DHCP reservations match OpenTofu
+      - name: Did anything router-related change?
+        id: changes
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != pull_request ]; then
+            echo "relevant=true" >>"$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/$BASE...HEAD" |
+            grep -qE '^(infra/nixos/|infra/terraform/[^/]+\.tf$|\.sops\.yaml$|\.github/workflows/nixos\.yaml$)'; then
+            echo "relevant=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >>"$GITHUB_OUTPUT"
+            echo "No router-related changes; nothing to test."
+          fi
+
+      - name: DHCP reservations and pool match OpenTofu
+        if: steps.changes.outputs.relevant == 'true'
         run: python3 scripts/check-reservations.py
 
       # Enables KVM on the runner, so the router VM test runs at native speed.
       - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+        if: steps.changes.outputs.relevant == 'true'
 
       - name: Build hosts and run the router VM test
+        if: steps.changes.outputs.relevant == 'true'
         run: nix flake check --print-build-logs
 
       - name: Build Proxmox images
