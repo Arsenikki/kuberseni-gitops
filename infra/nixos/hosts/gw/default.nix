@@ -104,6 +104,15 @@ in
         ];
         mdns = true;
       };
+      # Guest Wi-Fi ("Uuno's Guest Kennel" on the U6 Pro, VLAN 30, client isolation on
+      # the AP): internet only. No LAN, IoT, tailnet or router management, and no mDNS.
+      # The AP keeps guests apart from each other; this keeps them off the house.
+      guest = {
+        id = 30;
+        subnet = "192.168.30.0/24";
+        address = "192.168.30.1";
+        pool = "192.168.30.100 - 192.168.30.199";
+      };
       iot = {
         id = 20;
         subnet = "192.168.20.0/24";
