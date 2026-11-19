@@ -1,0 +1,206 @@
+---
+# Music Assistant zone selector ("Bedroom", "Bedroom + Living Room", "Living Room")
+# and TTS announcement helper for the Bedroom tablet dashboard.
+# Bedroom speaker power is managed separately by packages/bedroom_speakers.yaml.
+input_select:
+  bedroom_music_zone:
+    name: "Bedroom music zone"
+    options:
+      - "Bedroom"
+      - "Bedroom + Living Room"
+      - "Living Room"
+    initial: "Bedroom"
+    icon: mdi:speaker-multiple
+
+input_text:
+  bedroom_tts_message:
+    name: "Bedroom TTS message"
+    max: 255
+    icon: mdi:message-text
+
+script:
+  bedroom_tts_announce:
+    alias: "Bedroom: TTS announce"
+    description: >-
+      Speak a message via tts.piper (when available) or tts.google_en_com to
+      the currently selected bedroom music zone player (or an explicit target).
+    mode: queued
+    fields:
+      message:
+        description: Message to speak (defaults to input_text.bedroom_tts_message).
+        required: false
+        selector:
+          text:
+      media_player_entity_id:
+        description: Optional target media_player entity ID override.
+        required: false
+        selector:
+          entity:
+            domain: media_player
+    variables:
+      used_helper: >-
+        {{ message is not defined or message is none or (message | string | trim) == '' }}
+      spoken_message: >-
+        {{ (states('input_text.bedroom_tts_message') if used_helper else message) | string | trim }}
+      target_player: >-
+        {% if media_player_entity_id is defined and media_player_entity_id %}
+          {{ media_player_entity_id }}
+        {% elif is_state('input_select.bedroom_music_zone', 'Living Room') %}
+          media_player.q_series_soundbar
+        {% else %}
+          media_player.bedroom
+        {% endif %}
+      tts_engine: >-
+        {{ 'tts.piper' if 'tts.piper' in (states.tts | map(attribute='entity_id') | list) else 'tts.google_en_com' }}
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ spoken_message == '' }}"
+        then:
+          - stop: "Empty TTS message"
+      - action: tts.speak
+        target:
+          entity_id: "{{ tts_engine }}"
+        data:
+          media_player_entity_id: "{{ target_player }}"
+          message: "{{ spoken_message }}"
+      - if:
+          - condition: template
+            value_template: "{{ used_helper }}"
+        then:
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.bedroom_tts_message
+            data:
+              value: ""
+
+automation:
+  - id: bedroom_music_zone_select
+    alias: "Bedroom: select music zone"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.bedroom_music_zone
+        not_to:
+          - unavailable
+          - unknown
+    variables:
+      zone: "{{ trigger.to_state.state }}"
+      bedroom_members: "{{ state_attr('media_player.bedroom', 'group_members') or [] }}"
+      soundbar_members: "{{ state_attr('media_player.q_series_soundbar', 'group_members') or [] }}"
+      is_grouped: >-
+        {{ 'media_player.q_series_soundbar' in bedroom_members
+           or 'media_player.bedroom' in soundbar_members }}
+      bedroom_is_leader: >-
+        {{ bedroom_members | length > 1 and bedroom_members[0] == 'media_player.bedroom' }}
+      soundbar_is_leader: >-
+        {{ (soundbar_members | length > 1
+            and soundbar_members[0] == 'media_player.q_series_soundbar'
+            and 'media_player.bedroom' in soundbar_members)
+           or ('media_player.bedroom' in soundbar_members and bedroom_members | length == 0) }}
+      bedroom_active: >-
+        {{ states('media_player.bedroom') in ['playing', 'buffering', 'paused'] }}
+      soundbar_active: >-
+        {{ states('media_player.q_series_soundbar') in ['playing', 'buffering', 'paused'] }}
+      bedroom_playing: >-
+        {{ states('media_player.bedroom') in ['playing', 'buffering'] }}
+      soundbar_playing: >-
+        {{ states('media_player.q_series_soundbar') in ['playing', 'buffering'] }}
+    actions:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ zone == 'Bedroom' }}"
+            sequence:
+              - if:
+                  - condition: template
+                    value_template: "{{ is_grouped }}"
+                then:
+                  - if:
+                      - condition: template
+                        value_template: "{{ soundbar_is_leader }}"
+                    then:
+                      - action: music_assistant.transfer_queue
+                        target:
+                          entity_id: media_player.bedroom
+                        data:
+                          source_player: media_player.q_series_soundbar
+                          auto_play: "{{ is_state('media_player.q_series_soundbar', 'playing') }}"
+                        continue_on_error: true
+                      - action: media_player.unjoin
+                        target:
+                          entity_id: media_player.bedroom
+                        continue_on_error: true
+                  - action: media_player.unjoin
+                    target:
+                      entity_id: media_player.q_series_soundbar
+                    continue_on_error: true
+                else:
+                  - if:
+                      - condition: template
+                        value_template: "{{ soundbar_active and not bedroom_playing }}"
+                    then:
+                      - action: music_assistant.transfer_queue
+                        target:
+                          entity_id: media_player.bedroom
+                        data:
+                          source_player: media_player.q_series_soundbar
+                          auto_play: "{{ is_state('media_player.q_series_soundbar', 'playing') }}"
+
+          - conditions:
+              - condition: template
+                value_template: "{{ zone == 'Bedroom + Living Room' }}"
+            sequence:
+              - if:
+                  - condition: template
+                    value_template: "{{ not is_grouped }}"
+                then:
+                  - if:
+                      - condition: template
+                        value_template: "{{ soundbar_playing and not bedroom_playing }}"
+                    then:
+                      - action: music_assistant.transfer_queue
+                        target:
+                          entity_id: media_player.bedroom
+                        data:
+                          source_player: media_player.q_series_soundbar
+                          auto_play: true
+                      - delay: "00:00:01"
+                  - action: media_player.join
+                    target:
+                      entity_id: media_player.bedroom
+                    data:
+                      group_members:
+                        - media_player.q_series_soundbar
+
+          - conditions:
+              - condition: template
+                value_template: "{{ zone == 'Living Room' }}"
+            sequence:
+              - if:
+                  - condition: template
+                    value_template: "{{ is_grouped or bedroom_active }}"
+                then:
+                  - if:
+                      - condition: template
+                        value_template: "{{ bedroom_active or bedroom_is_leader }}"
+                    then:
+                      - action: music_assistant.transfer_queue
+                        target:
+                          entity_id: media_player.q_series_soundbar
+                        data:
+                          source_player: media_player.bedroom
+                          auto_play: "{{ is_state('media_player.bedroom', 'playing') }}"
+                  - if:
+                      - condition: template
+                        value_template: "{{ is_grouped }}"
+                    then:
+                      - delay: "00:00:01"
+                      - action: media_player.unjoin
+                        target:
+                          entity_id: media_player.bedroom
+                        continue_on_error: true
+                      - action: media_player.unjoin
+                        target:
+                          entity_id: media_player.q_series_soundbar
+                        continue_on_error: true
