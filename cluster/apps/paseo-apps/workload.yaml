@@ -95,6 +95,10 @@ spec:
             # + the pod hostname automatically.
             - name: PASEO_HOSTNAMES
               value: "paseo-apps.paseo-apps.svc.cluster.local,paseo-apps,paseo-apps.paseo-apps,paseo-apps.arsenikki.casa"
+            # Co-authored-by trailer on every git commit (paseo-homelab >= 0.15.4-3): the
+            # agent stays the author, Arsenikki gets contribution-graph credit.
+            - name: GIT_COAUTHOR
+              value: "Arsenikki <42617129+Arsenikki@users.noreply.github.com>"
           ports:
             - containerPort: 6767
               name: paseo
