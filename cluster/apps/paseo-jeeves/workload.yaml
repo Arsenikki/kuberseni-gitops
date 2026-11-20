@@ -102,7 +102,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-1
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-8
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -111,6 +111,11 @@ spec:
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). One-time kernel login: agy-acp-muzzle --login.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             # Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
             # dials this Service's FQDN, so those names must be allow-listed. The
             # entrypoint always adds loopback + the pod hostname.
