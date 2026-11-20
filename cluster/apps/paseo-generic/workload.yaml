@@ -60,18 +60,6 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
-      # Keep the Paseo daemons off worker-02: it is a 3-vCPU VM on the 4-core nas host
-      # (shared with TrueNAS + cp-03) and also runs Longhorn engines. Agent spikes
-      # (builds, renovate, gh fan-out) pinned it at load ~100, starving Longhorn's
-      # probes into crashloops. Hard rule — a soft spread put a daemon back on it.
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: [worker-02]
       containers:
         - name: paseo
           image: ghcr.io/arsenikki/paseo-homelab:0.15.4-7
@@ -186,7 +174,7 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
+              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack a node
               memory: 1Gi # observed ~800Mi idle-ish, ~1.5Gi under agent load
             # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
             # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
