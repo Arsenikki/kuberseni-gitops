@@ -11,6 +11,9 @@ metadata:
   name: jeeves
   namespace: argocd
   annotations:
+    # Diff via server-side dry-run: SSA apps otherwise show permanent OutOfSync
+    # on server-defaulted fields (ESO nullBytePolicy, STS maxUnavailable).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
     argocd.argoproj.io/sync-wave: "6"
     # The chart is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
     # ephemeral ArgoCD with no registry creds) can't pull it. Skip this app there;
