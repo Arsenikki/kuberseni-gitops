@@ -52,6 +52,7 @@ spec:
         app: paseo-generic
         app.kubernetes.io/part-of: paseo-homelab
     spec:
+      priorityClassName: kuberseni-critical
       serviceAccountName: paseo-generic
       imagePullSecrets:
         - name: ghcr-credentials

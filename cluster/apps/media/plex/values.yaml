@@ -65,3 +65,6 @@ resources:
     # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.
     # Also pins Plex to worker-01 via resource availability.
     gpu.intel.com/i915: 1
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+priorityClassName: kuberseni-critical
