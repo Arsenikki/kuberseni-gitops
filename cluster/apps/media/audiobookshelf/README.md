@@ -15,16 +15,17 @@ the bjw-s `app-template` chart with `values.yaml`.
 ## Storage scoping
 
 The library mount is the shared **`media-pvc`** but restricted to the existing
-**`books`** subfolder (`subPath: books`) and mounted **read-only**. Audiobookshelf
-therefore cannot see or modify `movies/series/music/downloads` — only `books`.
-Populate `<nfs>/books/...` via Readarr or your own drops; ABS just serves it.
-Reading progress, bookmarks and cached art live in `/config` + `/metadata`, so a
-read-only library is fully functional.
+**`books`** subfolder (`subPath: books`), so Audiobookshelf cannot see or touch
+`movies/series/music/downloads` — only `books`. The mount is **read-write**: ABS's
+ebook-upload feature creates item folders in the library, and a read-only mount
+made a failed upload crash the whole process (see PR #679). Writes stay confined
+to the `books` subfolder. Populate `<nfs>/books/...` via the ABS web UI, Readarr,
+or your own drops.
 
 ## Auth (important)
 
 **Do not** put Authentik forward-auth in front of ABS — it breaks the mobile
-apps, OPDS and the BookBridge/API clients (they can't complete the browser login;
+apps and the BookBridge/API clients (they can't complete the browser login;
 the app polls `/ping`, gets a 302, and shows an empty shelf). Use ABS's own
 built-in accounts. If you want SSO later, wire Authentik as an **OIDC provider**
 (Settings → Authentication → OpenID Connect), which keeps the apps working.
@@ -32,14 +33,15 @@ built-in accounts. If you want SSO later, wire Authentik as an **OIDC provider**
 ## Post-deploy setup
 
 1. Open `https://audiobookshelf.arsenikki.casa`, create the root/admin user.
-2. Add libraries pointing at the read-only paths, e.g. `/data/audiobooks`
-   (Books/Audiobook type) and `/data/ebooks`.
+2. Add libraries pointing at e.g. `/data/audiobooks` (Audiobook type) and
+   `/data/ebooks` (Book type). Uploading ebooks via the web UI works — the mount
+   is read-write.
 3. Create an **API token** (Settings → Users → your user → API token) — you'll
    paste it into BookBridge to let it read your listening position.
-4. On the Kindle's KOReader, add ABS as an **OPDS catalog**:
-   `https://audiobookshelf.arsenikki.casa/opds` with your ABS username +
-   password (or API key) to browse/download EPUBs. Reading-position sync is
-   handled by **BookBridge**, not ABS — see `../bookbridge/README.md`.
+4. **Reading on the Kindle is NOT via ABS** — ABS has no native OPDS feed
+   (`/opds` 404s). Ebook browse/download to KOReader is served by the separate
+   **abs-opds** bridge (`../abs-opds/README.md`), and reading-position sync by
+   **BookBridge** (`../bookbridge/README.md`).
 
 ## Sync
 
