@@ -339,7 +339,8 @@ repoServer:
   resources:
     requests:
       cpu: 250m
-      memory: 512Mi
+      # 65-90 MiB each when idle (2026-11-21); renders burst above the request.
+      memory: 256Mi
   livenessProbe:
     timeoutSeconds: 10
     periodSeconds: 30
