@@ -98,7 +98,7 @@
     },
     {
       "description": ["Jeeves prod + board: one PR per release; merging it is the promotion"],
-      "matchFileNames": ["cluster/argocd/apps/jeeves.yaml", "cluster/argocd/apps/flock.yaml"],
+      "matchFileNames": ["cluster/argocd/apps/jeeves.yaml", "cluster/argocd/apps/jeeves-board.yaml"],
       "matchDatasources": ["docker"],
       "minimumReleaseAge": null,
       "minimumReleaseAgeBehaviour": "timestamp-optional",

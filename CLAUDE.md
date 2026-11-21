@@ -20,13 +20,13 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
   Before opening a PR, `git rebase origin/main` and re-run the checks; once the PR is
   pushed, merge `origin/main` into it instead of rebasing.
 - **If your PR supersedes another**, close the old one with a link to yours.
-- **Use the board activity log** (`http://flock.flock.svc.cluster.local:8099/api/v1/activity`,
+- **Use the board activity log** (`http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1/activity`,
   also visible in the Jeeves board UI). It shows merges, ArgoCD deploys and failures,
   Jeeves' tickets, manual changes and other agents' intents. It is advisory: nothing
   blocks on it.
   - **Before you start**, read the last day for this repo:
     ```bash
-    curl -s "http://flock.flock.svc.cluster.local:8099/api/v1/activity?repo=Arsenikki/kuberseni-gitops&since=$(date -u -d -1day +%FT%TZ)" \
+    curl -s "http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1/activity?repo=Arsenikki/kuberseni-gitops&since=$(date -u -d -1day +%FT%TZ)" \
       | jq -r '.activity[] | "\(.at[:16]) \(.kind) \(.source): \(.summary)"'
     ```
   - **Before multi-step work**, post an `intent` naming the paths you'll touch. It
@@ -35,7 +35,7 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
     setting), post a `change.manual` entry saying what you changed and why.
   - To post:
     ```bash
-    curl -s -X POST http://flock.flock.svc.cluster.local:8099/api/v1/activity \
+    curl -s -X POST http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1/activity \
       -H 'Content-Type: application/json' -H 'X-Jeeves-Actor: <your session name>' \
       -d '{"kind":"intent","repo":"Arsenikki/kuberseni-gitops","summary":"…","paths":["cluster/apps/…"]}'
     ```
@@ -88,8 +88,8 @@ it by hand.
 **one card per deliverable**; Jeeves picks cards up from the board.
 
 - **UI:** <https://jeeves.arsenikki.casa> (authentik login). **In-cluster API:**
-  `http://flock.flock.svc.cluster.local:8099/api/v1` (the k8s namespace, StatefulSet
-  and Service are still named `flock`).
+  `http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1` (k8s name `jeeves-board`,
+  formerly `flock`; the old `flock.flock.svc` URL still resolves for now).
 - **File a card:** `POST /api/v1/cards` with JSON `{"project":"Arsenikki/kuberseni-gitops",
   "title":"…","body":"…","column":"backlog","owner":"jeeves"}`.
 - **Jeeves only works cards in a `managed` project, in the `ready` column, owned by

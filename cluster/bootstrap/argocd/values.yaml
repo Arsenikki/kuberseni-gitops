@@ -69,7 +69,7 @@ notifications:
     # The Jeeves board's activity log (in-cluster, no auth: the board attributes
     # writes by X-Jeeves-Actor). Deploy results show up there for every agent to see.
     "service.webhook.jeeves-board": |
-      url: http://flock.flock.svc.cluster.local:8099/api/v1
+      url: http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1
       headers:
         - name: Content-Type
           value: application/json
@@ -280,7 +280,7 @@ extraObjects:
 
   # OCI Helm repository credential so ArgoCD can pull the PRIVATE jeeves charts
   # (ghcr.io/arsenikki/charts/{jeeves,jeeves-board}: the jeeves, jeeves-dev and
-  # flock apps). Read-only PAT from the shared 1Password `github-packages-ro` item.
+  # jeeves-board apps). Read-only PAT from the shared 1Password `github-packages-ro` item.
   - apiVersion: external-secrets.io/v1
     kind: ExternalSecret
     metadata:

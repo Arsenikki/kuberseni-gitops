@@ -8,6 +8,8 @@
 priorityClassName: kuberseni-low
 
 config:
+  # In-cluster board API (the chart default still points at the pre-rename flock URL).
+  JEEVES_BOARD_URL: http://jeeves-board.jeeves-board.svc.cluster.local:8099
   JEEVES_INSTANCE: jeeves-dev
   # Opens PRs but never auto-merges (caps an unproven build's blast radius).
   JEEVES_AUTONOMY: propose

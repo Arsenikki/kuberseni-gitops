@@ -1,16 +1,18 @@
 ---
-# flock — the Jeeves board (`jeeves board`): the realtime kanban board that is
-# Jeeves' ticket surface, shared by the jeeves + jeeves-dev instances. Deployed
+# jeeves-board — the Jeeves board (`jeeves board`): the realtime kanban board that
+# is Jeeves' ticket surface, shared by the jeeves + jeeves-dev instances. Deployed
 # from the private `jeeves-board` Helm chart (released with jeeves; Renovate PR is
-# grouped with prod). The Application, namespace, StatefulSet and PVC keep the
-# `flock` name on purpose — renaming would orphan the SQLite PVC.
-# NEVER delete/rename this Application: its finalizer + prune would take the
-# board data with it. Own namespace `flock`, ingress host jeeves.arsenikki.casa.
+# grouped with prod). Formerly named `flock` (namespace, StatefulSet, Service);
+# renamed 2026-11 by re-binding the SQLite PV to data-jeeves-board-0.
+# NEVER delete/rename this Application casually: its finalizer + prune would take
+# the board's StatefulSet with it, and the PVC holds the board data. Own namespace
+# `jeeves-board`, ingress host jeeves.arsenikki.casa. In-cluster API:
+# http://jeeves-board.jeeves-board.svc.cluster.local:8099.
 # Wave 6 — after ESO/1Password + Longhorn, like jeeves.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: flock
+  name: jeeves-board
   namespace: argocd
   annotations:
     # Diff via server-side dry-run: SSA apps otherwise show permanent OutOfSync
@@ -32,15 +34,20 @@ spec:
       chart: jeeves-board
       targetRevision: 1.62.0
       helm:
-        releaseName: flock
+        releaseName: jeeves-board
         valueFiles:
           - $values/cluster/apps/jeeves/values-board.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: main
       ref: values
+    # Transition shim: keeps the old flock.flock.svc URL resolving (ExternalName)
+    # for agents/docs that still use it. Remove once nothing calls it.
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/jeeves/board-legacy
   destination:
     server: https://kubernetes.default.svc
-    namespace: flock
+    namespace: jeeves-board
   syncPolicy:
     automated:
       prune: true

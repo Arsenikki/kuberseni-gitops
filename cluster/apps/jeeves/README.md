@@ -2,7 +2,7 @@
 
 [Jeeves](https://github.com/Arsenikki/jeeves) (private) publishes two Helm charts
 to `oci://ghcr.io/arsenikki/charts` on every release: `jeeves` (one instance, with
-its agent prompts) and `jeeves-board` (the shared board, k8s name `flock`). The
+its agent prompts) and `jeeves-board` (the shared board). The
 templates and prompts live in the jeeves repo (`deploy/charts/`); this directory
 holds only the values for each deployment:
 
@@ -10,7 +10,7 @@ holds only the values for each deployment:
 | --------------------------------- | -------------- | ------------- | ------------------------- |
 | `jeeves-dev.yaml`                 | `jeeves`       | `jeeves-dev`  | `values-dev.yaml`         |
 | `jeeves.yaml`                     | `jeeves`       | `jeeves-prod` | `values-prod.yaml`        |
-| `flock.yaml`                      | `jeeves-board` | `flock`       | `values-board.yaml`       |
+| `jeeves-board.yaml`               | `jeeves-board` | `jeeves-board`| `values-board.yaml`       |
 
 Chart defaults hold the shared config; these files list only what differs.
 
