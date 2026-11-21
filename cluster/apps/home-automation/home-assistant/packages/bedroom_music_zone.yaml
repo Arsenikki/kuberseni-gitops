@@ -1,14 +1,14 @@
 ---
-# Music Assistant zone selector ("Bedroom", "Bedroom + Living Room", "Living Room")
+# Music Assistant zone selector ("Living Room", "Bedroom", "Living Room + Bedroom")
 # and TTS announcement helper for the Bedroom tablet dashboard.
 # Bedroom speaker power is managed separately by packages/bedroom_speakers.yaml.
 input_select:
   bedroom_music_zone:
     name: "Bedroom music zone"
     options:
-      - "Bedroom"
-      - "Bedroom + Living Room"
       - "Living Room"
+      - "Bedroom"
+      - "Living Room + Bedroom"
     initial: "Bedroom"
     icon: mdi:speaker-multiple
 
@@ -149,7 +149,7 @@ automation:
 
           - conditions:
               - condition: template
-                value_template: "{{ zone == 'Bedroom + Living Room' }}"
+                value_template: "{{ zone == 'Living Room + Bedroom' }}"
             sequence:
               - if:
                   - condition: template
