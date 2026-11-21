@@ -278,6 +278,39 @@ extraObjects:
             key: "Jeeves Agent"
             property: github_app_private_key
 
+  # OCI Helm repository credential so ArgoCD can pull the PRIVATE jeeves charts
+  # (ghcr.io/arsenikki/charts/{jeeves,jeeves-board}: the jeeves, jeeves-dev and
+  # flock apps). Read-only PAT from the shared 1Password `github-packages-ro` item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: arsenikki-charts
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: arsenikki-charts
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            name: arsenikki-charts
+            type: helm
+            url: ghcr.io/arsenikki/charts
+            enableOCI: "true"
+            username: arsenikki
+      data:
+        - secretKey: password
+          remoteRef:
+            key: "github-packages-ro"
+            property: credential
+
 # Run ArgoCD components on control-plane nodes
 controller:
   # 2026-10-11 incident: with NO resource requests set, the controller was
