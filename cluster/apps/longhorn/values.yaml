@@ -17,6 +17,11 @@ defaultSettings:
   # replicas, became unschedulable, and all 32 volumes stacked both replicas on
   # worker-01. Trade-off: with only 2 storage nodes, a node down/full leaves the
   # affected volumes degraded until it returns.
+  # Node dies unplanned (not a drain): force-delete its Longhorn-backed pods once
+  # k8s marks them Terminating, so RWO volumes detach and the pods restart on a
+  # healthy node. Default "do-nothing" leaves StatefulSets (home-assistant-0)
+  # stuck Terminating until the node returns, which defeats the PriorityClasses.
+  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
   replicaSoftAntiAffinity: false
   replicaAutoBalance: best-effort
   # Cap concurrent replica rebuilds per node at 3 (Longhorn default is 5). A storage
