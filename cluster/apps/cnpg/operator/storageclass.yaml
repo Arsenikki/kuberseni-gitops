@@ -1,0 +1,20 @@
+---
+# Dedicated Longhorn StorageClass for CNPG volumes. At instances: 1 there is no
+# Postgres-level replica, and Longhorn's default 2 replicas would just double every
+# write for no availability gain (a single-instance cluster is still a single point
+# of failure). One Longhorn replica + strict-local keeps the data on the node the
+# Postgres pod runs on. Revisit (bump replicas / let Postgres own replication) only
+# if you later move to instances >= 2 on a 3rd DB-schedulable node.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-cnpg
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+parameters:
+  numberOfReplicas: "1"
+  dataLocality: "strict-local"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
