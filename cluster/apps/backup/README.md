@@ -55,7 +55,7 @@ rclone's shared client-id is being retired during 2026, so you need your own:
 ```sh
 # Authorise the drive remote (opens a browser; produces a token JSON blob):
 rclone config create gdrive drive \
-  client_id <CLIENT_ID> client_secret <CLIENT_SECRET> scope drive
+  client_id <CLIENT_ID> client_secret <CLIENT_SECRET> scope drive.file
 rclone config show gdrive        # copy the `token = {...}` value
 
 # Pick a strong passphrase + salt, then obscure both:
@@ -98,10 +98,10 @@ kubectl -n backup logs job/manual-test -f
   `rclone delete --min-age 365d gdrive-crypt:coachi-media/backups` — never `sync`.
 - **750 GB/day cap:** irrelevant at the current <1 GB/day volume;
   `--drive-stop-on-upload-limit` makes the job fail loudly if it's ever hit.
-- **Hardening (optional):** switch `scope = drive` → `drive.file` in
-  `externalsecret.yaml` so the token can only touch files rclone itself created
-  (re-run the token dance in step 2 with `scope drive.file`). Smaller blast radius
-  if the secret leaks.
+- **Least privilege:** the remote uses `scope = drive.file`, so the token can only
+  touch files rclone itself created (`homelab-backups`), not the rest of Drive.
+  Smaller blast radius if the secret leaks. The token must be minted with the
+  same scope (step 2).
 - **This is not your DR backup of record.** A single Google account is a single
   point of failure, and Drive download throttling makes large restores
   unpredictable. When you want a backup you can *trust* for disaster recovery,
