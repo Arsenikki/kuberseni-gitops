@@ -1,10 +1,10 @@
 ---
-# jeeves-dev — the CANDIDATE (dev) instance of Jeeves, co-located with prod in the
-# SAME cluster for environment parity (identical Longhorn/Cilium/Traefik/ESO), but
-# fully isolated in its own namespace `jeeves-dev` with its OWN NATS + Paseo daemon.
-# Via instance routing it watches the same repos as prod yet only claims issues
-# labelled jeeves-instance/dev, and is propose-only (never auto-merges). Source =
-# the SAME private jeeves repo, rendered from "deploy/overlays/dev". Wave 6.
+# jeeves-dev — the EDGE (dev) instance of Jeeves, co-located with prod in the SAME
+# cluster for environment parity, isolated in its own namespace `jeeves-dev` with
+# its OWN NATS. Works only `jeeves-dev`-owned board cards and is propose-only
+# (never auto-merges). Same private `jeeves` chart as prod; Renovate AUTO-MERGES
+# every release here. To run a pre-merge candidate build, set image.tag in
+# cluster/apps/jeeves/values-dev.yaml. Wave 6.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,26 +12,27 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "6"
-    # Private source repo → the in-CI ArgoCD diff preview can't list its refs.
-    # Skip it here (same as the prod jeeves app); the live ArgoCD has the repo cred.
+    # The chart is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
+    # ephemeral ArgoCD with no registry creds) can't pull it. Skip this app there;
+    # the live ArgoCD has the arsenikki-charts OCI repository credential.
     argocd-diff-preview/ignore: "true"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
-  source:
-    repoURL: https://github.com/Arsenikki/jeeves
-    targetRevision: main
-    path: deploy/overlays/dev
-    # WHICH BUILD RUNS IN DEV: the overlay defaults to a stable tag; override it
-    # here to run a candidate. CI publishes an edge image per branch push tagged
-    #   ghcr.io/arsenikki/jeeves:<semver>-<branch>-<shortsha>
-    # (e.g. v1.3.2-feat-foo-a1b2c3d). To deploy a candidate, uncomment + set the
-    # tag below — a one-line change, no churn in the jeeves repo:
-    #
-    # kustomize:
-    #   images:
-    #     - ghcr.io/arsenikki/jeeves:v1.3.2-feat-foo-a1b2c3d
+  sources:
+    # Private OCI chart published by every jeeves release (no oci:// prefix).
+    # Chart X.Y.Z runs image vX.Y.Z. Renovate bumps targetRevision.
+    - repoURL: ghcr.io/arsenikki/charts
+      chart: jeeves
+      targetRevision: 1.62.0
+      helm:
+        releaseName: jeeves-dev
+        valueFiles:
+          - $values/cluster/apps/jeeves/values-dev.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: jeeves-dev
@@ -42,3 +43,11 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+    # Auto-sync doesn't re-attempt a failed sync of the same commit; retry rides
+    # out transient OCI pull failures.
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

@@ -1,0 +1,5 @@
+---
+# Jeeves board (namespace flock, served at jeeves.arsenikki.casa). Chart defaults
+# (jeeves repo, deploy/charts/jeeves-board/values.yaml) match this cluster; add
+# overrides here.
+{}
