@@ -35,9 +35,14 @@ defaultSettings:
   # fill with stale replica directories (the root cause of the 2026-07-04 collapse:
   # orphans pushed worker-02 below the 25% min-available threshold -> unschedulable).
   orphanResourceAutoDeletion: "replica-data;instance"
-  # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
-  # can mount Longhorn volumes (data still lives on worker disks)
-  taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
+  # Longhorn stays off the control planes: they have no Longhorn disks and nothing
+  # pinned there mounts a volume. Running there cost each 5 GB control plane ~0.4
+  # core of requests and ~300 Mi, and parked the CSI sidecars on control-plane-03
+  # (the overloaded nas host). Explicitly empty: an absent key would leave the old
+  # value in the Setting. A change here only takes effect once EVERY Longhorn
+  # volume is detached (longhorn-manager setting controller), so it needs a
+  # maintenance window, see PR #938.
+  taintToleration: ""
 
 longhornManager:
   # Without a request the manager is BestEffort → cgroup cpu.weight 1 (vs ~111 for
@@ -49,11 +54,7 @@ longhornManager:
     requests:
       cpu: 100m
       memory: 256Mi
-  tolerations:
-    - key: node-role.kubernetes.io/control-plane
-      operator: Exists
-    - key: CriticalAddonsOnly
-      operator: Exists
+  # No control-plane toleration: see taintToleration above.
 
 longhornUI:
   replicas: 1
