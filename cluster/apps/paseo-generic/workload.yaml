@@ -118,7 +118,7 @@ spec:
             - name: PASEO_PLUGINS_ENABLED
               value: "1"
             - name: JEEVES_BOARD_URL
-              value: "http://flock.flock.svc.cluster.local:8099"
+              value: "http://jeeves-board.jeeves-board.svc.cluster.local:8099"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
