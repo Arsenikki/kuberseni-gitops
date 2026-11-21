@@ -224,6 +224,12 @@ spec:
             secretName: paseo-ssh
             optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
             defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+  # /data/paseo holds CLAUDE_CONFIG_DIR (session transcripts), GOPATH + GOCACHE,
+  # MISE_DATA_DIR, antigravity state/logs and the local-speech models (~1G), so it
+  # filled 5Gi (ENOSPC, 2026-11-21). volumeClaimTemplates are immutable: to resize,
+  # patch the live PVC (Longhorn expands online), then change this and
+  # `kubectl delete sts paseo-generic -n paseo-generic --cascade=orphan` so ArgoCD
+  # can recreate the StatefulSet (the pod keeps running).
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -233,7 +239,7 @@ spec:
         storageClassName: longhorn
         resources:
           requests:
-            storage: 5Gi
+            storage: 15Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
