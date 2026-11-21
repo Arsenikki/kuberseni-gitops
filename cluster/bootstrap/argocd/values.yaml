@@ -278,6 +278,39 @@ extraObjects:
             key: "Jeeves Agent"
             property: github_app_private_key
 
+  # OCI Helm repository credential so ArgoCD can pull the PRIVATE jeeves charts
+  # (ghcr.io/arsenikki/charts/{jeeves,jeeves-board}: the jeeves, jeeves-dev and
+  # flock apps). Read-only PAT from the shared 1Password `github-packages-ro` item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: arsenikki-charts
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: arsenikki-charts
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            name: arsenikki-charts
+            type: helm
+            url: ghcr.io/arsenikki/charts
+            enableOCI: "true"
+            username: arsenikki
+      data:
+        - secretKey: password
+          remoteRef:
+            key: "github-packages-ro"
+            property: credential
+
 # Run ArgoCD components on control-plane nodes
 controller:
   # 2026-10-11 incident: with NO resource requests set, the controller was
@@ -306,19 +339,20 @@ repoServer:
   resources:
     requests:
       cpu: 250m
-      memory: 512Mi
+      # 65-90 MiB each when idle (2026-11-21); renders burst above the request.
+      memory: 256Mi
   livenessProbe:
     timeoutSeconds: 10
     periodSeconds: 30
     failureThreshold: 6
-  # Placement: one replica per node, never on the Proxmox host nas. Both replicas
-  # used to sit on control-plane-03 (nas: 4 cores for 9 vCPUs), so every render
-  # after a merge saturated nas and starved everything else on it (Music Assistant
-  # stuttered), and losing nas would have stopped all renders. The control planes
-  # are short on memory (~650Mi free at worst over 7 days), so worker-01 (minipc,
-  # idle CPU, ~9Gi free) is allowed and preferred; the second replica lands on
-  # control-plane-01/02. Excluding nas by hostname until the nodes carry a
-  # topology.kubernetes.io/zone label per Proxmox host.
+  # Placement: one replica per node, preferring the two workers, which sit on
+  # different Proxmox hosts (worker-01 on minipc, worker-02 on nas). Losing either
+  # host then leaves one replica rendering. History: both replicas once sat on
+  # control-plane-03 (nas, then a 4-core N5105), so every render after a merge
+  # saturated nas (Music Assistant stuttered), and #935 kept repo-server off nas.
+  # nas is now a Ryzen 5800U and worker-02 has 8 vCPU, so worker-02 is allowed again.
+  # control-plane-03 stays excluded: the control planes are short on memory
+  # (~650Mi free at worst over 7 days).
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -326,14 +360,14 @@ repoServer:
           - matchExpressions:
               - key: kubernetes.io/hostname
                 operator: NotIn
-                values: [control-plane-03, worker-02]
+                values: [control-plane-03]
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 50
           preference:
             matchExpressions:
               - key: kubernetes.io/hostname
                 operator: In
-                values: [worker-01]
+                values: [worker-01, worker-02]
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: kubernetes.io/hostname

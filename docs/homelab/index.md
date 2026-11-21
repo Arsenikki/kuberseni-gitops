@@ -10,7 +10,7 @@ base lives in a private companion repo (see [Deeper docs](#deeper-docs) below).
 ## What this is
 
 - **Kubernetes** cluster named `kuberseni`, running **Talos Linux** (immutable, API-managed OS) on VMs.
-- Virtualized on **Proxmox** across three physical machines; VMs and the OPNSense/TrueNAS config are provisioned with **OpenTofu** (`infra/terraform/`), Talos machine config rendered by **Talhelper** (`infra/talos/talconfig.yaml`).
+- Virtualized on **Proxmox** across three physical machines; VMs and the OPNSense/TrueNAS config are provisioned with **OpenTofu** (`infra/terraform/`), Talos machine config rendered and applied by **topf** (`infra/talos/topf.yaml`).
 - Everything in-cluster is **GitOps** — **ArgoCD** app-of-apps continuously syncs the `cluster/` tree from `Arsenikki/kuberseni-gitops`. Don't hand-fix drift; commit it (ArgoCD self-heals).
 - Maintenance is (partly) autonomous: **Jeeves** turns a GitHub issue labelled `jeeves` into a reviewed PR. This repo is registered and eligible.
 
@@ -28,7 +28,7 @@ base lives in a private companion repo (see [Deeper docs](#deeper-docs) below).
 | CNI | Cilium |
 | Storage | Longhorn (in-cluster, default 2 replicas) + TrueNAS Scale over NFS (ZFS mirror) |
 | GitOps | ArgoCD app-of-apps (`cluster/argocd/root-app.yaml`), repo `Arsenikki/kuberseni-gitops` |
-| IaC | OpenTofu (`tofu`) + Talhelper; secrets sops-encrypted |
+| IaC | OpenTofu (`tofu`) + topf (Talos config); secrets sops-encrypted |
 | Secrets | External Secrets Operator + 1Password Connect |
 | Automation | Jeeves (issue → PR), Renovate (dependency PRs) |
 
@@ -61,4 +61,3 @@ repo, under `kuberseni-gitops/docs/`.
 ## Handing work to Jeeves
 
 File **one GitHub issue per deliverable, labelled `jeeves`**, in `Arsenikki/kuberseni-gitops`. That label is the only trigger; the prod instance claims it within ~5 min. Write the body for an agent — desired end state, acceptance criteria, files/paths to touch, and repo rules (sops-encrypted secrets, pin versions never `latest`, commit ArgoCD drift rather than hand-fixing it). Changes touching `cluster/**` are always left for human review; low-risk, non-behavioral changes elsewhere can auto-merge once the gate is green. See the Jeeves page in `codex` (linked above) for details.
-

@@ -33,8 +33,7 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
       # Soft-spread the Paseo daemons (paseo-apps/generic/jeeves) across workers: they
-      # are the heaviest pods and two had landed on 3-vCPU worker-02. Soft because there
-      # are 3 daemons (RWO PVCs) on 2 workers.
+      # are the heaviest pods. Soft because there are 3 daemons (RWO PVCs) on 2 workers.
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -47,11 +46,16 @@ spec:
                     app.kubernetes.io/part-of: paseo-homelab
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-4
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-8
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). One-time kernel login: agy-acp-muzzle --login.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             # Claude Code auth (claude provider) — reuse the shared work token.
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom:
