@@ -35,7 +35,7 @@ data:
     # "What got built": merged PRs from the Jeeves board activity log (no AI).
     jeeves:
       enabled: true
-      board_url: http://flock.flock.svc.cluster.local:8099/api/v1
+      board_url: http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1
       lookback_hours: 24
 
     news:

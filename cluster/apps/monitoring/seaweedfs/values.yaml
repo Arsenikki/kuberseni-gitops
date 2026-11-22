@@ -32,7 +32,12 @@ volume:
       type: "persistentVolumeClaim"
       storageClass: "longhorn"
       size: "20Gi"
-      maxVolumes: 0
+      # 300 explicit (was 0 = auto = disk/volumeSizeLimit ≈ 99). 2026-11-21: all 99 slots
+      # were allocated (each collection pre-grows 7 volumes, several near-empty) while
+      # only 3.7 of 19.5 GiB was used, so new volumes could not grow and mimir-ruler
+      # crashlooped again on failed rule-object reads. Slots are only a count; actual
+      # disk use is still bounded by the 20Gi PVC.
+      maxVolumes: 300
   idx:
     type: "persistentVolumeClaim"
     size: "5Gi"
