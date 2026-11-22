@@ -30,6 +30,25 @@ spec:
             severity: warning
           annotations:
             summary: "Filesystem on {{ $labels.instance }} ({{ $labels.mountpoint }}) below 10% free"
+        # The kubelet hard-evicts pods at 15% free on /var (nodefs/imagefs), so the
+        # generic 10% alert above only fires after pods are already gone. This warns
+        # first. Bit worker-01 on 2026-11-14/16 (digests and paseo-generic evicted).
+        - alert: NodeVarFilesystemNearEviction
+          expr: |
+            node_filesystem_avail_bytes{mountpoint="/var"}
+              / node_filesystem_size_bytes{mountpoint="/var"} < 0.20
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.instance }} /var below 20% free; kubelet evicts pods at 15%"
+        - alert: KubeNodeDiskPressure
+          expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} has DiskPressure: pods are being evicted"
         - alert: NodeMemoryHigh
           expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
           for: 15m

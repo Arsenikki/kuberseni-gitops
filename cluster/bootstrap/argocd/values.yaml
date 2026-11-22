@@ -69,7 +69,7 @@ notifications:
     # The Jeeves board's activity log (in-cluster, no auth: the board attributes
     # writes by X-Jeeves-Actor). Deploy results show up there for every agent to see.
     "service.webhook.jeeves-board": |
-      url: http://flock.flock.svc.cluster.local:8099/api/v1
+      url: http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1
       headers:
         - name: Content-Type
           value: application/json
@@ -278,6 +278,39 @@ extraObjects:
             key: "Jeeves Agent"
             property: github_app_private_key
 
+  # OCI Helm repository credential so ArgoCD can pull the PRIVATE jeeves charts
+  # (ghcr.io/arsenikki/charts/{jeeves,jeeves-board}: the jeeves, jeeves-dev and
+  # jeeves-board apps). Read-only PAT from the shared 1Password `github-packages-ro` item.
+  - apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
+    metadata:
+      name: arsenikki-charts
+      namespace: argocd
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: onepassword
+      target:
+        name: arsenikki-charts
+        creationPolicy: Owner
+        template:
+          mergePolicy: Merge
+          metadata:
+            labels:
+              argocd.argoproj.io/secret-type: repository
+          data:
+            name: arsenikki-charts
+            type: helm
+            url: ghcr.io/arsenikki/charts
+            enableOCI: "true"
+            username: arsenikki
+      data:
+        - secretKey: password
+          remoteRef:
+            key: "github-packages-ro"
+            property: credential
+
 # Run ArgoCD components on control-plane nodes
 controller:
   # 2026-10-11 incident: with NO resource requests set, the controller was
@@ -306,13 +339,41 @@ repoServer:
   resources:
     requests:
       cpu: 250m
-      memory: 512Mi
+      # 65-90 MiB each when idle (2026-11-21); renders burst above the request.
+      memory: 256Mi
   livenessProbe:
     timeoutSeconds: 10
     periodSeconds: 30
     failureThreshold: 6
-  nodeSelector:
-    node-role.kubernetes.io/control-plane: ""
+  # Placement: one replica per node, preferring the two workers, which sit on
+  # different Proxmox hosts (worker-01 on minipc, worker-02 on nas). Losing either
+  # host then leaves one replica rendering. History: both replicas once sat on
+  # control-plane-03 (nas, then a 4-core N5105), so every render after a merge
+  # saturated nas (Music Assistant stuttered), and #935 kept repo-server off nas.
+  # nas is now a Ryzen 5800U and worker-02 has 8 vCPU, so worker-02 is allowed again.
+  # control-plane-03 stays excluded: the control planes are short on memory
+  # (~650Mi free at worst over 7 days).
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: [control-plane-03]
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values: [worker-01, worker-02]
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      # count only the current ReplicaSet, so a rollout isn't blocked by old pods
+      matchLabelKeys: [pod-template-hash]
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists

@@ -27,6 +27,14 @@ spec:
             matchLabels: { app: paseo-apps }
       ports:
         - { protocol: TCP, port: 6767 }
+    # Jeeves board API (read-only GET /activity) for the "Shipped" section.
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: jeeves-board }
+          podSelector:
+            matchLabels: { app: jeeves-board }
+      ports:
+        - { protocol: TCP, port: 8099 }
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

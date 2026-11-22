@@ -1,0 +1,21 @@
+---
+# qBittorrent slow mode while the gaming PC is on. Ported from the Node-RED
+# "qBittorrent / Gaming" tab (which also synced once at startup).
+automation:
+  - id: qbittorrent_slow_mode_while_gaming
+    alias: "Gaming: qBittorrent slow mode while gaming PC is on"
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.gaming_pc
+        to: ["on", "off"]
+      - trigger: homeassistant
+        event: start
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.gaming_pc
+        state: ["on", "off"]
+    actions:
+      - action: "switch.turn_{{ states('binary_sensor.gaming_pc') }}"
+        target:
+          entity_id: switch.qbittorrent_alternative_speed

@@ -1,0 +1,38 @@
+# Talos cluster config for topf (https://github.com/postfinance/topf), which replaced the
+# archived talhelper. Per-node machine configs are assembled from the patch folders here:
+#   all/ -> control-plane/ | worker/ -> node/<host>/   (lexicographic order within each)
+# Secrets: secrets.yaml (Talos secrets bundle, SOPS-encrypted; topf decrypts it via sops).
+#
+#   topf render -o /tmp/talos   # inspect generated configs (contain secrets: don't commit)
+#   topf apply --dry-run        # diff against live nodes (redacted), exit 2 if changes
+#   topf apply --mode=no-reboot
+#   topf upgrade                # Talos OS upgrade to the installer image in the config
+clusterName: kuberseni
+clusterEndpoint: https://192.168.1.40:6443
+# renovate: datasource=github-releases depName=kubernetes/kubernetes
+kubernetesVersion: v1.35.2
+# renovate: datasource=github-releases depName=siderolabs/talos
+talosVersion: v1.13.4
+
+# Image Factory schematic (system extensions): ID is computed locally from the file.
+# qemu-guest-agent + iscsi-tools + util-linux-tools (Longhorn) = 53513e54bb...
+schematicId: "@schematic.yaml"
+
+nodes:
+  - host: control-plane-01
+    ip: 192.168.1.41
+    role: control-plane
+  - host: control-plane-02
+    ip: 192.168.1.42
+    role: control-plane
+  - host: control-plane-03
+    ip: 192.168.1.43
+    role: control-plane
+  - host: worker-01
+    ip: 192.168.1.44
+    role: worker
+    # base extensions + i915 + intel-ucode (Plex iGPU) = a7eb3dff56...
+    schematicId: "@schematic-gpu.yaml"
+  - host: worker-02
+    ip: 192.168.1.45
+    role: worker

@@ -83,6 +83,29 @@
       // helm-values manager from cluster/apps/arc/runners/values.yaml.)
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
+    // Jeeves: private OCI charts from its own releases (cluster/apps/jeeves/README.md).
+    // ghcr has no release timestamps, so timestamp-optional (as for ARC above);
+    // and no 3-day wait: we cut these releases ourselves.
+    {
+      "description": ["Jeeves dev: the edge channel, auto-merge every release"],
+      "matchFileNames": ["cluster/argocd/apps/jeeves-dev.yaml"],
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": null,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": ["jeeves/dev"]
+    },
+    {
+      "description": ["Jeeves prod + board: one PR per release; merging it is the promotion"],
+      "matchFileNames": ["cluster/argocd/apps/jeeves.yaml", "cluster/argocd/apps/jeeves-board.yaml"],
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": null,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "automerge": false,
+      "groupName": "jeeves prod",
+      "addLabels": ["jeeves/prod"]
+    },
     // commit message topics
     {
       "matchDatasources": ["helm"],

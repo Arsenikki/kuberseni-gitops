@@ -1,0 +1,82 @@
+---
+# Living-room projector (Formovie, Android TV). In standby its Wi-Fi sleeps, so
+# media_player.living_room_tv (androidtv_remote) goes unavailable and a plain
+# turn_on is dropped while HomeKit still tells Siri it worked. The projector has
+# "Wake on wireless network" on, so a magic packet to its Wi-Fi MAC wakes it.
+# media_player.projector wraps the androidtv_remote entity with that wake, and is
+# what HomeKit exposes as the TV.
+#
+# The MAC is the projector's hardware Wi-Fi MAC (MAC randomization is off), also
+# the Kea reservation for .151 in infra/terraform/opnsense.tf.
+media_player:
+  - platform: universal
+    name: Projector
+    unique_id: projector_universal
+    device_class: tv
+    children:
+      - media_player.living_room_tv
+    # Declared so HomeKit sees the same features while the projector is asleep.
+    commands:
+      turn_on:
+        action: script.projector_turn_on
+      turn_off:
+        action: media_player.turn_off
+        target:
+          entity_id: media_player.living_room_tv
+      media_play_pause:
+        action: media_player.media_play_pause
+        target:
+          entity_id: media_player.living_room_tv
+      media_play:
+        action: media_player.media_play
+        target:
+          entity_id: media_player.living_room_tv
+      media_pause:
+        action: media_player.media_pause
+        target:
+          entity_id: media_player.living_room_tv
+      media_stop:
+        action: media_player.media_stop
+        target:
+          entity_id: media_player.living_room_tv
+      volume_mute:
+        action: media_player.volume_mute
+        target:
+          entity_id: media_player.living_room_tv
+        data:
+          is_volume_muted: "{{ is_volume_muted }}"
+
+script:
+  projector_turn_on:
+    alias: "Projector: turn on (wake over Wi-Fi)"
+    mode: single
+    sequence:
+      - action: wake_on_lan.send_magic_packet
+        data:
+          mac: "38:54:39:6c:bc:dd"
+          broadcast_address: 192.168.1.255
+      # The magic packet wakes it within ~5 s, but androidtv_remote only notices on
+      # its next reconnect attempt, which backs off to over a minute. Reload the
+      # integration until it connects, so a turn_off right after works too.
+      - if:
+          - condition: template
+            value_template: "{{ states('media_player.living_room_tv') in ['unavailable', 'unknown'] }}"
+        then:
+          - repeat:
+              sequence:
+                - delay: 3
+                - action: homeassistant.reload_config_entry
+                  target:
+                    entity_id: media_player.living_room_tv
+                - wait_template: "{{ states('media_player.living_room_tv') not in ['unavailable', 'unknown'] }}"
+                  timeout: 5
+              until: "{{ wait.completed or repeat.index >= 8 }}"
+      # Already awake (or woken but still reporting off): use the normal power-on.
+      - if:
+          - condition: state
+            entity_id: media_player.living_room_tv
+            state: "off"
+        then:
+          - action: media_player.turn_on
+            target:
+              entity_id: media_player.living_room_tv

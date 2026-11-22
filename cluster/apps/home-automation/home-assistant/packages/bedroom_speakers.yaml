@@ -1,0 +1,76 @@
+---
+# Power the bedroom active monitors (Zigbee plug) when Music Assistant plays to
+# Bedroom (bedroom-pi, Sendspin). Off once nothing has played for 10 minutes;
+# resuming within that window resets the timer (the for: never completes).
+# A plug switched on by hand but never used also goes off after 10 minutes.
+automation:
+  - id: bedroom_speakers_follow_music_assistant
+    alias: "Bedroom: speakers follow Music Assistant"
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: media_player.bedroom
+        to: [playing, buffering]
+        id: start
+      - trigger: state
+        entity_id: media_player.bedroom
+        not_to: [playing, buffering]
+        for: "00:10:00"
+        id: idle
+      - trigger: state
+        entity_id: switch.bedroom_speakers
+        to: "on"
+        for: "00:10:00"
+        id: idle
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: start
+            sequence:
+              - action: switch.turn_on
+                target:
+                  entity_id: switch.bedroom_speakers
+          - conditions:
+              - condition: trigger
+                id: idle
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: media_player.bedroom
+                    state: [playing, buffering]
+            sequence:
+              - action: switch.turn_off
+                target:
+                  entity_id: switch.bedroom_speakers
+
+  # for: timers live in memory, so a restart (or reloading the automation above)
+  # drops a pending "off in 10 min". Re-arm it: if the speakers are on and nothing
+  # plays, give playback 10 minutes to start, otherwise switch them off.
+  - id: bedroom_speakers_off_after_restart
+    alias: "Bedroom: speakers off after restart if unused"
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    conditions:
+      - condition: state
+        entity_id: switch.bedroom_speakers
+        state: "on"
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: media_player.bedroom
+            state: [playing, buffering]
+    actions:
+      - wait_template: "{{ is_state('media_player.bedroom', ['playing', 'buffering']) }}"
+        timeout: "00:10:00"
+        continue_on_timeout: true
+      - if:
+          - "{{ not wait.completed and is_state('switch.bedroom_speakers', 'on') }}"
+        then:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.bedroom_speakers
