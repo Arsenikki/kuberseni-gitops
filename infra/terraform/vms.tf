@@ -26,26 +26,24 @@ locals {
     worker-01 = { proxmox_node = "minipc", network_bridge = "vmbr0", vm_id = 2001, cores = 14, memory = 20480, disk_size = 80, extra_disk_size = 500, ip = "192.168.1.44", mac = "BC:24:11:0F:1D:1D", machine_type = "q35", gpu_mapping = "minipc-igpu" }
     # worker-02: 130GB Longhorn data disk on local-lvm (grown live from 100; Proxmox
     # can't shrink, so the code must never go below the live size). local-lvm is a
-    # thin pool that is ~98% full (2026-10-31) — don't grow this further.
-    # 14 GiB (was 16, was 24): nas is only 32 GiB and also hosts TrueNAS(12) +
-    # cp-03(6); 16(w02)+12(nas)+6(cp03)=34 GiB overcommits the 31 GiB host, which
-    # sits with ~1 GiB free and multiple GiB swapped. worker-02 has only ever used
-    # ~11.5 GiB, so 14 frees ~2 GiB of real host RAM while leaving comfortable
-    # headroom. NOTE: applying this reboots worker-02 (balloon:0 → no hot-resize);
-    # do it on a maintenance window AFTER metrics-server + the real-usage
-    # descheduler land and worker-02 has rebalanced to a light pod set, so the
-    # reboot doesn't repack a heavy load onto the smaller VM.
-    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 3,  memory = 14336, disk_size = 50, extra_disk_size = 130, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
+    # thin pool (~87% full 2026-11-20) — don't grow this further until the nas boot
+    # NVMe is replaced with a bigger one.
+    # cores=8 (was 3): nas moved 2026-11-20 from a 4-core Celeron N5105 to a Ryzen 7
+    # 5800U (8C/16T). nas now runs TrueNAS 4 + cp-03 2 + worker-02 8 = 14 vCPU on 16
+    # threads, so worker-02 can carry a real share of pods instead of worker-01 alone.
+    # 14 GiB RAM unchanged: nas has 32 GiB (TrueNAS 8 + cp-03 6 + worker-02 14 = 28)
+    # and runs ~1 GiB free — RAM, not CPU, is the limit until a 2x32 GiB upgrade.
+    worker-02 = { proxmox_node = "nas",    network_bridge = "vmbr0", vm_id = 2002, cores = 8,  memory = 14336, disk_size = 50, extra_disk_size = 130, ip = "192.168.1.45", mac = "BC:24:11:EE:72:F2", machine_type = "q35", gpu_mapping = null }
   }
 
   # Proxmox cpuunits = relative CPU weight between VMs on the same host (PVE default
-  # 100 on cgroup v2). nas is a 4-core Celeron N5105 running 9 vCPUs (TrueNAS 4 +
-  # cp-03 2 + worker-02 3), so under contention etcd (cp-03) wins first, then
-  # worker-02 (Longhorn engines); TrueNAS is 50 (truenas-scale.tf).
-  # Unlisted VMs keep the provider default.
+  # 100 on cgroup v2). On the old 4-core N5105 nas, cp-03 (etcd) had 200 and
+  # worker-02 150 so they won CPU contention over TrueNAS (50). The 5800U nas has
+  # spare threads (14 vCPU on 16), so all are back at the default 100. Explicit
+  # (not removed) so an apply resets the live 200/150 instead of leaving them.
   cpu_units = {
-    control-plane-03 = 200
-    worker-02        = 150
+    control-plane-03 = 100
+    worker-02        = 100
   }
 
   all_vms       = merge(local.controlplane_vms, local.worker_vms)
