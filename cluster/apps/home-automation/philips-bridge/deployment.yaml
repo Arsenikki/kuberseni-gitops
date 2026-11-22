@@ -21,6 +21,7 @@ spec:
       labels:
         app: philips-bridge
     spec:
+      priorityClassName: kuberseni-critical
       # The purifier's CoAP status reply is a large, IP-fragmented UDP datagram.
       # On the pod network it goes through Cilium's BPF masquerade (vxlan), which
       # cannot reverse-NAT the non-first fragments (no UDP ports in them), so the
