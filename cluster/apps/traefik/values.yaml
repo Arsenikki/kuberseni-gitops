@@ -66,3 +66,6 @@ resources:
     memory: 100Mi
   limits:
     memory: 500Mi
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+priorityClassName: kuberseni-critical

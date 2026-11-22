@@ -1,0 +1,58 @@
+---
+# Lobby candle lights follow the front-door motion sensor. Ported from the
+# Node-RED "Lights" tab (front_door_motion_sensor): on with motion, off 2 minutes
+# after motion clears; new motion within those 2 minutes keeps them on.
+automation:
+  - id: lobby_lights_follow_motion
+    alias: "Lobby: lights follow front door motion"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        to: "on"
+        id: motion
+      - trigger: state
+        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        to: "off"
+        for: "00:02:00"
+        id: clear
+    actions:
+      - action: "light.turn_{{ 'on' if trigger.id == 'motion' else 'off' }}"
+        target:
+          entity_id:
+            - light.lobby_candle_light_01
+            - light.lobby_candle_light_02
+            - light.lobby_candle_light_03
+
+  # for: timers live in memory: a restart (or reloading the automation above)
+  # while the 2-minute off-timer runs would leave the lobby lit until the next
+  # motion. Re-arm it: lights on and no motion -> off unless motion within 2 min.
+  - id: lobby_lights_off_after_restart
+    alias: "Lobby: lights off after restart if no motion"
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        state: "off"
+      - condition: state
+        entity_id: [light.lobby_candle_light_01, light.lobby_candle_light_02, light.lobby_candle_light_03]
+        match: any
+        state: "on"
+    actions:
+      - wait_template: "{{ is_state('binary_sensor.front_door_motion_sensor_occupancy', 'on') }}"
+        timeout: "00:02:00"
+        continue_on_timeout: true
+      - if:
+          - "{{ not wait.completed }}"
+        then:
+          - action: light.turn_off
+            target:
+              entity_id:
+                - light.lobby_candle_light_01
+                - light.lobby_candle_light_02
+                - light.lobby_candle_light_03
