@@ -159,6 +159,12 @@ spec:
               value: /workspaces/go
             - name: GOCACHE
               value: /workspaces/go-cache
+            # Keep one agent's go test / golangci-lint from eating the whole CPU limit while
+            # other agents run (2026-11-22: 3 parallel code agents were CPU-throttled 43-58%).
+            - name: GOMAXPROCS
+              value: "2"
+            - name: GOFLAGS
+              value: "-p=2"
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -181,9 +187,12 @@ spec:
             - { name: jeeves-bin, mountPath: /opt/bin, readOnly: true } # injected jeeves binary (git-credential helper)
             # Seed Claude Code's user settings.json so the agent runs non-interactively.
             - { name: claude-settings, mountPath: /data/paseo/claude/settings.json, subPath: settings.json, readOnly: true }
+          # Measured 2026-11-22: ~0.55Gi idle, 1.47Gi with 3 code agents, 0 OOM kills in 34h, but
+          # CPU throttled 43-58% at 2 cores. Request what it really uses; limit leaves room for
+          # prod (3+2+2 agents) + dev (1+1+1) running at once.
           resources:
-            requests: { cpu: 100m, memory: 512Mi }
-            limits: { cpu: "2", memory: 6Gi }
+            requests: { cpu: 500m, memory: 2Gi }
+            limits: { cpu: "4", memory: 8Gi }
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker
