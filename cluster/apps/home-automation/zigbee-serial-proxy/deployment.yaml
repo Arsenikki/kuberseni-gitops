@@ -19,6 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: zigbee-serial-proxy
     spec:
+      priorityClassName: kuberseni-critical
       nodeSelector:
         kubernetes.io/hostname: "control-plane-01"
       tolerations:

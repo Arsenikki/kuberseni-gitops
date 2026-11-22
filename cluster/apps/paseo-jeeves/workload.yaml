@@ -68,18 +68,6 @@ spec:
         runAsNonRoot: true
         fsGroup: 1000 # make the PVC writable by uid 1000 (all containers)
         fsGroupChangePolicy: OnRootMismatch # skip the recursive chown when the PVC root already matches (fast rolls; the data PVC has ~20k+ files)
-      # Keep the Paseo daemons off worker-02: it is a 3-vCPU VM on the 4-core nas host
-      # (shared with TrueNAS + cp-03) and also runs Longhorn engines. Agent spikes
-      # (builds, renovate, gh fan-out) pinned it at load ~100, starving Longhorn's
-      # probes into crashloops. Hard rule — a soft spread put a daemon back on it.
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: [worker-02]
       initContainers:
         # The shared paseo-homelab image carries no `jeeves` binary. Copy it from the
         # sidecar image (same jeeves tag the token-broker runs) into a shared
@@ -102,7 +90,7 @@ spec:
         # claude-code + the baked Go toolchain + procps/lbzip2; the jeeves binary is injected above and
         # git auth is wired via the generic $GIT_CREDENTIAL_HELPER entrypoint hook.
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-1
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-8
           imagePullPolicy: Always
           ports:
             - { containerPort: 6767, name: daemon }
@@ -111,6 +99,11 @@ spec:
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). One-time kernel login: agy-acp-muzzle --login.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             # Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
             # dials this Service's FQDN, so those names must be allow-listed. The
             # entrypoint always adds loopback + the pod hostname.
@@ -166,6 +159,12 @@ spec:
               value: /workspaces/go
             - name: GOCACHE
               value: /workspaces/go-cache
+            # Keep one agent's go test / golangci-lint from eating the whole CPU limit while
+            # other agents run (2026-11-22: 3 parallel code agents were CPU-throttled 43-58%).
+            - name: GOMAXPROCS
+              value: "2"
+            - name: GOFLAGS
+              value: "-p=2"
           readinessProbe:
             tcpSocket: { port: 6767 }
             initialDelaySeconds: 5
@@ -188,9 +187,12 @@ spec:
             - { name: jeeves-bin, mountPath: /opt/bin, readOnly: true } # injected jeeves binary (git-credential helper)
             # Seed Claude Code's user settings.json so the agent runs non-interactively.
             - { name: claude-settings, mountPath: /data/paseo/claude/settings.json, subPath: settings.json, readOnly: true }
+          # Measured 2026-11-22: ~0.55Gi idle, 1.47Gi with 3 code agents, 0 OOM kills in 34h, but
+          # CPU throttled 43-58% at 2 cores. Request what it really uses; limit leaves room for
+          # prod (3+2+2 agents) + dev (1+1+1) running at once.
           resources:
-            requests: { cpu: 100m, memory: 512Mi }
-            limits: { cpu: "2", memory: 6Gi }
+            requests: { cpu: 500m, memory: 2Gi }
+            limits: { cpu: "4", memory: 8Gi }
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.
         - name: token-broker

@@ -97,7 +97,9 @@ podSecurityContext:
 resources:
   requests:
     cpu: 250m
-    memory: 1Gi
+    # ~290 MiB between runs (2026-11-21); scan bursts go above the request, up
+    # to the 4 GiB limit.
+    memory: 512Mi
   limits:
     cpu: "2"
     memory: 4Gi

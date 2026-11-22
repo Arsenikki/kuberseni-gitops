@@ -50,7 +50,7 @@ ArgoCD, authentik or Longhorn data on worker-01/02. Ways to provide it:
 
 | Option | Containment | Cost |
 |---|---|---|
-| Dedicated Talos worker VM (e.g. `ci-01`, 4 vCPU / 8 GiB / 80 GB, no Longhorn disk), labelled + tainted in `infra/talos/talconfig.yaml` | Escape = root on a node that runs only CI and the node DaemonSets (Cilium, monitoring); still on the LAN | RAM: every Proxmox host is ~full (minipc 29.9/31 GiB, nas 30/31, router 14/15) — needs a RAM upgrade or freeing a VM |
+| Dedicated Talos worker VM (e.g. `ci-01`, 4 vCPU / 8 GiB / 80 GB, no Longhorn disk), labelled + tainted via a `node/ci-01/` patch in `infra/talos/` | Escape = root on a node that runs only CI and the node DaemonSets (Cilium, monitoring); still on the LAN | RAM: every Proxmox host is ~full (minipc 29.9/31 GiB, nas 30/31, router 14/15) — needs a RAM upgrade or freeing a VM |
 | Kata Containers `RuntimeClass` (siderolabs `kata-containers` extension) on an existing worker, pods with `runtimeClassName: kata` | Each runner pod is its own micro-VM: privileged dind is root only inside it | Talos extension + reboot of that worker; nested virtualisation on the Proxmox host (VMs already use `cpu: host`); per-pod VM overhead |
 | Both (dedicated node running Kata) | Best | Both |
 

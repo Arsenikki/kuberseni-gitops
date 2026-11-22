@@ -85,3 +85,7 @@ persistence:
     existingClaim: zigbee2mqtt
     globalMounts:
       - path: /config
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+defaultPodOptions:
+  priorityClassName: kuberseni-critical
