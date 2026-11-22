@@ -6,7 +6,7 @@
 # topf renders + applies Talos machine config (infra/talos/topf.yaml); replaced the
 # archived talhelper. talosctl stays for ad-hoc node operations.
 "github:postfinance/topf" = "0.6.2"
-talosctl = "1.14.5"
+talosctl = "1.14.6"
 
 # Configuration management
 sops = "3.13.2"
