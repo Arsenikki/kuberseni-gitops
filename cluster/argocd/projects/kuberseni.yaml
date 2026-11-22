@@ -34,6 +34,8 @@ spec:
     - https://mend.github.io/renovate-ce-ee
     # OCI Helm charts are listed without the oci:// prefix (same form as repoURL).
     - ghcr.io/actions/actions-runner-controller-charts
+    # Private jeeves + jeeves-board charts (arsenikki-charts repo credential).
+    - ghcr.io/arsenikki/charts
   destinations:
     - server: https://kubernetes.default.svc
       namespace: "*"

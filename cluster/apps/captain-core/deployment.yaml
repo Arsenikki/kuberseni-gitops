@@ -101,7 +101,8 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 512Mi
+              # ~75 MiB in use (2026-11-21); the 1 GiB limit covers bursts.
+              memory: 256Mi
             limits:
               cpu: 500m
               memory: 1Gi

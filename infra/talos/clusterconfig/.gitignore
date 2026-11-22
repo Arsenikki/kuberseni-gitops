@@ -1,6 +1,4 @@
-kuberseni-control-plane-01.yaml
-kuberseni-control-plane-02.yaml
-kuberseni-control-plane-03.yaml
-kuberseni-worker-01.yaml
-talosconfig
-kuberseni-worker-02.yaml
+# Rendered by `task talos:render` / `task talos:talosconfig`: plaintext machine configs
+# and the talosctl client config, all containing cluster secrets. Never commit.
+*
+!.gitignore

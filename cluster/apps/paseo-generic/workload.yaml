@@ -52,6 +52,7 @@ spec:
         app: paseo-generic
         app.kubernetes.io/part-of: paseo-homelab
     spec:
+      priorityClassName: kuberseni-critical
       serviceAccountName: paseo-generic
       imagePullSecrets:
         - name: ghcr-credentials
@@ -60,31 +61,24 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
-      # Keep the Paseo daemons off worker-02: it is a 3-vCPU VM on the 4-core nas host
-      # (shared with TrueNAS + cp-03) and also runs Longhorn engines. Agent spikes
-      # (builds, renovate, gh fan-out) pinned it at load ~100, starving Longhorn's
-      # probes into crashloops. Hard rule — a soft spread put a daemon back on it.
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-15
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-9
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). Kernel login lives in ~/.gemini on the PVC.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            # Daemon bearer auth. The 0.11.2 daemon bcrypts PASEO_PASSWORD from env
+            # Daemon bearer auth. The paseo daemon bcrypts PASEO_PASSWORD from env
             # (resolveAuthConfig — env wins over any persisted hash), so this alone
             # enables auth with no image/entrypoint change. REQUIRED before exposing
             # this full-shell + cluster-read daemon over the ingress: the Host-header
@@ -102,7 +96,7 @@ spec:
                   name: paseo-agy
                   key: AGY_TOKEN
                   optional: true
-            # Daemon Host-header allow-list: the 0.11.x daemon 403s a TCP client whose
+            # Daemon Host-header allow-list: the paseo daemon 403s a TCP client whose
             # Host isn't listed. SEPARATE from the PASEO_PASSWORD bearer auth above — a
             # client must satisfy BOTH (allow-listed Host AND password). The ingress host
             # must be listed so wss://paseo-generic.arsenikki.casa/ws is accepted; the
@@ -119,6 +113,12 @@ spec:
             # prints; its API calls still go to the in-cluster board Service.
             - name: JEEVES_BOARD_PUBLIC_URL
               value: "https://jeeves.arsenikki.casa"
+            # Plugin host on (config.json is merged, so installed plugins persist). The jeeves
+            # plugin (Arsenikki/paseo-jeeves-plugin) reads cards from the in-cluster board API.
+            - name: PASEO_PLUGINS_ENABLED
+              value: "1"
+            - name: JEEVES_BOARD_URL
+              value: "http://jeeves-board.jeeves-board.svc.cluster.local:8099"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
@@ -161,6 +161,13 @@ spec:
             periodSeconds: 10
           # Same as paseo-apps/paseo-jeeves: restart a daemon that stops accepting connections
           # (a crashed worker the supervisor fails to respawn) instead of leaving it NotReady.
+          # A first start after an upgrade (config migration, plugin builds) or on a slow
+          # node can take minutes; give it up to 5 min before liveness can kill it.
+          startupProbe:
+            tcpSocket:
+              port: 6767
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: 6767
@@ -168,7 +175,7 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
+              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack a node
               memory: 1Gi # observed ~800Mi idle-ish, ~1.5Gi under agent load
             # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
             # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
@@ -187,6 +194,14 @@ spec:
             - name: op-token
               mountPath: /var/run/secrets/1password
               readOnly: true
+            # Scoped Proxmox API token as a file (see secrets.yaml paseo-proxmox).
+            - name: proxmox-token
+              mountPath: /var/run/secrets/proxmox
+              readOnly: true
+            # SSH key for the Proxmox nodes as files (see secrets.yaml paseo-ssh).
+            - name: ssh-key
+              mountPath: /var/run/secrets/ssh
+              readOnly: true
       volumes:
         - name: workspaces
           persistentVolumeClaim:
@@ -199,6 +214,22 @@ spec:
             secretName: paseo-op
             optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
             defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+        - name: proxmox-token
+          secret:
+            secretName: paseo-proxmox
+            optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
+            defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+        - name: ssh-key
+          secret:
+            secretName: paseo-ssh
+            optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
+            defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+  # /data/paseo holds CLAUDE_CONFIG_DIR (session transcripts), GOPATH + GOCACHE,
+  # MISE_DATA_DIR, antigravity state/logs and the local-speech models (~1G), so it
+  # filled 5Gi (ENOSPC, 2026-11-21). volumeClaimTemplates are immutable: to resize,
+  # patch the live PVC (Longhorn expands online), then change this and
+  # `kubectl delete sts paseo-generic -n paseo-generic --cascade=orphan` so ArgoCD
+  # can recreate the StatefulSet (the pod keeps running).
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -208,7 +239,7 @@ spec:
         storageClassName: longhorn
         resources:
           requests:
-            storage: 5Gi
+            storage: 15Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

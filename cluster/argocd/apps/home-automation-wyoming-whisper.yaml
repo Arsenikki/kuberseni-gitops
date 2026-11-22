@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: node-red
+  name: wyoming-whisper
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "5"
@@ -13,16 +13,16 @@ spec:
   sources:
     - repoURL: https://bjw-s-labs.github.io/helm-charts
       chart: app-template
-      targetRevision: 1.5.1
+      targetRevision: 5.0.1
       helm:
         valueFiles:
-          - $values/cluster/apps/home-automation/node-red/values.yaml
+          - $values/cluster/apps/home-automation/wyoming-whisper/values.yaml
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: main
       ref: values
     - repoURL: https://github.com/Arsenikki/kuberseni-gitops
       targetRevision: main
-      path: cluster/apps/home-automation/node-red
+      path: cluster/apps/home-automation/wyoming-whisper
       directory:
         exclude: "values.yaml"
   destination:
