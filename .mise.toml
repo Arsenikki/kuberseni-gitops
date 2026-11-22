@@ -9,7 +9,7 @@
 talosctl = "1.14.6"
 
 # Configuration management
-sops = "3.13.2"
+sops = "3.13.3"
 age = "1.3.2"
 
 # Infrastructure as Code
