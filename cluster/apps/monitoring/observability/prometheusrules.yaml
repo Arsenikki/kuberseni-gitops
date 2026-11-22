@@ -155,6 +155,8 @@ spec:
             severity: warning
           annotations:
             summary: "No up series for scrape job {{ $labels.job }} in 15m"
+        # Alloy's ServiceMonitor configgen sets job to the Service name when the
+        # ServiceMonitor has no jobLabel, so this is the mimir-compactor Service.
         - alert: ScrapeJobMissing
           expr: absent_over_time(up{job="mimir-compactor"}[15m])
           for: 10m
