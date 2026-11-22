@@ -19,8 +19,9 @@ config:
   # posts to a dedicated forum topic in the shared group.
   TELEGRAM_POLL: "true"
   TELEGRAM_TOPIC_ID: "471"
-  # Light footprint in the shared cluster.
-  JEEVES_MAX_INPROGRESS_AGENTS: "2"
+  # Light footprint: dev shares the paseo-jeeves daemon with prod, so keep it to one
+  # agent per phase (it only runs occasional smoke tests).
+  JEEVES_MAX_INPROGRESS_AGENTS: "1"
   JEEVES_MAX_REVIEW_AGENTS: "1"
   JEEVES_MAX_VERIFY_AGENTS: "1"
 
