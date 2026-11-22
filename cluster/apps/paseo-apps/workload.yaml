@@ -1,6 +1,6 @@
 ---
 # paseo-apps — the shared Paseo daemon for the homelab app agents (resepti, coachi,
-# untappi, …). Built from the portable `paseo-homelab` image (paseo 0.11.x + Claude
+# untappi, …). Built from the portable `paseo-homelab` image (paseo 0.15.x + Claude
 # Code + Antigravity/agy). Apps drive it over the paseo CLI pointed at the
 # `paseo-apps` service; each app runs agents in its own workspace + MCP.
 #
@@ -33,8 +33,7 @@ spec:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
       # Soft-spread the Paseo daemons (paseo-apps/generic/jeeves) across workers: they
-      # are the heaviest pods and two had landed on 3-vCPU worker-02. Soft because there
-      # are 3 daemons (RWO PVCs) on 2 workers.
+      # are the heaviest pods. Soft because there are 3 daemons (RWO PVCs) on 2 workers.
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -47,18 +46,23 @@ spec:
                     app.kubernetes.io/part-of: paseo-homelab
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.11.2-12
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-9
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
               value: /data/paseo
+            # Opt-in agy-muzzle Paseo provider: official Antigravity ACP kernel behind
+            # agy-acp-muzzle (locked runs via --env AGY_LOCKDOWN=1, history across
+            # restarts, idle shutdown). One-time kernel login: agy-acp-muzzle --login.
+            - name: PASEO_AGY_MUZZLE
+              value: "1"
             # Claude Code auth (claude provider) — reuse the shared work token.
             - name: CLAUDE_CODE_OAUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: paseo-secrets
                   key: CLAUDE_CODE_OAUTH_TOKEN
-            # Daemon bearer auth. The 0.11.2 daemon bcrypts PASEO_PASSWORD from env
+            # Daemon bearer auth. The paseo daemon bcrypts PASEO_PASSWORD from env
             # (env takes precedence over any persisted hash), so this alone enables
             # auth — no entrypoint/image change. Every client (resepti-api) must send
             # the same value; both read it from the paseo-apps-password 1Password item.
@@ -85,7 +89,7 @@ spec:
             # shell/exec. (paseo-generic leaves this unset so its debug shell is full.)
             - name: AGY_FORCE_SANDBOX
               value: "1"
-            # Daemon Host-header allowlist: the 0.11.x daemon 403s a TCP client whose
+            # Daemon Host-header allowlist: the paseo daemon 403s a TCP client whose
             # Host isn't listed. This is a SEPARATE layer from the PASEO_PASSWORD bearer
             # auth above — a client must satisfy BOTH (allow-listed Host AND password).
             # In-cluster apps dial the Service FQDN, so it must be allowed. The
@@ -104,6 +108,13 @@ spec:
               port: 6767
             initialDelaySeconds: 10
             periodSeconds: 10
+          # A first start after an upgrade (config migration, plugin builds) or on a slow
+          # node can take minutes; give it up to 5 min before liveness can kill it.
+          startupProbe:
+            tcpSocket:
+              port: 6767
+            periodSeconds: 10
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: 6767

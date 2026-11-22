@@ -19,14 +19,13 @@ configMapGenerator:
       - blueprints/app-argocd.yaml
       - blueprints/app-bazarr.yaml
       - blueprints/app-chrome.yaml
-      - blueprints/app-flock.yaml
+      - blueprints/app-jeeves-board.yaml
       - blueprints/app-grafana.yaml
       - blueprints/app-home-assistant.yaml
       - blueprints/app-homepage.yaml
       - blueprints/app-lidarr.yaml
       - blueprints/app-longhorn.yaml
       - blueprints/app-music-assistant.yaml
-      - blueprints/app-nodered.yaml
       - blueprints/app-overseerr.yaml
       - blueprints/app-prowlarr.yaml
       - blueprints/app-qbittorrent.yaml

@@ -1,0 +1,21 @@
+---
+# Transition shim for the flock -> jeeves-board rename: the old in-cluster URL
+# http://flock.flock.svc.cluster.local:8099 keeps working as a CNAME to the new
+# Service. Delete this directory (and its source in
+# cluster/argocd/apps/jeeves-board.yaml, then the `flock` namespace) once no
+# caller uses the old URL.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flock
+  namespace: flock
+spec:
+  type: ExternalName
+  externalName: jeeves-board.jeeves-board.svc.cluster.local
+  ports:
+    - { name: http, port: 8099, targetPort: 8099 }

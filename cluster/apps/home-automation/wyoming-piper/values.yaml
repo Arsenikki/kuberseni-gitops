@@ -1,0 +1,47 @@
+---
+controllers:
+  main:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: rhasspy/wyoming-piper
+          tag: 2.5.4
+          pullPolicy: IfNotPresent
+        args:
+          - --voice
+          - en_GB-alba-medium
+          - --uri
+          - tcp://0.0.0.0:10200
+          - --data-dir
+          - /data
+          - --download-dir
+          - /data
+        env:
+          TZ: Europe/London
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+
+defaultPodOptions:
+  nodeSelector:
+    kubernetes.io/hostname: worker-01
+
+service:
+  main:
+    controller: main
+    type: ClusterIP
+    ports:
+      wyoming:
+        port: 10200
+        protocol: TCP
+
+persistence:
+  data:
+    enabled: true
+    existingClaim: wyoming-piper-data
+    globalMounts:
+      - path: /data

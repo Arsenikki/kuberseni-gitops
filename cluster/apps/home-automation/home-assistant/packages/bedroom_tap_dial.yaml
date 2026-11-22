@@ -1,0 +1,116 @@
+---
+# Hue Tap Dial (zigbee2mqtt bedroom_tap_dial) by the bed: the bedroom light and
+# the Music Assistant player for the bedroom speakers (media_player.bedroom).
+#   button 1        toggle the bedroom light; dial -> brightness
+#   button 2        play/pause; dial -> volume
+#   button 3 / 4    previous / next track; dial -> volume
+#   hold button 2   dial -> volume without touching playback
+# The dial sets the volume while timer.bedroom_tap_dial_volume runs (30 s,
+# restarted by every media button and every turn in volume mode), and the
+# brightness otherwise. Short presses act on release, so a hold isn't also a press.
+timer:
+  bedroom_tap_dial_volume:
+    name: "Bedroom tap dial: volume mode"
+    duration: "00:00:30"
+
+automation:
+  - id: bedroom_tap_dial
+    alias: "Bedroom: tap dial"
+    # A fast spin sends a burst of dial events; play them in order.
+    mode: queued
+    max: 25
+    max_exceeded: silent
+    triggers:
+      - trigger: mqtt
+        topic: zigbee2mqtt/bedroom_tap_dial/action
+    variables:
+      press: "{{ trigger.payload }}"
+      volume_mode: "{{ is_state('timer.bedroom_tap_dial_volume', 'active') }}"
+      # Dial events are dial_rotate_<left|right>_<step|slow|fast>.
+      direction: "{{ 1 if press.startswith('dial_rotate_right') else -1 }}"
+      speed: "{{ press.split('_')[-1] }}"
+      volume_steps: {step: 0.02, slow: 0.04, fast: 0.08}
+      # z2m brightness_step is on the 0-254 scale. Turning sends 1-3 events a
+      # second, so a 0.6 s transition fades each step into the next one.
+      brightness_steps: {step: 15, slow: 35, fast: 70}
+    actions:
+      - choose:
+          - conditions: "{{ press == 'button_1_press_release' }}"
+            sequence:
+              - action: timer.cancel
+                target:
+                  entity_id: timer.bedroom_tap_dial_volume
+              - action: light.toggle
+                target:
+                  entity_id: light.bedroom_light_01
+
+          - conditions: >-
+              {{ press in ['button_2_press_release', 'button_2_hold',
+                           'button_3_press_release', 'button_4_press_release'] }}
+            sequence:
+              - action: timer.start
+                target:
+                  entity_id: timer.bedroom_tap_dial_volume
+              - choose:
+                  - conditions: "{{ press == 'button_2_press_release' }}"
+                    sequence:
+                      - action: media_player.media_play_pause
+                        target:
+                          entity_id: media_player.bedroom
+                  - conditions: "{{ press == 'button_3_press_release' }}"
+                    sequence:
+                      - action: media_player.media_previous_track
+                        target:
+                          entity_id: media_player.bedroom
+                  - conditions: "{{ press == 'button_4_press_release' }}"
+                    sequence:
+                      - action: media_player.media_next_track
+                        target:
+                          entity_id: media_player.bedroom
+
+          - conditions: "{{ press.startswith('dial_rotate_') and volume_mode }}"
+            sequence:
+              - action: timer.start
+                target:
+                  entity_id: timer.bedroom_tap_dial_volume
+              - condition: template
+                value_template: "{{ state_attr('media_player.bedroom', 'volume_level') is number }}"
+              - action: media_player.volume_set
+                target:
+                  entity_id: media_player.bedroom
+                data:
+                  volume_level: >-
+                    {% set level = state_attr('media_player.bedroom', 'volume_level')
+                                   + direction * volume_steps[speed] %}
+                    {{ ([0, level, 1] | sort)[1] | round(2) }}
+
+          # Step the brightness on the light itself (z2m brightness_step) rather
+          # than via light.turn_on, which reads HA's state and lags a fast spin.
+          # Turning right switches an off light on. Turning left stops at the
+          # minimum (1): stepping below it can bounce the bulb back to its last
+          # on-level, so skip left turns there and while the light is off.
+          - conditions: "{{ press.startswith('dial_rotate_') }}"
+            sequence:
+              - condition: template
+                value_template: >-
+                  {{ direction > 0 or
+                     (is_state('light.bedroom_light_01', 'on')
+                      and state_attr('light.bedroom_light_01', 'brightness') | int(0) > 1) }}
+              - action: mqtt.publish
+                data:
+                  topic: zigbee2mqtt/bedroom_light_01/set
+                  payload: >-
+                    {{ {'brightness_step': direction * brightness_steps[speed],
+                        'transition': 0.6} | to_json }}
+              # Adaptive Lighting manages this light and doesn't see changes made
+              # outside HA (detect_non_ha_changes: false), so it would reset the
+              # brightness on its next 90 s tick. Mark the light manually controlled;
+              # Adaptive Lighting releases it again once the light is turned off.
+              - wait_template: "{{ is_state('light.bedroom_light_01', 'on') }}"
+                timeout: "00:00:02"
+              - action: adaptive_lighting.set_manual_control
+                data:
+                  entity_id: "switch.adaptive_lighting_{{ states('input_select.adaptive_lighting_level') }}"
+                  lights: light.bedroom_light_01
+                  manual_control: true
+                continue_on_error: true

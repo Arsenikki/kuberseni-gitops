@@ -3,20 +3,22 @@
 
 [tools]
 # Talos tooling
-talhelper = "3.1.13"
+# topf renders + applies Talos machine config (infra/talos/topf.yaml); replaced the
+# archived talhelper. talosctl stays for ad-hoc node operations.
+"github:postfinance/topf" = "0.6.2"
 talosctl = "1.13.6"
 
 # Configuration management
 sops = "3.13.2"
-age = "1.3.1"
+age = "1.3.2"
 
 # Infrastructure as Code
 opentofu = "1.12.2"
 
 # Utilities
-yq = "4.53.3"
-task = "3.52.0"
-pre-commit = "4.6.0"
+yq = "4.54.3"
+task = "3.54.0"
+pre-commit = "4.7.0"
 
 # Python tooling — provides `uvx` for running MCP servers (e.g. ha-mcp)
 uv = "0.11.21"

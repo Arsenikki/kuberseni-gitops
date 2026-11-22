@@ -6,6 +6,14 @@ metadata:
   namespace: home-automation
 data:
   configuration.yaml: |
+    # Version-controlled automations/scripts live in packages/ — one file per
+    # package under cluster/apps/home-automation/home-assistant/packages/, shipped
+    # as the home-assistant-packages ConfigMap and reloaded live by the
+    # packages-reload sidecar (check_config, then per-domain reloads; no restart).
+    # UI-made automations still go to automations.yaml on the PVC.
+    homeassistant:
+      packages: !include_dir_named packages
+
     # Loads default set of integrations. Do not remove.
     default_config:
 
@@ -38,8 +46,13 @@ data:
         filter:
           include_domains:
             - media_player
+          # Exposed through media_player.projector instead (packages/projector.yaml),
+          # which wakes the projector over Wi-Fi so Siri's "turn on" works from standby.
+          exclude_entities:
+            - media_player.living_room_tv
         entity_config:
-          media_player.living_room_tv:
+          media_player.projector:
+            name: Living Room TV
             feature_list:
               - feature: on_off
               - feature: play_pause
@@ -47,11 +60,6 @@ data:
               - feature: toggle_mute
 
     light:
-    # Configure specified switches to report as lights
-      - platform: switch
-        name: living_room_christmas_lights
-        entity_id: switch.living_room_christmas_lights
-
     # Group lights into single entities
       - platform: group
         name: "kitchen_all_lights"
@@ -61,7 +69,6 @@ data:
       - platform: group
         name: "living_room_all_lights"
         entities:
-          - light.living_room_christmas_lights
           - light.living_room_corner_light_01
           - light.living_room_corner_light_02
       - platform: group
@@ -197,10 +204,6 @@ data:
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
-
-  automations.yaml: "[]"
-  scenes.yaml: "[]"
-  scripts.yaml: "{}"
 
   adaptive_lighting_config.yaml: |
     - name: "Low"
