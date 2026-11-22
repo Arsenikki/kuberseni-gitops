@@ -1,0 +1,131 @@
+---
+# Whole-home scenes driven by input_select.scene (defined in configuration.yaml).
+# Ported from the Node-RED "Lights" tab. Each scene first snapshots the lights
+# it changes into scene.before (as Node-RED did) so it can be restored by hand.
+# Entering "normal" changes nothing (that Node-RED trigger was disabled).
+automation:
+  - id: scene_cleaning
+    alias: "Scene: cleaning"
+    description: All lights to full brightness, cool white. Back to normal after 1 hour.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.scene
+        to: cleaning
+    variables:
+      lights: >-
+        {{ states.light | rejectattr('state', 'in', ['unavailable', 'unknown'])
+           | map(attribute='entity_id') | list }}
+    actions:
+      - action: scene.create
+        data:
+          scene_id: before
+          snapshot_entities: "{{ lights }}"
+      - action: light.turn_on
+        target:
+          entity_id: "{{ lights }}"
+        data:
+          brightness_pct: 100
+          color_temp_kelvin: 6500  # Node-RED sent mired 1 = coolest; HA clamps to each light's range
+          transition: 2
+        continue_on_error: true
+
+  - id: scene_cleaning_timeout
+    alias: "Scene: cleaning ends after 1 hour"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: input_select.scene
+        to: cleaning
+        for: "01:00:00"
+    actions:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.scene
+        data:
+          option: normal
+
+  # The 1-hour for: above is lost on restart / reload of that automation. Re-arm it.
+  - id: scene_cleaning_timeout_after_restart
+    alias: "Scene: cleaning ends within 1 hour after restart"
+    mode: restart
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    conditions:
+      - condition: state
+        entity_id: input_select.scene
+        state: cleaning
+    actions:
+      - wait_template: "{{ not is_state('input_select.scene', 'cleaning') }}"
+        timeout: "01:00:00"
+        continue_on_timeout: true
+      - if:
+          - "{{ not wait.completed }}"
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.scene
+            data:
+              option: normal
+
+  - id: scene_away
+    alias: "Scene: away"
+    description: All lights off, then one living room corner light and one lobby candle on.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.scene
+        to: away
+    variables:
+      lights: >-
+        {{ states.light | rejectattr('state', 'in', ['unavailable', 'unknown'])
+           | map(attribute='entity_id') | list }}
+    actions:
+      - action: scene.create
+        data:
+          scene_id: before
+          snapshot_entities: "{{ lights }}"
+      - action: light.turn_off
+        target:
+          entity_id: "{{ lights }}"
+        continue_on_error: true
+      - action: light.turn_on
+        target:
+          entity_id:
+            - light.living_room_corner_light_01
+            - light.lobby_candle_light_01
+
+  - id: scene_spinning
+    alias: "Scene: spinning"
+    description: Kitchen strips and living room corner lights to full, warm orange / pink.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.scene
+        to: spinning
+    actions:
+      - action: scene.create
+        data:
+          scene_id: before
+          snapshot_entities:
+            - light.kitchen_led_strip_01
+            - light.kitchen_led_strip_02
+            - light.living_room_corner_light_01
+            - light.living_room_corner_light_02
+      - action: light.turn_on
+        target:
+          entity_id: [light.kitchen_led_strip_01, light.living_room_corner_light_01]
+        data:
+          brightness_pct: 100
+          rgb_color: [255, 101, 53]
+          transition: 2
+      - action: light.turn_on
+        target:
+          entity_id: [light.kitchen_led_strip_02, light.living_room_corner_light_02]
+        data:
+          brightness_pct: 100
+          rgb_color: [255, 106, 138]
+          transition: 2

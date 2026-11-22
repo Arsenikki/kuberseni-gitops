@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: node-red-data
+  name: wyoming-whisper-data
   namespace: home-automation
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
+  storageClassName: longhorn
