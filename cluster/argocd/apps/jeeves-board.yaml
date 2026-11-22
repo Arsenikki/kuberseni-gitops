@@ -32,7 +32,7 @@ spec:
     # Chart X.Y.Z runs image vX.Y.Z. Renovate bumps targetRevision.
     - repoURL: ghcr.io/arsenikki/charts
       chart: jeeves-board
-      targetRevision: 1.63.0
+      targetRevision: 1.68.1
       helm:
         releaseName: jeeves-board
         valueFiles:
