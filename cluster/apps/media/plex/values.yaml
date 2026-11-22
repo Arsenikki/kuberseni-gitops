@@ -59,9 +59,14 @@ podSecurityContext:
 resources:
   requests:
     cpu: 2
-    memory: 1024Mi
+    # ~70 MiB idle (2026-11-21). Transcoding is on the iGPU with an on-disk
+    # transcode dir, so 1 GiB covers streams; the 8 GiB limit covers bursts.
+    memory: 1Gi
   limits:
-    memory: 4096Mi
+    memory: 8192Mi
     # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.
     # Also pins Plex to worker-01 via resource availability.
     gpu.intel.com/i915: 1
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+priorityClassName: kuberseni-critical

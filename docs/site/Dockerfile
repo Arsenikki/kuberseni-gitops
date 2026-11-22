@@ -1,7 +1,7 @@
 # Build the Starlight static site and serve it with nginx.
 # Build context is the REPO ROOT (the generator reads cluster/ manifests):
 #   docker build -f docs/site/Dockerfile -t ghcr.io/arsenikki/homelab-docs .
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app/docs/site
 COPY docs/site/package.json docs/site/package-lock.json ./
 RUN npm ci

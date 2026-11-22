@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/null"
       version = "~> 3.0"
     }
+    restapi = {
+      source  = "Mastercard/restapi"
+      version = "~> 3.0"
+    }
   }
 
   # Uncomment to use remote state (e.g. an S3-compatible store on TrueNAS)
@@ -37,6 +41,21 @@ provider "opnsense" {
   api_key        = var.opnsense_api_key
   api_secret     = var.opnsense_api_secret
   allow_insecure = true  # OPNSense uses self-signed cert
+}
+
+# Generic REST client against the same OPNSense API, for settings the opnsense
+# provider has no resource for (e.g. Kea's global lease lifetime). OPNSense
+# settings are read with GET `.../get` and written with POST `.../set`.
+provider "restapi" {
+  alias    = "opnsense"
+  uri      = "https://192.168.1.1/api"
+  username = var.opnsense_api_key
+  password = var.opnsense_api_secret
+  insecure = true # OPNSense uses self-signed cert
+
+  create_method  = "POST"
+  update_method  = "POST"
+  destroy_method = "POST"
 }
 
 provider "proxmox" {
