@@ -73,5 +73,15 @@
     "hostname": "formovie-projector",
     "mac": "38:54:39:6c:bc:dd",
     "ip": "192.168.1.151"
+  },
+  {
+    "hostname": "q990h-soundbar",
+    "mac": "cc:20:ac:49:9e:f9",
+    "ip": "192.168.1.152"
+  },
+  {
+    "hostname": "stadia-controller",
+    "mac": "f0:ef:86:1b:65:d0",
+    "ip": "192.168.1.153"
   }
 ]

@@ -132,6 +132,11 @@ in
               hostname = mkOption { type = types.str; };
               mac = mkOption { type = types.str; };
               ip = mkOption { type = types.str; };
+              dnsServers = mkOption {
+                type = types.listOf types.str;
+                default = [ ];
+                description = "Per-reservation DNS servers (DHCP option 6); empty inherits dhcp.dnsServers.";
+              };
             };
           }
         );
@@ -465,11 +470,22 @@ in
                 data = lib.concatStringsSep ", " cfg.dhcp.dnsServers;
               }
             ];
-            reservations = map (r: {
-              hw-address = lib.toLower r.mac;
-              ip-address = r.ip;
-              inherit (r) hostname;
-            }) cfg.dhcp.reservations;
+            reservations = map (
+              r:
+              {
+                hw-address = lib.toLower r.mac;
+                ip-address = r.ip;
+                inherit (r) hostname;
+              }
+              // lib.optionalAttrs (r.dnsServers != [ ]) {
+                option-data = [
+                  {
+                    name = "domain-name-servers";
+                    data = lib.concatStringsSep ", " r.dnsServers;
+                  }
+                ];
+              }
+            ) cfg.dhcp.reservations;
           }
         ];
       };
