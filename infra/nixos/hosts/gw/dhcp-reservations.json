@@ -60,11 +60,6 @@
     "ip": "192.168.1.52"
   },
   {
-    "hostname": "AutLaptopALMBP2",
-    "mac": "6c:7e:67:c8:b5:a5",
-    "ip": "192.168.1.53"
-  },
-  {
     "hostname": "philips-purifier",
     "mac": "88:a6:8d:16:6e:ba",
     "ip": "192.168.1.150"

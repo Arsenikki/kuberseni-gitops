@@ -71,7 +71,6 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.usw_flex,
     opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
-    opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
@@ -159,14 +158,6 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   ip_address  = "192.168.1.52"
   hostname    = "DESKTOP-Q0E7TOC"
   description = "Windows Desktop"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "laptop" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "6c:7e:67:c8:b5:a5"
-  ip_address  = "192.168.1.53"
-  hostname    = "AutLaptopALMBP2"
-  description = "Laptop"
 }
 
 # Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
