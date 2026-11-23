@@ -60,11 +60,6 @@
     "ip": "192.168.1.52"
   },
   {
-    "hostname": "AutLaptopALMBP2",
-    "mac": "6c:7e:67:c8:b5:a5",
-    "ip": "192.168.1.53"
-  },
-  {
     "hostname": "philips-purifier",
     "mac": "88:a6:8d:16:6e:ba",
     "ip": "192.168.1.150"
@@ -73,5 +68,15 @@
     "hostname": "formovie-projector",
     "mac": "38:54:39:6c:bc:dd",
     "ip": "192.168.1.151"
+  },
+  {
+    "hostname": "q990h-soundbar",
+    "mac": "cc:20:ac:49:9e:f9",
+    "ip": "192.168.1.152"
+  },
+  {
+    "hostname": "stadia-controller",
+    "mac": "f0:ef:86:1b:65:d0",
+    "ip": "192.168.1.153"
   }
 ]

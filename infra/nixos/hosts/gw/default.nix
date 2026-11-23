@@ -64,7 +64,14 @@ in
       ];
       # Copied from infra/terraform (opnsense.tf + VM MACs); CI checks they stay in sync
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
-      reservations = lib.importJSON ./dhcp-reservations.json;
+      # StadiaCast intercepts Google's Stadia endpoints via its DNS sink on the gaming PC.
+      reservations = map (
+        r:
+        if r.hostname == "stadia-controller" then
+          r // { dnsServers = [ "192.168.1.52" ]; }
+        else
+          r
+      ) (lib.importJSON ./dhcp-reservations.json);
     };
     # OPNSense had no port forwards (checked in its config.xml, 2026-11-15).
     portForwards = [ ];

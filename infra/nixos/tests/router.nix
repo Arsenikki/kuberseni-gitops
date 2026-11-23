@@ -178,6 +178,12 @@ in
                 mac = qemu-common.qemuNicMac 2 nodes.client.virtualisation.test.nodeNumber;
                 ip = "192.168.1.50";
               }
+              {
+                hostname = "custom-dns";
+                mac = "02:00:00:00:00:99";
+                ip = "192.168.1.99";
+                dnsServers = [ "192.0.2.53" ];
+              }
             ];
           };
           portForwards = [
@@ -249,6 +255,15 @@ in
     with subtest("LAN client gets its reserved address and the router as gateway"):
         client.wait_until_succeeds("ip -4 addr show eth1 | grep -q 'inet 192.168.1.50/24'", timeout=120)
         client.succeed("ip route show default | grep -q 'via 192.168.1.1'")
+        router.succeed(
+            "jq -e '.Dhcp4.subnet4[0].reservations[] | select(.hostname == \"custom-dns\")"
+            " | .\"option-data\" == [{\"name\": \"domain-name-servers\", \"data\": \"192.0.2.53\"}]'"
+            " /etc/kea/dhcp4-server.conf >/dev/null"
+        )
+        router.succeed(
+            "jq -e '.Dhcp4.subnet4[0].reservations[] | select(.hostname == \"client\")"
+            " | has(\"option-data\") | not' /etc/kea/dhcp4-server.conf >/dev/null"
+        )
 
     with subtest("LAN reaches the internet through NAT"):
         isp.wait_for_open_port(80)
