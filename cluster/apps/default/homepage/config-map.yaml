@@ -159,11 +159,11 @@ data:
           siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
 
     - Network & Storage:
-      - OPNSense:
-          icon: opnsense.png
-          href: https://opnsense.arsenikki.casa
-          description: Firewall & router
-          siteMonitor: https://opnsense.arsenikki.casa
+      - Router (gw):
+          icon: nixos.png
+          href: https://github.com/Arsenikki/kuberseni-gitops/tree/main/infra/nixos
+          description: NixOS router (no web UI; config in git)
+          siteMonitor: http://192.168.1.1:9100/metrics
       - TrueNAS:
           icon: truenas.png
           href: https://truenas.arsenikki.casa
