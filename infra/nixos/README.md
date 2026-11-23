@@ -10,7 +10,7 @@
 - Tailscale: subnet router for the LAN and an exit node, replacing Tailscale on OPNSense
 - exporters
 
-**Status: not deployed.** OPNSense is still the router, and `infra/terraform/opnsense.tf` is still the source of truth for DHCP.
+**Status: live since 2026-11-23** (switchover 16:00–16:07 UTC). gw is VM 101 on `router` and starts on boot; OPNSense (VM 100) is stopped and kept for rollback (`/root/gw/gw-rollback.sh`). Until OPNSense is removed from OpenTofu, `infra/terraform/opnsense.tf` and `hosts/gw/dhcp-reservations.json` must match (CI checks); **don't run `tofu plan/apply`** meanwhile, it would fail against the stopped OPNSense.
 
 | Path | What |
 |---|---|
