@@ -136,11 +136,13 @@ data:
         value_template: "{{ true }}"
         timeout: 10
         scan_interval: 60
+      # The router (gw, NixOS; replaced OPNSense 2026-11-23). No web UI, so probe its
+      # node-exporter, which answers on the LAN. unique_id kept so the entity
+      # (binary_sensor.opnsense) and its history stay.
       - platform: rest
-        name: "OPNSense"
+        name: "Router (gw)"
         unique_id: infra_opnsense
-        resource: "https://192.168.1.1"
-        verify_ssl: false
+        resource: "http://192.168.1.1:9100/metrics"
         device_class: connectivity
         value_template: "{{ true }}"
         timeout: 10
