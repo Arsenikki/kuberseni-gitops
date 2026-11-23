@@ -51,14 +51,13 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
     enabled = true
   }
 
-  # 2 cores (was 4) + cpuunits 50 (PVE default 100): nas is a 4-core Celeron N5105
-  # shared with cp-03 (etcd, units 200) and worker-02 (Longhorn, units 150). TrueNAS
-  # is mostly idle; 4 vCPUs let a scrub contend for every host core. Applied live
-  # 2026-10-31 (VM restarted) — this reconciles code with live.
+  # 4 cores, default cpuunits (was 2 cores + units 50 on the 4-core N5105 nas).
+  # nas is a Ryzen 7 5800U (8C/16T) since 2026-11-20 — ZFS scrub/checksums and NFS
+  # get real cores without starving cp-03 or worker-02.
   cpu {
-    cores = 2
+    cores = 4
     type  = "host" # Exposes AES-NI to ZFS; avoids SMB CPU spikes with kvm64
-    units = 50
+    units = 100
   }
 
   # 8192 (was 12288, was 16384): the 31 GiB nas host was RAM-overcommitted
@@ -97,13 +96,44 @@ resource "proxmox_virtual_environment_vm" "truenas_scale" {
     type = "l26"
   }
 
-  # The 16TB ZFS data pool ("main") is attached out-of-band at cutover via:
-  #   qm set 202 --scsi1 /dev/disk/by-id/ata-ST16000NM000J-2TW103_ZR55Q0MR,discard=on
-  # It is a raw device passthrough (the disk physically lives in the nas host and is
-  # moved from TrueNAS-Core VM 200 by pool export/import — the data is never copied).
-  # ignore_changes guarantees a future `terraform apply` can NEVER detach or recreate
-  # that disk, which would be catastrophic for 14TB of unbacked-up data.
+  # The ZFS data pool "main" (2x 16TB mirror) lives on disks attached to the onboard
+  # ASMedia ASM1166 SATA controller, which is passed through whole (since 2026-11-20,
+  # was per-disk scsi1/scsi2 by-id passthrough). TrueNAS owns the controller, so SMART,
+  # hotplug and disk errors are native, and the host never sees the pool.
+  # Host prerequisites (not managed here — see codex runbook "nas" section):
+  #   - /etc/modprobe.d/vfio.conf binds 1b21:1166 to vfio-pci (softdep ahci pre: vfio-pci)
+  #   - DKMS module asm1166_nobusreset sets PCI_DEV_FLAGS_NO_BUS_RESET on the ASM1166.
+  #     Without it QEMU's bus hot-reset at VM start wedges the chip ("not ready 65535ms
+  #     after bus reset", reads 0xffff until host reboot). Upstream quirk exists for
+  #     ASM1164 (v6.20) but not ASM1166 yet.
+  #   - zfs-import-scan/-cache masked on the host so it never imports "main".
+  hostpci {
+    device  = "hostpci0"
+    mapping = proxmox_virtual_environment_hardware_mapping_pci.nas_asm1166.name
+    pcie    = true
+    rombar  = true
+  }
+
+  # ignore_changes = [disk]: the scsi0 boot disk was created by this resource, but
+  # disks were historically attached out-of-band (by-id data disks). Keep a future
+  # apply from ever detaching or recreating a disk.
   lifecycle {
     ignore_changes = [disk]
   }
+}
+
+# PCI resource mapping for the onboard ASMedia ASM1166 6-port SATA controller on nas
+# (Topton Ryzen 7 5800U board), passed through whole to TrueNAS (VM 202).
+resource "proxmox_virtual_environment_hardware_mapping_pci" "nas_asm1166" {
+  name    = "nas-asm1166"
+  comment = "ASMedia ASM1166 SATA (nas onboard) for TrueNAS pool main"
+  map = [
+    {
+      id           = "1b21:1166"
+      node         = "nas"
+      path         = "0000:04:00.0"
+      iommu_group  = 14
+      subsystem_id = "1b21:2116"
+    }
+  ]
 }

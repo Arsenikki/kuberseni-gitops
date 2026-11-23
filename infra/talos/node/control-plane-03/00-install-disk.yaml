@@ -1,0 +1,4 @@
+# verify with: talosctl get disks --nodes <ip>
+machine:
+  install:
+    disk: /dev/sda

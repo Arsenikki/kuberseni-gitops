@@ -13,6 +13,7 @@ configMapGenerator:
     namespace: home-automation
     files:
       - packages/adaptive_lighting.yaml
+      - packages/bedroom_music_zone.yaml
       - packages/bedroom_speakers.yaml
       - packages/bedroom_tap_dial.yaml
       - packages/gaming.yaml
