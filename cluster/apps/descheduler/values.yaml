@@ -14,10 +14,10 @@
 # ensures a pod is only evicted when it can actually land somewhere better —
 # so it stays a no-op while a node is cordoned.
 kind: CronJob
-schedule: "*/30 * * * *"
+schedule: "*/10 * * * *"
 suspend: false
 
-# Modest footprint — this only runs briefly every 30 minutes.
+# Modest footprint — this only runs briefly every 10 minutes.
 resources:
   requests:
     cpu: 50m
@@ -27,7 +27,8 @@ resources:
 
 deschedulerPolicyAPIVersion: "descheduler/v1alpha2"
 deschedulerPolicy:
-  # Cap churn per run.
+  # Cap churn per run (shared by both profiles). At one run every 10 minutes
+  # that's up to 18 evictions per node per hour.
   maxNoOfPodsToEvictPerNode: 3
   # Pull live CPU/memory from metrics-server (cluster/apps/metrics-server) so
   # LowNodeUtilization balances on ACTUAL usage, not pod requests. Without this,
@@ -77,16 +78,17 @@ deschedulerPolicy:
               source: KubernetesMetrics
             # A node is "under" only if below ALL thresholds and "over" if above
             # ANY target. The old 20/50 (with pods) never fired: every node sits
-            # above 50% memory, so all five read as over and nothing moved. The
-            # control planes idle at ~80-86% memory, hence the 90% memory target.
-            # Today this reads worker-01 (~12% cpu, ~60% mem) as under and
-            # worker-02 (~80% cpu) as over.
+            # above 50% memory, so all five read as over and nothing moved. 90%
+            # memory was too lax: after the 2026-11-23 Talos upgrade drained
+            # worker-01, worker-02 sat at 78% memory used (99% requested) with
+            # probes timing out, and this read it as "appropriately utilized".
+            # The control planes now use ~64-75% memory, so 80 keeps them out.
             thresholds:
               cpu: 30
-              memory: 70
+              memory: 60
             targetThresholds:
               cpu: 60
-              memory: 90
+              memory: 80
             # Jeeves places its own pods with hard per-node spread constraints;
             # moving them would only bounce them back every run.
             evictableNamespaces:
@@ -105,3 +107,34 @@ deschedulerPolicy:
             - RemovePodsViolatingNodeTaints
             - RemovePodsViolatingNodeAffinity
             - RemovePodsViolatingInterPodAntiAffinity
+
+    # Same balancing, measured on pod REQUESTS instead of usage. The usage
+    # profile above misses a node that is fully booked but not yet busy: after
+    # the 2026-11-23 drain worker-02 had 89% cpu / 98% memory requested (nothing
+    # new could schedule there) while worker-01 sat at ~51% / ~38%. The
+    # scheduler places pods by requests, so this is what keeps room on a node.
+    # Requests normally: control planes 23-55%, workers well under 85%.
+    - name: requests
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            nodeFit: true
+            podProtections:
+              extraEnabled:
+                - "PodsWithPVC"
+        - name: LowNodeUtilization
+          args:
+            thresholds:
+              cpu: 60
+              memory: 50
+            targetThresholds:
+              cpu: 85
+              memory: 85
+            evictableNamespaces:
+              exclude:
+                - jeeves-prod
+                - jeeves-dev
+      plugins:
+        balance:
+          enabled:
+            - LowNodeUtilization
