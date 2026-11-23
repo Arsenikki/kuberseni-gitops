@@ -54,6 +54,8 @@ in
       address = "192.168.1.1";
       # OPNSense's bridge0.
       macAddress = "58:9c:fc:10:f1:79";
+      # MGMT zone: infra, Proxmox, k8s (incl. Home Assistant, which must reach IoT).
+      mdns = true;
     };
     dhcp = {
       # The address plan's dynamic blocks: trusted .100-.149, IoT .180-.199. Must match
@@ -66,6 +68,72 @@ in
       # (scripts/check-reservations.py) until OpenTofu stops managing OPNSense.
       reservations = lib.importJSON ./dhcp-reservations.json;
     };
+    # Zones from the address plan (codex network/README.md). Inert until the
+    # Flex Mini and the U6 Pro tag traffic with these VLAN ids; devices then move
+    # over keeping their last octet (e.g. purifier 192.168.1.150 -> 192.168.20.150).
+    vlans = {
+      trusted = {
+        id = 10;
+        subnet = "192.168.10.0/24";
+        address = "192.168.10.1";
+        pool = "192.168.10.100 - 192.168.10.149";
+        # Phones, tablets, personal laptops. They use the cluster's user-facing services
+        # and cast to IoT, but can't reach MGMT's admin planes (Proxmox, TrueNAS UI,
+        # k8s API, router SSH). Admin machines (desktop .52, laptop .53) stay in MGMT.
+        canReach = [
+          "iot"
+          "tailnet"
+        ];
+        allow = [
+          {
+            to = "lan";
+            # Cilium LoadBalancer IPs: Plex .220, Traefik ingress .222, Music
+            # Assistant .223, spare .224-.229. Not MQTT (.221): no auth on it.
+            addresses = [
+              "192.168.1.220"
+              "192.168.1.222-192.168.1.229"
+            ];
+            description = "k8s services";
+          }
+          {
+            to = "lan";
+            addresses = [ "192.168.1.2" ];
+            tcpPorts = [ 445 ];
+            description = "TrueNAS SMB";
+          }
+        ];
+        mdns = true;
+      };
+      # Guest Wi-Fi ("uuno-second-class" on the U6 Pro, VLAN 30, client isolation on
+      # the AP): internet only. No LAN, IoT, tailnet or router management, and no mDNS.
+      # The AP keeps guests apart from each other; this keeps them off the house.
+      guest = {
+        id = 30;
+        subnet = "192.168.30.0/24";
+        address = "192.168.30.1";
+        pool = "192.168.30.100 - 192.168.30.199";
+      };
+      iot = {
+        id = 20;
+        subnet = "192.168.20.0/24";
+        address = "192.168.20.1";
+        pool = "192.168.20.180 - 192.168.20.199";
+        # Internet only; HA (in the LAN zone) and trusted devices open connections in.
+        mdns = true;
+      };
+    };
+
+    # Split-horizon arsenikki.casa: external-dns in the cluster writes every internal
+    # name here (RFC 2136, TSIG), so the LAN resolves its own services without the
+    # internet and without publishing private IPs to Cloudflare. `serve` stays off
+    # until the zone is populated (kdig @127.0.0.1 -p 5300 arsenikki.casa AXFR).
+    dns.localZone = {
+      enable = true;
+      serve = false;
+      name = "arsenikki.casa";
+      updateKeyFile = config.sops.secrets.knot_tsig.path;
+    };
+
     # OPNSense had no port forwards (checked in its config.xml, 2026-11-15).
     portForwards = [ ];
     # Replaces Tailscale on OPNSense (node "opnsense", 192.168.1.0/24). scripts/cutover.sh
@@ -76,4 +144,10 @@ in
 
   # pppoe: the pppd `user "..."` and `password "..."` lines (from OPNSense's config).
   sops.secrets.pppoe.sopsFile = ./secrets.yaml;
+  # knot_tsig: Knot `key:` section for external-dns's TSIG key (same secret as the
+  # cluster's external-dns-internal; see README).
+  sops.secrets.knot_tsig = {
+    sopsFile = ./secrets.yaml;
+    owner = "knot";
+  };
 }
