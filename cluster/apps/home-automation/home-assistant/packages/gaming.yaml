@@ -45,6 +45,8 @@ script:
                   continue_on_error: true
               until: "{{ (sunshine is defined and sunshine.get('status') == 200) or repeat.index >= 20 }}"
       - action: rest_command.bazzite_gaming_start
+      - action: shell_command.projector_game_mode_on
+        continue_on_error: true
 
   living_room_gaming_stop:
     alias: "Gaming: stop living room"
@@ -57,6 +59,8 @@ script:
             entity_id: media_player.living_room_tv
             state: "on"
         then:
+          - action: shell_command.projector_game_mode_off
+            continue_on_error: true
           - action: remote.send_command
             target:
               entity_id: remote.living_room_tv
