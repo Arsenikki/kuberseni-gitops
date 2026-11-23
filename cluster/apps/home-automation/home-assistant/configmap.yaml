@@ -199,6 +199,25 @@ data:
             json_attributes:
               - items
 
+    # Living-room gaming remote control (Bazzite Moonlight launcher + Sunshine probe).
+    rest_command:
+      bazzite_gaming_status:
+        url: "http://192.168.1.51:8765/status"
+        method: GET
+        timeout: 5
+      bazzite_gaming_start:
+        url: "http://192.168.1.51:8765/start"
+        method: POST
+        timeout: 15
+      bazzite_gaming_stop:
+        url: "http://192.168.1.51:8765/stop"
+        method: POST
+        timeout: 15
+      sunshine_serverinfo:
+        url: "http://192.168.1.52:47989/serverinfo?uniqueid=0123456789ABCDEF&uuid=b34cf743351f4d1c8ee0911711f662d3"
+        method: GET
+        timeout: 2
+
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
     automation: !include automations.yaml
