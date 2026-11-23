@@ -24,10 +24,12 @@ log "preflight"
 [ "$(qm status $OPN | awk '{print $2}')" = running ] || { log "OPNSense (VM $OPN) isn't running: refusing"; exit 1; }
 [ "$(qm status $GW | awk '{print $2}')" = stopped ] || { log "gw (VM $GW) must exist and be stopped: run gw-prepare.sh"; exit 1; }
 qm config $GW | grep -qx 'name: gw' || { log "VM $GW isn't gw: refusing"; exit 1; }
-# The leases and the Tailscale identity are read through OPNSense's guest agent.
+# The leases and the Tailscale identity are read through OPNSense's guest agent, or,
+# if it isn't answering, from the snapshot below (read-only, OPNSense keeps running).
+agent=yes
 qm agent $OPN ping 2>/dev/null || {
-  log "OPNSense's QEMU guest agent isn't answering: start it in OPNSense (Services > QEMU Guest Agent) first; nothing changed"
-  exit 1
+  agent=no
+  log "OPNSense's guest agent isn't answering: will read its state from the snapshot instead"
 }
 
 log "snapshot OPNSense (pre-gw-cutover)"
@@ -36,13 +38,43 @@ qm snapshot $OPN pre-gw-cutover --description "before switching to gw ($(date -I
 
 # Kea's lease file cleanup keeps most leases in .1/.2; the main file only has the
 # changes since. Kea loads all three at startup.
-log "copy DHCP leases and Tailscale state from OPNSense"
-for f in kea-leases4.csv kea-leases4.csv.1 kea-leases4.csv.2; do
-  if guest_sh $OPN "test -s /var/db/kea/$f"; then
-    guest_cat $OPN /var/db/kea/$f >"$work/dhcp4.leases${f#kea-leases4.csv}"
+# OPNSense's disk is UFS2 with /var on the root partition (p3).
+copy_from_snapshot() {
+  local lv loop mnt rc=0
+  lv=snap_vm-${OPN}-disk-0_pre-gw-cutover
+  lvchange -ay -K "pve/$lv"
+  loop=$(losetup -r -fP --show "/dev/pve/$lv")
+  udevadm settle
+  mnt=$(mktemp -d)
+  if mount -t ufs -o ro,ufstype=ufs2 "${loop}p3" "$mnt"; then
+    for f in kea-leases4.csv kea-leases4.csv.1 kea-leases4.csv.2; do
+      if [ -s "$mnt/var/db/kea/$f" ]; then
+        cp "$mnt/var/db/kea/$f" "$work/dhcp4.leases${f#kea-leases4.csv}" || rc=1
+      fi
+    done
+    cp "$mnt/var/db/tailscale/tailscaled.state" "$work/tailscaled.state" || rc=1
+    umount "$mnt"
+  else
+    rc=1
   fi
-done
-guest_cat $OPN /var/db/tailscale/tailscaled.state >"$work/tailscaled.state"
+  rmdir "$mnt"
+  losetup -d "$loop"
+  lvchange -an "pve/$lv"
+  return $rc
+}
+
+if [ $agent = yes ]; then
+  log "copy DHCP leases and Tailscale state from OPNSense (guest agent)"
+  for f in kea-leases4.csv kea-leases4.csv.1 kea-leases4.csv.2; do
+    if guest_sh $OPN "test -s /var/db/kea/$f"; then
+      guest_cat $OPN /var/db/kea/$f >"$work/dhcp4.leases${f#kea-leases4.csv}"
+    fi
+  done
+  guest_cat $OPN /var/db/tailscale/tailscaled.state >"$work/tailscaled.state"
+else
+  log "copy DHCP leases and Tailscale state from OPNSense (its pre-gw-cutover snapshot, read-only)"
+  copy_from_snapshot || { log "couldn't read OPNSense's state from the snapshot: refusing; nothing changed"; exit 1; }
+fi
 chmod 600 "$work"/*
 python3 -m json.tool "$work/tailscaled.state" >/dev/null || { log "copied tailscaled.state isn't valid JSON: refusing"; exit 1; }
 ls "$work"/dhcp4.leases* >/dev/null || { log "no Kea lease files copied: refusing"; exit 1; }
