@@ -17,15 +17,32 @@ defaultSettings:
   # replicas, became unschedulable, and all 32 volumes stacked both replicas on
   # worker-01. Trade-off: with only 2 storage nodes, a node down/full leaves the
   # affected volumes degraded until it returns.
+  # Node dies unplanned (not a drain): force-delete its Longhorn-backed pods once
+  # k8s marks them Terminating, so RWO volumes detach and the pods restart on a
+  # healthy node. Default "do-nothing" leaves StatefulSets (home-assistant-0)
+  # stuck Terminating until the node returns, which defeats the PriorityClasses.
+  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
   replicaSoftAntiAffinity: false
   replicaAutoBalance: best-effort
+  # Cap concurrent replica rebuilds per node at 3 (Longhorn default is 5). A storage
+  # node reboot leaves every volume with a replica there degraded, and all rebuild
+  # at once; on the weak 4-core N5105 nas host (worker-02) 5 concurrent rebuilds
+  # drove load to ~11 and CPU-starved the Longhorn pods into liveness crashloops
+  # (2026-10-25). 3 balances rebuild speed against host headroom. The deeper fix is
+  # still capacity (fewer tenants on nas / more cores), but this bounds the blast radius.
+  concurrentReplicaRebuildPerNodeLimit: 3
   # Auto-delete orphaned replica/instance resources so a storage node can't silently
   # fill with stale replica directories (the root cause of the 2026-07-04 collapse:
   # orphans pushed worker-02 below the 25% min-available threshold -> unschedulable).
   orphanResourceAutoDeletion: "replica-data;instance"
-  # Allow CSI plugin DaemonSet to run on control-plane nodes so pods there
-  # can mount Longhorn volumes (data still lives on worker disks)
-  taintToleration: "node-role.kubernetes.io/control-plane:NoSchedule;CriticalAddonsOnly:NoSchedule"
+  # Longhorn stays off the control planes: they have no Longhorn disks and nothing
+  # pinned there mounts a volume. Running there cost each 5 GB control plane ~0.4
+  # core of requests and ~300 Mi, and parked the CSI sidecars on control-plane-03
+  # (the overloaded nas host). Explicitly empty: an absent key would leave the old
+  # value in the Setting. A change here only takes effect once EVERY Longhorn
+  # volume is detached (longhorn-manager setting controller), so it needs a
+  # maintenance window, see PR #938.
+  taintToleration: ""
 
 longhornManager:
   # Without a request the manager is BestEffort → cgroup cpu.weight 1 (vs ~111 for
@@ -37,11 +54,7 @@ longhornManager:
     requests:
       cpu: 100m
       memory: 256Mi
-  tolerations:
-    - key: node-role.kubernetes.io/control-plane
-      operator: Exists
-    - key: CriticalAddonsOnly
-      operator: Exists
+  # No control-plane toleration: see taintToleration above.
 
 longhornUI:
   replicas: 1

@@ -1,0 +1,32 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# values.yaml is the app-template Helm values (separate Argo source), not a manifest.
+resources:
+  - configmap.yaml
+  - externalsecrets.yaml
+  - pvc.yaml
+configMapGenerator:
+  # Home Assistant packages, mounted at /config/packages (see values.yaml).
+  # Add every new packages/*.yaml here; CI fails if one is missing.
+  - name: home-assistant-packages
+    namespace: home-automation
+    files:
+      - packages/adaptive_lighting.yaml
+      - packages/bedroom_music_zone.yaml
+      - packages/bedroom_speakers.yaml
+      - packages/bedroom_tap_dial.yaml
+      - packages/gaming.yaml
+      - packages/light_webhooks.yaml
+      - packages/lights_common.yaml
+      - packages/lobby_lights.yaml
+      - packages/notifications.yaml
+      - packages/projector.yaml
+      - packages/scenes.yaml
+      - packages/wall_switches.yaml
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        # Package edits are reloaded live by the packages-reload sidecar;
+        # never restart HA for them.
+        reloader.stakater.com/ignore: "true"

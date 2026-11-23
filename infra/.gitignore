@@ -13,4 +13,4 @@ terraform/terraform.tfvars
 talos/_out/
 
 # Allow encrypted secrets (SOPS)
-!talos/talsecret.yaml
+!talos/secrets.yaml

@@ -8,13 +8,88 @@ resource "opnsense_kea_dhcpv4_subnet" "lan" {
   subnet      = "192.168.1.0/24"
   description = "LAN"
 
-  pools       = ["192.168.1.100-192.168.1.199"]
+  # Dynamic ranges of the address plan (Arsenikki/codex network/README.md):
+  # trusted dynamic .100-.149 and IoT dynamic .180-.199. The IoT static block
+  # .150-.179 is left out so Kea never leases a reserved-block address to
+  # something else.
+  pools       = ["192.168.1.100-192.168.1.149", "192.168.1.180-192.168.1.199"]
   routers     = ["192.168.1.1"]
   dns_servers = ["1.1.1.1", "8.8.8.8"]
 
   # Pin to OPNSense's actual value — the provider defaults this to true but the
   # write doesn't round-trip, causing a perpetual diff. false matches reality.
   match_client_id = false
+
+  # Keep the DNS servers above. With auto-collect on (the provider default), any save of
+  # the Kea model — GUI or the restapi_object below — replaces them with the router's own
+  # IP (it flipped DHCP DNS + NTP to 192.168.1.1 on 2026-11-07).
+  auto_collect = false
+}
+
+# ── Kea DHCP — global lease lifetime ─────────────────────────────────────────
+# Not exposed by the opnsense provider, so it's set via its REST API directly.
+# Kea's default lease is 4000s, and clients renew at 50% of it (~33 min). Android
+# schedules that renewal as a wakeup alarm, which pulled the Formovie projector
+# out of standby every ~33 min (fans spin, and its HDMI-CEC wake switches the
+# Q990H soundbar input). See Arsenikki/codex android-tv/README.md.
+# A 7-day lease means a renewal (and wake) only every ~3.5 days.
+
+locals {
+  kea_valid_lifetime = 604800 # 7 days
+}
+
+resource "restapi_object" "kea_dhcpv4_general" {
+  provider = restapi.opnsense
+
+  # A singleton settings object, not a collection: pin the id and point every
+  # operation at the fixed get/set endpoints.
+  path         = "/kea/dhcpv4"
+  object_id    = "general"
+  create_path  = "/kea/dhcpv4/set"
+  read_path    = "/kea/dhcpv4/get"
+  update_path  = "/kea/dhcpv4/set"
+  destroy_path = "/kea/dhcpv4/set"
+
+  # OPNSense returns integer fields as strings, so send one too or the read-back
+  # never matches and every plan shows drift.
+  data = jsonencode({ dhcpv4 = { general = { valid_lifetime = tostring(local.kea_valid_lifetime) } } })
+
+  # Removing this resource saves Kea's default back (reconfigure Kea by hand after).
+  destroy_data = jsonencode({ dhcpv4 = { general = { valid_lifetime = "4000" } } })
+
+  # `get` returns the whole Kea model; only compare the keys set in `data`.
+  ignore_server_additions = true
+
+  # `set` saves the whole Kea model from a snapshot, so a reservation or subnet written in
+  # parallel gets lost (the projector reservation was, on the first apply). Write after them.
+  depends_on = [
+    opnsense_kea_dhcpv4_subnet.lan,
+    opnsense_kea_dhcpv4_reservation.controlplane,
+    opnsense_kea_dhcpv4_reservation.worker,
+    opnsense_kea_dhcpv4_reservation.truenas_scale,
+    opnsense_kea_dhcpv4_reservation.unifi_os_server,
+    opnsense_kea_dhcpv4_reservation.usw_flex,
+    opnsense_kea_dhcpv4_reservation.u6_pro,
+    opnsense_kea_dhcpv4_reservation.desktop_main,
+    opnsense_kea_dhcpv4_reservation.laptop,
+    opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
+    opnsense_kea_dhcpv4_reservation.philips_purifier,
+    opnsense_kea_dhcpv4_reservation.formovie_projector,
+    opnsense_kea_dhcpv4_reservation.bedroom_pi,
+  ]
+}
+
+# `set` only saves config.xml; Kea needs a reconfigure to render and load it.
+resource "terraform_data" "kea_dhcpv4_reconfigure" {
+  triggers_replace = restapi_object.kea_dhcpv4_general.data
+
+  provisioner "local-exec" {
+    command = "curl -fsS -k -u \"$OPNSENSE_API_KEY:$OPNSENSE_API_SECRET\" -X POST -H 'Content-Type: application/json' -d '{}' https://192.168.1.1/api/kea/service/reconfigure"
+    environment = {
+      OPNSENSE_API_KEY    = var.opnsense_api_key
+      OPNSENSE_API_SECRET = var.opnsense_api_secret
+    }
+  }
 }
 
 # ── Cluster VM reservations — derived from vms.tf locals ──────────────────────
@@ -53,54 +128,64 @@ resource "opnsense_kea_dhcpv4_reservation" "truenas_scale" {
   description = "TrueNAS Scale (primary NAS, static .2)"
 }
 
+# UniFi USW Flex 2.5G switch (2026-11-16), network-infra block (.2-.9). It took over
+# .5 from the 1 GbE USW Flex Mini (58:d6:1f:50:c2:79), which was returned.
+resource "opnsense_kea_dhcpv4_reservation" "usw_flex" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "74:f9:2c:98:9d:b3"
+  ip_address  = "192.168.1.5"
+  hostname    = "usw-flex-2-5g"
+  description = "UniFi USW Flex 2.5G switch"
+}
+
+# UniFi U6 Pro access point, network-infra block (.2-.9). Was dynamic at .122.
+resource "opnsense_kea_dhcpv4_reservation" "u6_pro" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "ac:8b:a9:2f:9b:8e"
+  ip_address  = "192.168.1.6"
+  hostname    = "u6-pro"
+  description = "UniFi U6 Pro access point"
+}
+
 # ── Personal/home devices ──────────────────────────────────────────────────────
+# Trusted static block (.50-.99). The gaming PC and laptop sat at .100 and .111,
+# inside the dynamic pool, until 2026-11-17.
 
 resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "2c:f0:5d:7c:93:6c"
-  ip_address  = "192.168.1.100"
+  ip_address  = "192.168.1.52"
   hostname    = "DESKTOP-Q0E7TOC"
   description = "Windows Desktop"
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "netgear_ap" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "94:18:65:41:1e:05"
-  ip_address  = "192.168.1.110"
-  hostname    = "NETGEAR411E05"
-  description = "Netgear WAX220 Access Point"
 }
 
 resource "opnsense_kea_dhcpv4_reservation" "laptop" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "6c:7e:67:c8:b5:a5"
-  ip_address  = "192.168.1.111"
+  ip_address  = "192.168.1.53"
   hostname    = "AutLaptopALMBP2"
   description = "Laptop"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "desktop_secondary" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:02:18:80"
-  ip_address  = "192.168.1.124"
-  hostname    = "DESKTOP-L9VHPP0"
-  description = ""
-}
-
-resource "opnsense_kea_dhcpv4_reservation" "vm_hub" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "bc:24:11:7c:51:a9"
-  ip_address  = "192.168.1.125"
-  hostname    = "arseni-vm-hub"
-  description = ""
-}
-
+# Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
+# #782 but was never applied; Kea then leased .105 to the new USW Flex Mini.
 resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
   subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
   mac_address = "ca:e0:0e:6c:cf:c1"
-  ip_address  = "192.168.1.105"
+  ip_address  = "192.168.1.51"
   hostname    = "bazzite-chromebook"
   description = "ASUS Chromebook Plus 14 (CX3402CVA/marasov) dual-booted into Bazzite HTPC — see Arsenikki/codex bazzite-chromebook-cx3402cva/"
+}
+
+# Raspberry Pi 4 in the bedroom: NixOS, gitops-managed from Arsenikki/nixos-homelab
+# (Music Assistant "Bedroom" Sendspin player). Wi-Fi MAC (wlan0; it runs without the
+# Ethernet cable since 2026-11-14); trusted static block.
+resource "opnsense_kea_dhcpv4_reservation" "bedroom_pi" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "dc:a6:32:a9:a9:00"
+  ip_address  = "192.168.1.50"
+  hostname    = "bedroom-pi"
+  description = "Raspberry Pi 4, NixOS (Arsenikki/nixos-homelab)"
 }
 
 # ── IoT / home-automation devices ──────────────────────────────────────────────
@@ -124,6 +209,18 @@ resource "opnsense_kea_dhcpv4_reservation" "philips_purifier" {
   ip_address  = "192.168.1.150"
   hostname    = "philips-purifier"
   description = "Philips 3200 air purifier (MXCHIP wifi; CoAP local control)"
+}
+
+# The projector's hardware Wi-Fi MAC: MAC randomization is off for uuno-express
+# since 2026-11-17, because its per-SSID random MAC changed whenever it rejoined
+# the Wi-Fi. HA's androidtv_remote identifies it by 38:54:39:6c:bc:de, a different
+# interface. Also the wake-on-Wi-Fi target in HA's packages/projector.yaml.
+resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "38:54:39:6c:bc:dd"
+  ip_address  = "192.168.1.151"
+  hostname    = "formovie-projector"
+  description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"
 }
 
 # ── State migration — rename old individual resources to for_each ──────────────

@@ -11,9 +11,10 @@
 # (thin-pool hygiene) — it does NOT reach inside individual volumes, so neither problem
 # was ever cleaned up automatically.
 #
-# concurrency: 1 everywhere — the 4-core N5105 nas host (worker-02) cannot sustain
-# parallel heavy Longhorn IO (a 5-wide replica rebuild crashlooped it on 2026-10-25),
-# so maintenance is deliberately serialized.
+# concurrency: 1 everywhere — maintenance is deliberately serialized. Originally because
+# the old 4-core N5105 nas host (worker-02) could not sustain parallel heavy Longhorn IO
+# (a 5-wide replica rebuild crashlooped it on 2026-10-25); nas is now a Ryzen 5800U,
+# but these jobs are not time-critical, so serial remains the gentle default.
 
 # Reclaims space freed INSIDE each volume's filesystem — including blocks left behind
 # after snapshot coalescing — which node-level fstrim cannot touch. This is the job that

@@ -10,7 +10,7 @@
 # not forward this host.
 #
 # Auth is the daemon PASSWORD (PASEO_PASSWORD, wired in workload.yaml + secrets.yaml)
-# PLUS the 0.11.x Host-header allow-list (this ingress host is added to PASEO_HOSTNAMES
+# PLUS the Host-header allow-list (this ingress host is added to PASEO_HOSTNAMES
 # in workload.yaml) — a client must satisfy BOTH. Do NOT add an authentik forward-auth
 # middleware: it 302-redirects, which the non-browser paseo WebSocket client cannot
 # follow — it would break every client. Connect with:
