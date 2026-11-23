@@ -235,6 +235,11 @@ in
       "net.ipv4.conf.all.forwarding" = 1;
     };
 
+    # Unbound is the DNS server and the router resolves via the upstreams directly, so
+    # systemd-resolved (on by default with networkd) only added LLMNR/mDNS listeners
+    # on every interface. The firewall blocked them, but they had no reason to run.
+    services.resolved.enable = false;
+
     networking = {
       useNetworkd = true;
       useDHCP = false;
