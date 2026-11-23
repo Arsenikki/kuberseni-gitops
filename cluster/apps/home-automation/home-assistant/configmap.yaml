@@ -238,6 +238,19 @@ data:
         d.connect(rsa_keys=[s], auth_timeout_s=5);
         d.shell("settings put global tv_picture_video_game_mode 0");
         d.close()'
+      # Switch Samsung HW-Q990H (reserved at .152) via local HTTPS JSON-RPC (port 1516).
+      soundbar_input_hdmi1: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "HDMI_IN1"})'
+      soundbar_input_arc: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "ARC"})'
 
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
