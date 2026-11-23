@@ -21,9 +21,9 @@ automation:
                 entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
       - delay:
           seconds: 1
-      # Apply the selected profile to the lights it is configured for. (Node-RED
-      # passed every light, which also adapted lights Adaptive Lighting does not
-      # manage, e.g. the bedroom light and the light groups.)
+      # Apply the selected profile to the lights it is configured for (the shared
+      # `lights` list in configmap.yaml, which includes light.bedroom_light_01).
+      # Node-RED passed every light, which also adapted the light groups.
       - action: adaptive_lighting.apply
         data:
           entity_id: "switch.adaptive_lighting_{{ level }}"

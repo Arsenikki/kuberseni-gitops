@@ -32,7 +32,7 @@ deschedulerPolicy:
   # Pull live CPU/memory from metrics-server (cluster/apps/metrics-server) so
   # LowNodeUtilization balances on ACTUAL usage, not pod requests. Without this,
   # worker-02 — the weak NAS node, packed with request-less tenants (jeeves,
-  # flock, alloy) — reads as under-utilized by the requests-based heuristic and
+  # jeeves-board, alloy) — reads as under-utilized by the requests-based heuristic and
   # never sheds load, which is why it keeps getting repacked to CPU/RAM
   # starvation. Requires metrics-server to be deployed and serving (kubectl top
   # nodes must work) BEFORE this merges, or every run errors. The chart

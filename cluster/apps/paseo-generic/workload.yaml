@@ -52,6 +52,7 @@ spec:
         app: paseo-generic
         app.kubernetes.io/part-of: paseo-homelab
     spec:
+      priorityClassName: kuberseni-critical
       serviceAccountName: paseo-generic
       imagePullSecrets:
         - name: ghcr-credentials
@@ -60,21 +61,9 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch # skip recursive chown when PVC root already matches (fast rolls)
-      # Keep the Paseo daemons off worker-02: it is a 3-vCPU VM on the 4-core nas host
-      # (shared with TrueNAS + cp-03) and also runs Longhorn engines. Agent spikes
-      # (builds, renovate, gh fan-out) pinned it at load ~100, starving Longhorn's
-      # probes into crashloops. Hard rule — a soft spread put a daemon back on it.
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: NotIn
-                    values: [worker-02]
       containers:
         - name: paseo
-          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-6
+          image: ghcr.io/arsenikki/paseo-homelab:0.15.4-9
           imagePullPolicy: Always
           env:
             - name: PASEO_HOME
@@ -129,7 +118,7 @@ spec:
             - name: PASEO_PLUGINS_ENABLED
               value: "1"
             - name: JEEVES_BOARD_URL
-              value: "http://flock.flock.svc.cluster.local:8099"
+              value: "http://jeeves-board.jeeves-board.svc.cluster.local:8099"
             # GitHub CLI auth token for gh CLI operations
             - name: GH_TOKEN
               valueFrom:
@@ -186,7 +175,7 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack worker-02
+              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack a node
               memory: 1Gi # observed ~800Mi idle-ish, ~1.5Gi under agent load
             # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
             # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
@@ -235,6 +224,12 @@ spec:
             secretName: paseo-ssh
             optional: true # the pod starts before the 1Password item exists; the file appears once ESO syncs it
             defaultMode: 288 # 0440: owner root, group = fsGroup 1000 (the agent user)
+  # /data/paseo holds CLAUDE_CONFIG_DIR (session transcripts), GOPATH + GOCACHE,
+  # MISE_DATA_DIR, antigravity state/logs and the local-speech models (~1G), so it
+  # filled 5Gi (ENOSPC, 2026-11-21). volumeClaimTemplates are immutable: to resize,
+  # patch the live PVC (Longhorn expands online), then change this and
+  # `kubectl delete sts paseo-generic -n paseo-generic --cascade=orphan` so ArgoCD
+  # can recreate the StatefulSet (the pod keeps running).
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -244,7 +239,7 @@ spec:
         storageClassName: longhorn
         resources:
           requests:
-            storage: 5Gi
+            storage: 15Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

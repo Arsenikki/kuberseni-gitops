@@ -14,6 +14,10 @@ kind: Application
 metadata:
   name: root
   namespace: argocd
+  annotations:
+    # Server-side diff: ignores the pre/post-delete finalizers ArgoCD itself
+    # adds to child Applications (otherwise root is permanently OutOfSync).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
