@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: rhasspy/wyoming-whisper
-          tag: 3.9.0
+          tag: 3.9.1
           pullPolicy: IfNotPresent
         args:
           - --model
