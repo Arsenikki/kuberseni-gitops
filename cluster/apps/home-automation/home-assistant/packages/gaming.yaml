@@ -1,6 +1,86 @@
 ---
-# qBittorrent slow mode while the gaming PC is on. Ported from the Node-RED
-# "qBittorrent / Gaming" tab (which also synced once at startup).
+# Living-room gaming automation & PC state sync:
+# - qBittorrent slow mode while the gaming PC is on (ported from Node-RED).
+# - Start / Stop / Toggle living-room gaming via Bazzite Moonlight + Formovie HDMI 3 + WoL.
+#   Webhooks (local_only: true):
+#     GET/POST /api/webhook/living_room_gaming_toggle
+#     GET/POST /api/webhook/living_room_gaming_start
+#     GET/POST /api/webhook/living_room_gaming_stop
+
+script:
+  living_room_gaming_start:
+    alias: "Gaming: start living room"
+    mode: single
+    sequence:
+      - action: rest_command.sunshine_serverinfo
+        response_variable: sunshine_init
+        continue_on_error: true
+      - if:
+          - condition: template
+            value_template: "{{ sunshine_init is not defined or sunshine_init.get('status') != 200 }}"
+        then:
+          - action: wake_on_lan.send_magic_packet
+            data:
+              mac: "2C:F0:5D:7C:93:6C"
+              broadcast_address: 192.168.1.255
+      - if:
+          - condition: template
+            value_template: "{{ states('media_player.living_room_tv') in ['unavailable', 'unknown', 'off'] }}"
+        then:
+          - action: script.projector_turn_on
+      - action: remote.turn_on
+        target:
+          entity_id: remote.living_room_tv
+        data:
+          activity: "content://android.media.tv/passthrough/com.mediatek.tvinput%2F.hdmi.HDMIInputService%2FHW6"
+      - if:
+          - condition: template
+            value_template: "{{ sunshine_init is not defined or sunshine_init.get('status') != 200 }}"
+        then:
+          - repeat:
+              sequence:
+                - delay: 2
+                - action: rest_command.sunshine_serverinfo
+                  response_variable: sunshine
+                  continue_on_error: true
+              until: "{{ (sunshine is defined and sunshine.get('status') == 200) or repeat.index >= 20 }}"
+      - action: rest_command.bazzite_gaming_start
+
+  living_room_gaming_stop:
+    alias: "Gaming: stop living room"
+    mode: single
+    sequence:
+      - action: rest_command.bazzite_gaming_stop
+        continue_on_error: true
+      - if:
+          - condition: state
+            entity_id: media_player.living_room_tv
+            state: "on"
+        then:
+          - action: remote.send_command
+            target:
+              entity_id: remote.living_room_tv
+            data:
+              command: HOME
+
+  living_room_gaming_toggle:
+    alias: "Gaming: toggle living room"
+    mode: single
+    sequence:
+      - action: rest_command.bazzite_gaming_status
+        response_variable: gaming_status
+        continue_on_error: true
+      - if:
+          - condition: template
+            value_template: >-
+              {% set content = gaming_status.get('content', {}) if gaming_status is defined else {} %}
+              {% set data = content if content is mapping else (content | from_json if content is string and content.startswith('{') else {}) %}
+              {{ gaming_status is defined and gaming_status.get('status') == 200 and data.get('running', false) }}
+        then:
+          - action: script.living_room_gaming_stop
+        else:
+          - action: script.living_room_gaming_start
+
 automation:
   - id: qbittorrent_slow_mode_while_gaming
     alias: "Gaming: qBittorrent slow mode while gaming PC is on"
@@ -19,3 +99,40 @@ automation:
       - action: "switch.turn_{{ states('binary_sensor.gaming_pc') }}"
         target:
           entity_id: switch.qbittorrent_alternative_speed
+
+  - id: living_room_gaming_webhooks
+    alias: "Gaming: living room control webhooks"
+    mode: single
+    triggers:
+      - trigger: webhook
+        webhook_id: living_room_gaming_toggle
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: toggle
+      - trigger: webhook
+        webhook_id: living_room_gaming_start
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: start
+      - trigger: webhook
+        webhook_id: living_room_gaming_stop
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: stop
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: toggle
+            sequence:
+              - action: script.living_room_gaming_toggle
+          - conditions:
+              - condition: trigger
+                id: start
+            sequence:
+              - action: script.living_room_gaming_start
+          - conditions:
+              - condition: trigger
+                id: stop
+            sequence:
+              - action: script.living_room_gaming_stop
