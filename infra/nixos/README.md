@@ -123,6 +123,23 @@ The WAN cable (from the Draytek) only goes into that host, so gw can't simply mo
      ```
    - **An offline copy of the repo's master age key** (`kuberseni-gitops-sops-age-key`). It decrypts gw's own key and every other secret.
 
+### If the rollback fails too (escalation ladder)
+
+Work down the list, stopping at the first step that brings the internet back. Save this page to your phone first: once the router is down, nothing on the network can show it to you.
+
+1. **Wait 15 minutes.** `gw-cutover.sh` rolls back by itself within about 12 minutes. A rejected PPPoE login (the ISP still holding the old session) also clears in about 10 minutes.
+2. **Proxmox web UI.** Open https://192.168.1.10:8006 from Wi-Fi, or from a laptop cabled to the Flex Mini. After `merge-bridges`, the router box's spare 4th port (`enp5s0`) also works. If your device has no IP address, set 192.168.1.250, mask 255.255.255.0.
+   - VM 101 `gw` → **Stop**. VM 100 `OPNSense` → **Start**. Wait 3 minutes.
+3. **OPNSense starts but has no internet**, or won't boot: VM 100 → **Snapshots** → `pre-gw-cutover` → **Rollback**, then **Start**.
+4. **OPNSense is broken but gw got as far as booting:** try gw instead (VM 100 **Stop**, VM 101 **Start**). If neither gets PPPoE up, the problem is on the ISP side (step 7).
+5. **The Proxmox web UI is unreachable** (the host's own network is broken, e.g. by `merge-bridges`): connect a monitor and USB keyboard to the router box and log in as root.
+   - Restore the bridges: `cp /etc/network/interfaces.before-merge-* /etc/network/interfaces && ifreload -a`.
+   - Optionally undo `harden`: `rm /etc/sysctl.d/90-router-host.conf`. Then go back to step 2.
+6. **The router box itself is dead:** let the Draytek route. Switch it from bridge/modem mode to router mode with PPPoE, using the login in 1Password item `isp-pppoe`, and connect its LAN port to the Flex Mini. See "If the router Proxmox host dies".
+7. **Nothing works, or PPPoE is refused everywhere:** use a phone hotspot to get online, and call Onestream if PPPoE keeps being refused. The agents run in the cluster and have no internet while the router is down, so they can't help until it's back.
+
+Before switching, check that the 1Password item `isp-pppoe` exists, that you know the Draytek's admin login, and that you have a phone hotspot, a laptop with Ethernet and, ideally, a monitor and keyboard near the router box.
+
 ### Staging
 
 Staging has run on `nas` since 2026-11-15:

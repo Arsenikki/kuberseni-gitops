@@ -24,6 +24,11 @@ log "preflight"
 [ "$(qm status $OPN | awk '{print $2}')" = running ] || { log "OPNSense (VM $OPN) isn't running: refusing"; exit 1; }
 [ "$(qm status $GW | awk '{print $2}')" = stopped ] || { log "gw (VM $GW) must exist and be stopped: run gw-prepare.sh"; exit 1; }
 qm config $GW | grep -qx 'name: gw' || { log "VM $GW isn't gw: refusing"; exit 1; }
+# The leases and the Tailscale identity are read through OPNSense's guest agent.
+qm agent $OPN ping 2>/dev/null || {
+  log "OPNSense's QEMU guest agent isn't answering: start it in OPNSense (Services > QEMU Guest Agent) first; nothing changed"
+  exit 1
+}
 
 log "snapshot OPNSense (pre-gw-cutover)"
 qm delsnapshot $OPN pre-gw-cutover 2>/dev/null || true
