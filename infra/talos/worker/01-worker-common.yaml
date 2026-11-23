@@ -12,3 +12,9 @@ machine:
     extraConfig:
       imageGCHighThresholdPercent: 70
       imageGCLowThresholdPercent: 60
+      # Default 110 is too low for a 2-worker cluster: when one worker is down
+      # (2026-11-21 nas reboot) the survivor must hold both workers' pods, and
+      # worker-01 hit 110 with ~17 pods Pending ("Too many pods"). Each node's
+      # podCIDR is a /24 (254 IPs; hostNetwork pods use none), so 200 still
+      # leaves IP headroom. Workers only: control planes are far below 110.
+      maxPods: 200

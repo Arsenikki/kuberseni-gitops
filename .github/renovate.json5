@@ -12,6 +12,12 @@
   "schedule": ["at any time"],
   // 0 = no limit — open a PR for every pending update at once
   "prConcurrentLimit": 0,
+  // main requires up-to-date branches (strict). Renovate must NOT rebase every PR that falls
+  // behind: that moves the head, which discards Jeeves' stored advisor verdict and hands
+  // routine PRs to a human. Jeeves' merge gate brings a PR up to date itself (GitHub
+  // update-branch) right before merging it, one at a time. Renovate rebases only on conflict,
+  // except the PRs it merges itself (below), which have nothing else to update them.
+  "rebaseWhen": "conflicted",
   "platformAutomerge": true,
   "osvVulnerabilityAlerts": true,
   // ArgoCD Application manifests reference Helm charts (chart + targetRevision)
@@ -51,6 +57,8 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
+      // GitHub native auto-merge never updates a BEHIND branch; Renovate has to.
+      "rebaseWhen": "behind-base-branch",
       "pinDigests": true,
       "matchUpdateTypes": ["minor", "patch", "digest"]
     },
@@ -82,6 +90,30 @@
       // pending forever and no PR is ever opened. (The images are picked up by the
       // helm-values manager from cluster/apps/arc/runners/values.yaml.)
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    // Jeeves: private OCI charts from its own releases (cluster/apps/jeeves/README.md).
+    // ghcr has no release timestamps, so timestamp-optional (as for ARC above);
+    // and no 3-day wait: we cut these releases ourselves.
+    {
+      "description": ["Jeeves dev: the edge channel, auto-merge every release"],
+      "matchFileNames": ["cluster/argocd/apps/jeeves-dev.yaml"],
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": null,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "automerge": true,
+      "automergeType": "pr",
+      "rebaseWhen": "behind-base-branch",
+      "addLabels": ["jeeves/dev"]
+    },
+    {
+      "description": ["Jeeves prod + board: one PR per release; merging it is the promotion"],
+      "matchFileNames": ["cluster/argocd/apps/jeeves.yaml", "cluster/argocd/apps/jeeves-board.yaml"],
+      "matchDatasources": ["docker"],
+      "minimumReleaseAge": null,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "automerge": false,
+      "groupName": "jeeves prod",
+      "addLabels": ["jeeves/prod"]
     },
     // commit message topics
     {

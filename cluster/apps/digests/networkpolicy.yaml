@@ -30,9 +30,9 @@ spec:
     # Jeeves board API (read-only GET /activity) for the "Shipped" section.
     - to:
         - namespaceSelector:
-            matchLabels: { kubernetes.io/metadata.name: flock }
+            matchLabels: { kubernetes.io/metadata.name: jeeves-board }
           podSelector:
-            matchLabels: { app: flock }
+            matchLabels: { app: jeeves-board }
       ports:
         - { protocol: TCP, port: 8099 }
     - to:

@@ -1,0 +1,43 @@
+---
+# Jeeves DEV (namespace jeeves-dev). The edge channel: Renovate auto-merges every
+# release here. Same cluster as prod, own namespace + NATS; shares the paseo-jeeves
+# daemon and the board. Routing keeps it disjoint from prod via card OWNERSHIP:
+# it works only `jeeves-dev`-owned cards.
+
+# Expendable during a node outage: yields to everything else, never preempts.
+priorityClassName: kuberseni-low
+
+config:
+  # In-cluster board API (the chart default still points at the pre-rename flock URL).
+  JEEVES_BOARD_URL: http://jeeves-board.jeeves-board.svc.cluster.local:8099
+  JEEVES_INSTANCE: jeeves-dev
+  # Opens PRs but never auto-merges (caps an unproven build's blast radius).
+  JEEVES_AUTONOMY: propose
+  # Renovate cards are filed by prod only (else both would file the same card).
+  JEEVES_RENOVATE_INTERVAL: "0"
+  # Dev runs its OWN Telegram long-poller on its OWN bot (no 409 with prod) and
+  # posts to a dedicated forum topic in the shared group.
+  TELEGRAM_POLL: "true"
+  TELEGRAM_TOPIC_ID: "471"
+  # Light footprint: dev shares the paseo-jeeves daemon with prod, so keep it to one
+  # agent per phase (it only runs occasional smoke tests).
+  JEEVES_MAX_INPROGRESS_AGENTS: "1"
+  JEEVES_MAX_REVIEW_AGENTS: "1"
+  JEEVES_MAX_VERIFY_AGENTS: "1"
+
+externalSecrets:
+  # Dev's own bot token; everything else is shared with prod's "Jeeves Agent" item.
+  telegramBotItem: Jeeves Agent - Dev
+
+services:
+  orchestrator:
+    affinity: &avoidWorker02
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values: [worker-02]
+  agentRunner:
+    affinity: *avoidWorker02
