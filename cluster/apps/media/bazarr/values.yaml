@@ -48,6 +48,9 @@ persistence:
 resources:
   requests:
     cpu: 10m
-    memory: 64M
+    memory: 256M
   limits:
-    memory: 512M
+    memory: 2048M
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+priorityClassName: kuberseni-low

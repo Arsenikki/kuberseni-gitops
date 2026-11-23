@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zigbee-serial-proxy
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: zigbee-serial-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: zigbee-serial-proxy
+  ports:
+    - name: serial-tcp
+      port: 8888
+      targetPort: 8888
+      protocol: TCP

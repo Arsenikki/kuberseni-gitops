@@ -1,6 +1,6 @@
 ---
 # paseo-jeeves — the THIRD paseo tier: Jeeves's autonomous full-shell coding daemon
-# (jeeves-paseo image: paseo 0.11.x + Claude Code + git + the jeeves git-credential
+# (jeeves-paseo image: paseo 0.15.x + Claude Code + git + the jeeves git-credential
 # helper + token-broker/repo-sync sidecars). Its own app so it upgrades/syncs/rolls
 # back independently of paseo-apps (sandboxed MCP apps) and paseo-generic (personal
 # debug). Wave 6 — after ESO/1Password + Longhorn. See docs/homelab/paseo.md.

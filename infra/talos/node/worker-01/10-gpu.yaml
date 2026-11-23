@@ -1,0 +1,15 @@
+# Applied to worker-01 (Minisforum NBP5 — Intel i5-13500H with Intel Iris Xe iGPU,
+# full PCIe passthrough from minipc Proxmox host).
+# Its installer image (extra i915 GPU firmware + intel-ucode extensions) comes from
+# schematicId "@schematic-gpu.yaml" on worker-01 in topf.yaml.
+machine:
+  kernel:
+    modules:
+      - name: i915
+  kubelet:
+    extraArgs:
+      node-labels: intel.feature.node.kubernetes.io/gpu=true
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/mnt/longhorn-data

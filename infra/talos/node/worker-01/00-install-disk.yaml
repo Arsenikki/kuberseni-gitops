@@ -1,0 +1,7 @@
+# Select the OS disk by size instead of /dev/sdX: worker-01 has an ~86 GB OS disk
+# (grown from 51 GB on 2026-11-17) and a ~537 GB Longhorn data disk (/dev/sdb).
+# "<= 200GB" matches only the OS disk, with headroom for further growth.
+machine:
+  install:
+    diskSelector:
+      size: "<= 200GB"

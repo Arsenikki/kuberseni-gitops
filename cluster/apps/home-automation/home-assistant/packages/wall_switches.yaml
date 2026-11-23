@@ -1,0 +1,65 @@
+---
+# Zigbee wall switches, read from the same zigbee2mqtt action topics Node-RED
+# used. Ported from the Node-RED "Lights" tab.
+automation:
+  - id: kitchen_wall_switch
+    alias: "Kitchen: wall switch"
+    description: >-
+      on = toggle kitchen LED strips together; up/down = next/previous
+      adaptive lighting level (no wrap-around); off = nothing.
+    mode: queued
+    triggers:
+      - trigger: mqtt
+        topic: zigbee2mqtt/kitchen_wall_switch/action
+    actions:
+      - choose:
+          - conditions: "{{ trigger.payload == 'on_press' }}"
+            sequence:
+              - action: script.lights_sync_toggle
+                data:
+                  entities: [light.kitchen_led_strip_01, light.kitchen_led_strip_02]
+          - conditions: "{{ trigger.payload == 'up_press' }}"
+            sequence:
+              - action: input_select.select_next
+                target:
+                  entity_id: input_select.adaptive_lighting_level
+                data:
+                  cycle: false
+          - conditions: "{{ trigger.payload == 'down_press' }}"
+            sequence:
+              - action: input_select.select_previous
+                target:
+                  entity_id: input_select.adaptive_lighting_level
+                data:
+                  cycle: false
+
+  - id: living_room_wall_switch
+    alias: "Living room: wall switch"
+    description: >-
+      single left = toggle living room corner lights; single right = toggle
+      kitchen LED strips; double both = toggle the cleaning scene.
+    mode: queued
+    triggers:
+      - trigger: mqtt
+        topic: zigbee2mqtt/living_room_wall_switch/action
+    actions:
+      - choose:
+          - conditions: "{{ trigger.payload == 'single_left' }}"
+            sequence:
+              - action: script.lights_sync_toggle
+                data:
+                  entities: [light.living_room_corner_light_01, light.living_room_corner_light_02]
+          - conditions: "{{ trigger.payload == 'single_right' }}"
+            sequence:
+              - action: script.lights_sync_toggle
+                data:
+                  entities: [light.kitchen_led_strip_01, light.kitchen_led_strip_02]
+          # Node-RED toggled input_boolean.scene_cleaning_bool here, which no longer
+          # exists (the press did nothing). This does what it was meant to do.
+          - conditions: "{{ trigger.payload == 'double_both' }}"
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.scene
+                data:
+                  option: "{{ 'normal' if is_state('input_select.scene', 'cleaning') else 'cleaning' }}"

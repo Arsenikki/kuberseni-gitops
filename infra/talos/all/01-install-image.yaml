@@ -1,0 +1,6 @@
+# The installer image comes from topf.yaml: factory.talos.dev/metal-installer/<schematic>:<talosVersion>,
+# with the schematic from schematic.yaml (or a node's own schematicId, e.g. worker-01's
+# schematic-gpu.yaml). To upgrade Talos: bump talosVersion, merge, then `task talos:upgrade`.
+machine:
+  install:
+    wipe: true

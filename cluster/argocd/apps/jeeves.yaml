@@ -1,34 +1,43 @@
 ---
-# jeeves — ticket-driven autonomous maintenance system (GitHub Issues -> reviewed
-# PRs, built with Paseo + Claude Code). Source lives in a SEPARATE (private) repo;
-# rendered with kustomize (path "deploy/overlays/prod"). Wave 6 — after
-# ESO/1Password (secrets) and Longhorn (NATS + Paseo PVCs).
+# jeeves (PROD) — ticket-driven autonomous maintenance: board cards -> reviewed
+# PRs, built with Paseo + Claude Code. Deployed from the private `jeeves` Helm chart
+# (templates + agent prompts ship in the chart; values in cluster/apps/jeeves/).
+# The PROMOTED channel: Renovate opens a PR for each release and merging it is the
+# promotion (soak it on jeeves-dev first). Wave 6 — after ESO/1Password (secrets)
+# and Longhorn (NATS PVC). See cluster/apps/jeeves/README.md.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: jeeves
   namespace: argocd
   annotations:
+    # Diff via server-side dry-run: SSA apps otherwise show permanent OutOfSync
+    # on server-defaulted fields (ESO nullBytePolicy, STS maxUnavailable).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
     argocd.argoproj.io/sync-wave: "6"
-    # The source repo is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
-    # ephemeral ArgoCD with no repo creds) cannot list its refs and fails the
-    # check. Skip this app in the preview; the live cluster's ArgoCD has the
-    # repo credential (jeeves-repo ExternalSecret) and renders it normally.
+    # The chart is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
+    # ephemeral ArgoCD with no registry creds) can't pull it. Skip this app there;
+    # the live ArgoCD has the arsenikki-charts OCI repository credential.
     argocd-diff-preview/ignore: "true"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: kuberseni
-  source:
-    repoURL: https://github.com/Arsenikki/jeeves
-    targetRevision: main
-    path: deploy/overlays/prod
+  sources:
+    # Private OCI chart published by every jeeves release (no oci:// prefix).
+    # Chart X.Y.Z runs image vX.Y.Z. Renovate bumps targetRevision.
+    - repoURL: ghcr.io/arsenikki/charts
+      chart: jeeves
+      targetRevision: 1.69.2
+      helm:
+        releaseName: jeeves
+        valueFiles:
+          - $values/cluster/apps/jeeves/values-prod.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
-    # Prod moved to its own namespace (symmetric with jeeves-dev). The matching
-    # jeeves-repo change renames the prod overlay namespace; ArgoCD migrates the
-    # workloads jeeves -> jeeves-prod (tears down the old namespace, NATS+daemon
-    # state reset — done with prod idle).
     namespace: jeeves-prod
   syncPolicy:
     automated:
@@ -37,3 +46,11 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+    # Auto-sync doesn't re-attempt a failed sync of the same commit; retry rides
+    # out transient OCI pull failures.
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
