@@ -4,7 +4,38 @@
 #   GET /api/webhook/kitchen_lights_toggle
 #   GET /api/webhook/living_room_corner_lights_toggle
 #   GET /api/webhook/living_room_christmas_lights_toggle
+#   GET|POST /api/webhook/living_room_movie_lights
 # local_only: these IDs are public in this repo, so only LAN clients may call them.
+script:
+  living_room_movie_lights:
+    alias: "Lights: movie mode (kitchen & living room minimum brightness)"
+    mode: single
+    sequence:
+      - action: light.turn_on
+        target:
+          entity_id:
+            - light.kitchen_led_strip_01
+            - light.kitchen_led_strip_02
+            - light.living_room_corner_light_01
+            - light.living_room_corner_light_02
+        data:
+          brightness_pct: 1
+          transition: 2
+        continue_on_error: true
+      - repeat:
+          for_each:
+            - light.kitchen_countertop_lights
+            - light.living_room_christmas_lights
+          sequence:
+            - if:
+                - condition: template
+                  value_template: "{{ is_state(repeat.item, 'on') }}"
+              then:
+                - action: light.turn_off
+                  target:
+                    entity_id: "{{ repeat.item }}"
+                  continue_on_error: true
+
 automation:
   - id: light_webhooks
     alias: "Lights: toggle webhooks"
@@ -25,6 +56,11 @@ automation:
         allowed_methods: [GET]
         local_only: true
         id: christmas
+      - trigger: webhook
+        webhook_id: living_room_movie_lights
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: movie
     actions:
       - choose:
           - conditions:
@@ -48,3 +84,8 @@ automation:
               - action: light.toggle
                 target:
                   entity_id: light.living_room_christmas_lights
+          - conditions:
+              - condition: trigger
+                id: movie
+            sequence:
+              - action: script.living_room_movie_lights
