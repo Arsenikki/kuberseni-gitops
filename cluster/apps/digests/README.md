@@ -3,9 +3,9 @@
 Daily personal AI digest. Source: <https://github.com/Arsenikki/digests>.
 
 At 06:30 UK time the CronJob:
-1. Reads personal Gmail (last 24h), Google Calendar, Google Tasks and the configured news feeds.
+1. Reads personal Gmail (inbox only, last 24h, excluding promotions, social and forums), Google Calendar, Google Tasks and the configured news feeds.
 2. Reads the work calendar through the **free/busy API only**, so it sees "Busy (work)" blocks with times and nothing else.
-3. Hands each AI step to the shared **paseo-apps** daemon: one agent sorts all of the day's emails, then one each for news and the overview, plus one per reply draft. Each runs as a one-shot Gemini agent (`antigravity/gemini-3.8-flash-low` for triage, `-high` for writing). It uses `paseo run --output-schema` for validated JSON and archives its agents at the end of the run.
+3. Hands each AI step to the shared **paseo-apps** daemon: one agent sorts all of the day's emails, then one each for news and the overview, plus one per reply draft. Each runs as a one-shot Gemini agent (`antigravity/gemini-3.8-flash-low` for triage, `-high` for writing). The JSON schema is embedded in the prompt (antigravity rejects `--output-schema`, removed in v0.3.3). The reply is read back with `paseo logs <agent> --filter assistant_message`, the last JSON object is parsed and validated, and the step is retried once if validation fails. Each step's auto-created Paseo workspace is archived, together with its agents, at the end of the run.
 4. Adds a **🛠 Shipped** section listing PRs merged in the last 24h, from the Jeeves board activity log (`jeeves-board:8099`). Renovate bumps are collapsed into a count.
 5. Commits `Daily/YYYY-MM-DD-digest.md` to the private `Arsenikki/daily-digests` repo (opened as an Obsidian vault and synced by the Obsidian Git plugin), then posts a short summary with a link to the note to Telegram (@CasaAlertingBot).
 
@@ -23,5 +23,13 @@ The Paseo password comes from `paseo-apps-password` (same as resepti), and Teleg
 ## Operations
 
 - Run now: `kubectl create job --from=cronjob/digests manual-$(date +%s) -n digests`
-- Turn on Gmail drafts and Google Tasks: set `actions.enabled: true` in `configmap.yaml`.
 - Upgrade: tag `vX.Y.Z` in the app repo (CI publishes the image), then bump the tag in `cronjob.yaml`.
+
+## Rollout checklist
+
+These values are personal, so the owner fills them in `configmap.yaml`. After each change, trigger a test run with `kubectl create job --from=cronjob/digests manual-$(date +%s) -n digests`.
+
+- [ ] **`about_me`**: a line or two about you, used for reply tone and news relevance. Check: the next digest's drafts and news picks reflect it.
+- [ ] **`vip_senders`**: a list of addresses or `@domains`, e.g. `["mum@example.com", "@mybank.com"]`. Check: mail from a VIP is flagged or prioritised in the note.
+- [ ] **`busy_only_calendars`**: first share the work calendar with the personal Google account as "See only free/busy", then add its address. Check: the note shows "Busy (work)" blocks with times and no titles.
+- [ ] **Turn on Gmail drafts and Google Tasks (`actions.enabled: true`)**: only after the Google Tasks and thread-dedupe improvements ship in `Arsenikki/digests` (bump the image tag in `cronjob.yaml` first), and after about a week of proposed replies and tasks in the notes look right. Check: drafts appear in Gmail Drafts, tasks appear in the "AI suggested" list, and `.digests/state.json` in `daily-digests` stops duplicates.
