@@ -44,6 +44,20 @@ input_boolean:
     icon: mdi:television-classic
     initial: false
 
+input_datetime:
+  # Last (re)start of Moonlight; the external-exit cleanup gives it a grace period.
+  living_room_gaming_started_at:
+    name: "Living room gaming started at"
+    icon: mdi:clock-start
+    has_date: true
+    has_time: true
+
+input_text:
+  # Sunshine app of the current session, kept on in-place profile restarts.
+  living_room_gaming_app:
+    name: "Living room gaming app"
+    icon: mdi:application
+
 script:
   living_room_gaming_start:
     alias: "Gaming: start living room"
@@ -108,6 +122,16 @@ script:
           profile: "{{ target_profile }}"
           app: "{{ target_app }}"
           restart: "{{ target_restart }}"
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.living_room_gaming_started_at
+        data:
+          timestamp: "{{ now().timestamp() }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.living_room_gaming_app
+        data:
+          value: "{{ target_app }}"
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.living_room_gaming_active
@@ -236,7 +260,8 @@ script:
       - action: rest_command.bazzite_gaming_status
         response_variable: gaming_status
         continue_on_error: true
-      # Already streaming: restart Moonlight in place (no WoL / projector / lights).
+      # Already streaming: restart Moonlight in place (no WoL / projector / lights),
+      # keeping the session's app (e.g. Desktop).
       - if:
           - condition: template
             value_template: >-
@@ -247,7 +272,14 @@ script:
           - action: rest_command.bazzite_gaming_start
             data:
               profile: "{{ profile }}"
+              app: >-
+                {% set a = states('input_text.living_room_gaming_app') %}{{ 'Steam Big Picture' if a in ['', 'unknown', 'unavailable'] else a }}
               restart: true
+          - action: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.living_room_gaming_started_at
+            data:
+              timestamp: "{{ now().timestamp() }}"
         else:
           - action: script.living_room_gaming_start
             data:
@@ -491,7 +523,7 @@ automation:
       - action: script.living_room_gaming_stop
 
   # Session ended outside HA (controller / Steam exit, PC shut down): clean up.
-  # The 25s grace avoids racing living_room_gaming_start before Moonlight spawns.
+  # The 25s grace after each (re)start avoids racing Moonlight before it spawns.
   - id: living_room_gaming_cleanup_on_external_exit
     alias: "Gaming: clean up living room after external exit"
     mode: single
@@ -511,7 +543,7 @@ automation:
         state: "on"
       - condition: template
         value_template: >-
-          {{ (as_timestamp(now()) - as_timestamp(states.input_boolean.living_room_gaming_active.last_changed, 0)) > 25 }}
+          {{ (as_timestamp(now()) - (state_attr('input_datetime.living_room_gaming_started_at', 'timestamp') | float(0))) > 25 }}
     actions:
       - choose:
           - conditions:
