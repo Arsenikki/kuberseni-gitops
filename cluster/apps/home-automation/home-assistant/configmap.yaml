@@ -208,7 +208,8 @@ data:
         method: GET
         timeout: 5
       bazzite_gaming_start:
-        url: "http://192.168.1.51:8765/start"
+        # Optional data: profile (auto|1080p|4k_hdr), app, restart. No data keeps the old defaults.
+        url: "http://192.168.1.51:8765/start?profile={{ profile | default('auto') | urlencode }}&app={{ app | default('Steam Big Picture') | urlencode }}&restart={{ 'true' if (restart | default(false) | string | lower) in ['true', '1', 'yes', 'on'] else 'false' }}"
         method: POST
         timeout: 15
       bazzite_gaming_stop:
@@ -237,6 +238,15 @@ data:
         d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
         d.connect(rsa_keys=[s], auth_timeout_s=5);
         d.shell("settings put global tv_picture_video_game_mode 0");
+        d.close()'
+      projector_game_mode_toggle: >-
+        python3 -c 'from adb_shell.adb_device import AdbDeviceTcp;
+        from adb_shell.auth.sign_pythonrsa import PythonRSASigner;
+        s = PythonRSASigner(open("/config/.storage/adbkey.pub").read(), open("/config/.storage/adbkey").read());
+        d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
+        d.connect(rsa_keys=[s], auth_timeout_s=5);
+        cur = (d.shell("settings get global tv_picture_video_game_mode") or "").strip();
+        d.shell("settings put global tv_picture_video_game_mode " + ("0" if cur == "1" else "1"));
         d.close()'
       # Switch Samsung HW-Q990H (reserved at .152) via local HTTPS JSON-RPC (port 1516).
       soundbar_input_hdmi1: >-

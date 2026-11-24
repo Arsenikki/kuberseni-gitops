@@ -2,16 +2,89 @@
 # Living-room gaming automation & PC state sync:
 # - qBittorrent slow mode while the gaming PC is on (ported from Node-RED).
 # - Start / Stop / Toggle living-room gaming via Bazzite Moonlight + Formovie HDMI 3 + WoL.
+# - Stream profile (auto / 1080p / 4k_hdr), Windows Desktop launch, standalone Game Mode
+#   and HTPC input toggles for the Formovie tvQuickActions.
+# - Auto-cleanup when the projector turns off or the session ends outside HA
+#   (controller / Steam exit, PC shut down), and living-room light dim / restore.
 #   Webhooks (local_only: true):
 #     GET/POST /api/webhook/living_room_gaming_toggle
 #     GET/POST /api/webhook/living_room_gaming_start
 #     GET/POST /api/webhook/living_room_gaming_stop
+#     GET/POST /api/webhook/living_room_gaming_1080p
+#     GET/POST /api/webhook/living_room_gaming_4k
+#     GET/POST /api/webhook/living_room_gaming_desktop
+#     GET/POST /api/webhook/projector_game_mode_toggle
+#     GET/POST /api/webhook/living_room_htpc_toggle
+#     GET/POST /api/webhook/living_room_pc_wake
+
+input_select:
+  living_room_gaming_profile:
+    name: "Living room gaming profile"
+    icon: mdi:monitor-screenshot
+    options:
+      - "auto"
+      - "1080p"
+      - "4k_hdr"
+    initial: "auto"
+
+input_boolean:
+  # HA-managed gaming session is running (used to detect external exits).
+  living_room_gaming_active:
+    name: "Living room gaming active"
+    icon: mdi:controller
+    initial: false
+  # scene.living_room_gaming_lights_before was captured in this session.
+  living_room_gaming_lights_dimmed:
+    name: "Living room gaming lights dimmed"
+    icon: mdi:lightbulb-on-50
+    initial: false
+  # Projector is on HDMI 3 for the HTPC without a gaming session.
+  living_room_htpc_active:
+    name: "Living room HTPC active"
+    icon: mdi:television-classic
+    initial: false
+
+input_datetime:
+  # Last (re)start of Moonlight; the external-exit cleanup gives it a grace period.
+  living_room_gaming_started_at:
+    name: "Living room gaming started at"
+    icon: mdi:clock-start
+    has_date: true
+    has_time: true
+
+input_text:
+  # Sunshine app of the current session, kept on in-place profile restarts.
+  living_room_gaming_app:
+    name: "Living room gaming app"
+    icon: mdi:application
 
 script:
   living_room_gaming_start:
     alias: "Gaming: start living room"
     mode: single
+    fields:
+      profile:
+        description: "Stream profile (auto, 1080p, 4k_hdr). Defaults to input_select.living_room_gaming_profile."
+        example: "4k_hdr"
+        selector:
+          text:
+      app:
+        description: "Sunshine app to launch. Defaults to Steam Big Picture."
+        example: "Desktop"
+        selector:
+          text:
+      restart:
+        description: "Restart Moonlight if it is already running."
+        selector:
+          boolean:
     sequence:
+      - variables:
+          target_profile: >-
+            {% if profile is defined and profile not in ['', none] %}{{ profile }}
+            {%- else %}{% set p = states('input_select.living_room_gaming_profile') %}{{ 'auto' if p in ['unknown', 'unavailable'] else p }}
+            {%- endif %}
+          target_app: "{{ app | default('Steam Big Picture') }}"
+          target_restart: "{{ restart | default(false) }}"
       - action: rest_command.sunshine_serverinfo
         response_variable: sunshine_init
         continue_on_error: true
@@ -45,16 +118,80 @@ script:
                   continue_on_error: true
               until: "{{ (sunshine is defined and sunshine.get('status') == 200) or repeat.index >= 20 }}"
       - action: rest_command.bazzite_gaming_start
+        data:
+          profile: "{{ target_profile }}"
+          app: "{{ target_app }}"
+          restart: "{{ target_restart }}"
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.living_room_gaming_started_at
+        data:
+          timestamp: "{{ now().timestamp() }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.living_room_gaming_app
+        data:
+          value: "{{ target_app }}"
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.living_room_gaming_active
       - action: shell_command.projector_game_mode_on
         continue_on_error: true
       - action: shell_command.soundbar_input_hdmi1
         continue_on_error: true
+      # Dim the room for contrast; the snapshot is restored by living_room_gaming_stop.
+      - if:
+          - condition: state
+            entity_id: input_boolean.living_room_gaming_lights_dimmed
+            state: "off"
+          - condition: template
+            value_template: >-
+              {{ ['light.living_room_corner_light_01', 'light.living_room_corner_light_02', 'light.living_room_christmas_lights']
+                 | select('is_state', 'on') | list | count > 0 }}
+        then:
+          - action: scene.create
+            data:
+              scene_id: living_room_gaming_lights_before
+              snapshot_entities:
+                - light.living_room_corner_light_01
+                - light.living_room_corner_light_02
+                - light.living_room_christmas_lights
+          # Switch-platform light: on/off only, no brightness or transition.
+          - action: light.turn_off
+            target:
+              entity_id: light.living_room_christmas_lights
+            continue_on_error: true
+          - repeat:
+              for_each:
+                - light.living_room_corner_light_01
+                - light.living_room_corner_light_02
+              sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ is_state(repeat.item, 'on') }}"
+                  then:
+                    - action: light.turn_on
+                      target:
+                        entity_id: "{{ repeat.item }}"
+                      data:
+                        brightness_pct: 10
+                        transition: 2
+                      continue_on_error: true
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.living_room_gaming_lights_dimmed
 
   living_room_gaming_stop:
     alias: "Gaming: stop living room"
     mode: single
     sequence:
       - action: rest_command.bazzite_gaming_stop
+        continue_on_error: true
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.living_room_gaming_active
+      # Back to ARC even when the projector is already off.
+      - action: shell_command.soundbar_input_arc
         continue_on_error: true
       - if:
           - condition: state
@@ -68,8 +205,19 @@ script:
               entity_id: remote.living_room_tv
             data:
               command: HOME
-          - action: shell_command.soundbar_input_arc
             continue_on_error: true
+      - if:
+          - condition: state
+            entity_id: input_boolean.living_room_gaming_lights_dimmed
+            state: "on"
+        then:
+          - action: scene.turn_on
+            target:
+              entity_id: scene.living_room_gaming_lights_before
+            continue_on_error: true
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.living_room_gaming_lights_dimmed
 
   living_room_gaming_toggle:
     alias: "Gaming: toggle living room"
@@ -88,6 +236,156 @@ script:
           - action: script.living_room_gaming_stop
         else:
           - action: script.living_room_gaming_start
+
+  living_room_gaming_set_profile:
+    alias: "Gaming: set living room stream profile"
+    mode: single
+    fields:
+      profile:
+        description: "Stream profile."
+        required: true
+        example: "1080p"
+        selector:
+          select:
+            options:
+              - "auto"
+              - "1080p"
+              - "4k_hdr"
+    sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.living_room_gaming_profile
+        data:
+          option: "{{ profile }}"
+      - action: rest_command.bazzite_gaming_status
+        response_variable: gaming_status
+        continue_on_error: true
+      # Already streaming: restart Moonlight in place (no WoL / projector / lights),
+      # keeping the session's app (e.g. Desktop).
+      - if:
+          - condition: template
+            value_template: >-
+              {% set content = gaming_status.get('content', {}) if gaming_status is defined else {} %}
+              {% set data = content if content is mapping else (content | from_json if content is string and content.startswith('{') else {}) %}
+              {{ gaming_status is defined and gaming_status.get('status') == 200 and data.get('running', false) }}
+        then:
+          - action: rest_command.bazzite_gaming_start
+            data:
+              profile: "{{ profile }}"
+              app: >-
+                {% set a = states('input_text.living_room_gaming_app') %}{{ 'Steam Big Picture' if a in ['', 'unknown', 'unavailable'] else a }}
+              restart: true
+          - action: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.living_room_gaming_started_at
+            data:
+              timestamp: "{{ now().timestamp() }}"
+        else:
+          - action: script.living_room_gaming_start
+            data:
+              profile: "{{ profile }}"
+
+  living_room_gaming_1080p:
+    alias: "Gaming: living room 1080p"
+    mode: single
+    sequence:
+      - action: script.living_room_gaming_set_profile
+        data:
+          profile: "1080p"
+
+  living_room_gaming_4k:
+    alias: "Gaming: living room 4K HDR"
+    mode: single
+    sequence:
+      - action: script.living_room_gaming_set_profile
+        data:
+          profile: "4k_hdr"
+
+  living_room_gaming_desktop:
+    alias: "Gaming: living room Windows desktop"
+    mode: single
+    sequence:
+      - action: script.living_room_gaming_start
+        data:
+          app: "Desktop"
+          restart: true
+
+  projector_game_mode_toggle:
+    alias: "Projector: toggle Game Mode"
+    mode: single
+    sequence:
+      - if:
+          - condition: state
+            entity_id: media_player.living_room_tv
+            state: "on"
+        then:
+          - action: shell_command.projector_game_mode_toggle
+            continue_on_error: true
+
+  living_room_htpc_on:
+    alias: "HTPC: living room input on"
+    mode: single
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ states('media_player.living_room_tv') in ['unavailable', 'unknown', 'off'] }}"
+        then:
+          - action: script.projector_turn_on
+      - action: remote.turn_on
+        target:
+          entity_id: remote.living_room_tv
+        data:
+          activity: "content://android.media.tv/passthrough/com.mediatek.tvinput%2F.hdmi.HDMIInputService%2FHW6"
+      - action: shell_command.soundbar_input_hdmi1
+        continue_on_error: true
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.living_room_htpc_active
+
+  living_room_htpc_off:
+    alias: "HTPC: living room input off"
+    mode: single
+    sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.living_room_htpc_active
+      - action: shell_command.soundbar_input_arc
+        continue_on_error: true
+      - if:
+          - condition: state
+            entity_id: media_player.living_room_tv
+            state: "on"
+        then:
+          - action: remote.send_command
+            target:
+              entity_id: remote.living_room_tv
+            data:
+              command: HOME
+            continue_on_error: true
+
+  living_room_htpc_toggle:
+    alias: "HTPC: toggle living room input"
+    mode: single
+    sequence:
+      - if:
+          - condition: template
+            value_template: >-
+              {{ is_state('media_player.living_room_tv', 'on')
+                 and ('HDMIInputService' in (state_attr('media_player.living_room_tv', 'app_id') | default('', true))
+                      or is_state('input_boolean.living_room_htpc_active', 'on')) }}
+        then:
+          - action: script.living_room_htpc_off
+        else:
+          - action: script.living_room_htpc_on
+
+  living_room_pc_wake:
+    alias: "Gaming: wake living room PC"
+    mode: single
+    sequence:
+      - action: wake_on_lan.send_magic_packet
+        data:
+          mac: "2C:F0:5D:7C:93:6C"
+          broadcast_address: 192.168.1.255
 
 automation:
   - id: qbittorrent_slow_mode_while_gaming
@@ -110,7 +408,8 @@ automation:
 
   - id: living_room_gaming_webhooks
     alias: "Gaming: living room control webhooks"
-    mode: single
+    mode: queued
+    max: 5
     triggers:
       - trigger: webhook
         webhook_id: living_room_gaming_toggle
@@ -127,6 +426,36 @@ automation:
         allowed_methods: [GET, POST]
         local_only: true
         id: stop
+      - trigger: webhook
+        webhook_id: living_room_gaming_1080p
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: profile_1080p
+      - trigger: webhook
+        webhook_id: living_room_gaming_4k
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: profile_4k
+      - trigger: webhook
+        webhook_id: living_room_gaming_desktop
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: desktop
+      - trigger: webhook
+        webhook_id: projector_game_mode_toggle
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: game_mode_toggle
+      - trigger: webhook
+        webhook_id: living_room_htpc_toggle
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: htpc_toggle
+      - trigger: webhook
+        webhook_id: living_room_pc_wake
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: pc_wake
     actions:
       - choose:
           - conditions:
@@ -144,3 +473,97 @@ automation:
                 id: stop
             sequence:
               - action: script.living_room_gaming_stop
+          - conditions:
+              - condition: trigger
+                id: profile_1080p
+            sequence:
+              - action: script.living_room_gaming_1080p
+          - conditions:
+              - condition: trigger
+                id: profile_4k
+            sequence:
+              - action: script.living_room_gaming_4k
+          - conditions:
+              - condition: trigger
+                id: desktop
+            sequence:
+              - action: script.living_room_gaming_desktop
+          - conditions:
+              - condition: trigger
+                id: game_mode_toggle
+            sequence:
+              - action: script.projector_game_mode_toggle
+          - conditions:
+              - condition: trigger
+                id: htpc_toggle
+            sequence:
+              - action: script.living_room_htpc_toggle
+          - conditions:
+              - condition: trigger
+                id: pc_wake
+            sequence:
+              - action: script.living_room_pc_wake
+
+  # Projector turned off mid-session: end the HA-managed session. The condition
+  # keeps Netflix / Plex power-offs from polling Bazzite.
+  - id: living_room_gaming_stop_on_tv_off
+    alias: "Gaming: stop living room gaming when projector turns off"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: media_player.living_room_tv
+        from: "on"
+        to: ["off", "unavailable"]
+        for: "00:00:05"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.living_room_gaming_active
+        state: "on"
+    actions:
+      - action: script.living_room_gaming_stop
+
+  # Session ended outside HA (controller / Steam exit, PC shut down): clean up.
+  # The 25s grace after each (re)start avoids racing Moonlight before it spawns.
+  - id: living_room_gaming_cleanup_on_external_exit
+    alias: "Gaming: clean up living room after external exit"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.gaming_pc
+        from: "on"
+        to: "off"
+        for: "00:00:10"
+        id: pc_off
+      - trigger: time_pattern
+        seconds: "/30"
+        id: poll
+    conditions:
+      - condition: state
+        entity_id: input_boolean.living_room_gaming_active
+        state: "on"
+      - condition: template
+        value_template: >-
+          {{ (as_timestamp(now()) - (state_attr('input_datetime.living_room_gaming_started_at', 'timestamp') | float(0))) > 25 }}
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: pc_off
+            sequence:
+              - action: script.living_room_gaming_stop
+          - conditions:
+              - condition: trigger
+                id: poll
+            sequence:
+              - action: rest_command.bazzite_gaming_status
+                response_variable: gaming_status
+                continue_on_error: true
+              # Only an explicit running == false ends the session; errors / missing keys never do.
+              - if:
+                  - condition: template
+                    value_template: >-
+                      {% set content = gaming_status.get('content', {}) if gaming_status is defined else {} %}
+                      {% set data = content if content is mapping else (content | from_json if content is string and content.startswith('{') else {}) %}
+                      {{ gaming_status is defined and gaming_status.get('status') == 200 and data.get('running', true) == false }}
+                then:
+                  - action: script.living_room_gaming_stop
