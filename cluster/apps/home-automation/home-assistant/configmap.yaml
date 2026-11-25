@@ -82,6 +82,7 @@ data:
         name: "bathroom_all_lights"
         entities:
           - light.bathroom_light_01
+          - light.bathroom_light_02
 
     # Configure selectors
     input_select:
