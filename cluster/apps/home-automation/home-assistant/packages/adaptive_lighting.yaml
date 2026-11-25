@@ -69,8 +69,8 @@ automation:
       - action: "switch.turn_{{ 'on' if cozy else 'off' }}"
         target:
           entity_id:
-            - switch.adaptive_lighting_sleep_mode_bedroom
-            - switch.adaptive_lighting_sleep_mode_bathroom
+            - switch.adaptive_lighting_bedroom_sleep_mode
+            - switch.adaptive_lighting_bathroom_sleep_mode
         continue_on_error: true
 
   - id: lights_nightly_reset
