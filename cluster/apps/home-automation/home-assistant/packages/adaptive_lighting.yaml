@@ -2,7 +2,8 @@
 # Adaptive Lighting zones (switch.adaptive_lighting_<zone>, see
 # adaptive_lighting_config.yaml in configmap.yaml): living (kitchen, living room,
 # lobby), bedroom and bathroom. input_select.adaptive_lighting_level sets the
-# brightness/colour range of every zone; switches bump a single zone's lights
+# brightness/colour range of living and bedroom (the bathroom stays on maximum:
+# bright by day, dimming after sunset); switches bump a single zone's lights
 # (manual brightness control, cleared when the light turns off).
 # Cozy = sleep mode in the bedroom and bathroom from 21:00 to 06:00, dimmed to a
 # night light from 00:30.
@@ -19,17 +20,22 @@ script:
       level: "{{ states('input_select.adaptive_lighting_level') }}"
       ranges:
         low: {min_brightness: 1, max_brightness: 10, max_color_temp: 3000}
-        medium: {min_brightness: 5, max_brightness: 40, max_color_temp: 4000}
+        medium: {min_brightness: 5, max_brightness: 60, max_color_temp: 4000}
         high: {min_brightness: 10, max_brightness: 80, max_color_temp: 5000}
         maximum: {min_brightness: 20, max_brightness: 100, max_color_temp: 5000}
-      # Cozy is no brighter than the normal curve at 21:00 (about 15 % on medium)
+      # The bathroom is always on maximum (bright in the day, dimming after
+      # sunset); its cozy and night light still follow the level.
+      zone_level:
+        living: "{{ level }}"
+        bedroom: "{{ level }}"
+        bathroom: maximum
+      # Cozy is no brighter than the normal curve at 21:00 (about 20 % on medium)
       # and warmer (2200K vs 2500K); late night is a night light.
       cozy_brightness: {low: 5, medium: 15, high: 30, maximum: 50}
       late_night: "{{ today_at('00:30') <= now() < today_at('06:00') }}"
-      settings: >-
-        {{ dict(ranges.get(level, ranges.medium), use_defaults='current',
-                sleep_brightness=3 if late_night else cozy_brightness.get(level, 15),
-                sleep_color_temp=2000 if late_night else 2200) }}
+      sleep_settings:
+        sleep_brightness: "{{ 3 if late_night else cozy_brightness.get(level, 15) }}"
+        sleep_color_temp: "{{ 2000 if late_night else 2200 }}"
     sequence:
       - repeat:
           for_each: [living, bedroom, bathroom]
@@ -37,7 +43,9 @@ script:
             - action: adaptive_lighting.change_switch_settings
               target:
                 entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
-              data: "{{ settings }}"
+              data: >-
+                {{ dict(ranges.get(zone_level[repeat.item], ranges.medium),
+                        use_defaults='current', **sleep_settings) }}
               continue_on_error: true
 
 automation:

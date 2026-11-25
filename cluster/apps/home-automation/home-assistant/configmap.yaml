@@ -277,7 +277,8 @@ data:
     scene: !include scenes.yaml
 
   # One Adaptive Lighting switch per zone. Brightness/colour ranges below are the
-  # "medium" level; packages/adaptive_lighting.yaml re-applies the selected
+  # "medium" level (bathroom: always "maximum"); packages/adaptive_lighting.yaml
+  # re-applies the selected
   # input_select.adaptive_lighting_level (and the cozy sleep settings) to every
   # zone with adaptive_lighting.change_switch_settings. Sleep mode is "cozy":
   # bedroom and bathroom from 21:00 to 06:00. pause_changed: a brightness bump
@@ -297,7 +298,7 @@ data:
       initial_transition: 1
       interval: 90
       min_brightness: 5
-      max_brightness: 40
+      max_brightness: 60
       min_color_temp: 2500
       max_color_temp: 4000
       sleep_brightness: 15
@@ -315,7 +316,7 @@ data:
       initial_transition: 1
       interval: 90
       min_brightness: 5
-      max_brightness: 40
+      max_brightness: 60
       min_color_temp: 2500
       max_color_temp: 4000
       sleep_brightness: 15
@@ -333,10 +334,10 @@ data:
       transition: 45
       initial_transition: 1
       interval: 90
-      min_brightness: 5
-      max_brightness: 40
+      min_brightness: 20
+      max_brightness: 100
       min_color_temp: 2500
-      max_color_temp: 4000
+      max_color_temp: 5000
       sleep_brightness: 15
       sleep_color_temp: 2200
       take_over_control: true
