@@ -1,0 +1,32 @@
+---
+# Jeeves PROD (namespace jeeves-prod). The promoted channel: its chart version
+# moves only when you merge the Renovate promotion PR. Chart defaults (jeeves repo,
+# deploy/charts/jeeves/values.yaml) hold the shared config; only overrides here.
+config:
+  # In-cluster board API (the chart default still points at the pre-rename flock URL).
+  JEEVES_BOARD_URL: http://jeeves-board.jeeves-board.svc.cluster.local:8099
+  # Log PRs merged on managed repos by anyone to the board activity log. Prod only,
+  # so each merge is polled once.
+  JEEVES_ACTIVITY_MERGE_POLL: 2m
+  # Sweep unlinked non-Renovate open PRs across managed repos and file
+  # undispatched backlog triage cards for hanging/broken PRs. Prod only (shared board).
+  JEEVES_PR_SWEEP_INTERVAL: "6h"
+  # Background QA audit, findings to the morning digest. ONE instance only.
+  JEEVES_AUDIT_MODE: digest
+  # Always audit kuberseni-gitops (where parallel sessions collide most). Read-only.
+  JEEVES_AUDIT_REPOS: Arsenikki/kuberseni-gitops
+
+services:
+  # Off worker-02: these shell out to the Node `paseo` CLI, which took 14-30s to
+  # load on the old starved worker-02 (2026-11-02).
+  orchestrator:
+    affinity: &avoidWorker02
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values: [worker-02]
+  agentRunner:
+    affinity: *avoidWorker02

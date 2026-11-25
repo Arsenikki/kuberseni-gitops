@@ -8,7 +8,7 @@
 # only). Repo config comes from this repo's existing .github/renovate.json5.
 image:
   repository: ghcr.io/mend/renovate-ce
-  tag: "14.8.0"
+  tag: "15.12.0"
 
 renovate:
   # You must accept Mend's ToS (https://www.mend.io/terms-of-service/) — 'y'.
@@ -34,6 +34,11 @@ renovate:
   # and job logs are not touched. Daily, not "always": an always-empty cache makes
   # every hourly run cold. Quoted: a bare `off` would parse as a YAML boolean.
   mendRnvWorkerCleanup: "0 0 * * *"
+  # One job log per hourly run (~1 MB each). At the default 30-day TTL that's
+  # ~700 MB; 7 days keeps it around 170 MB. Set the
+  # dir explicitly so the TTL cleanup applies to where the logs actually go.
+  mendRnvLogHistoryDir: "/tmp/renovate/logs"
+  mendRnvLogHistoryTTLDays: "7"
   logLevel: "info"
   logFormat: "json"
   # Private ghcr.io auth: inject the shared read-only GHCR creds (github-packages-ro, from ESO,
@@ -65,26 +70,33 @@ renovate:
       ],
     };
 
-# Purge the package cache on every pod start. It is pure cache and rebuilds in one
-# run. Needed because CE's own cleanup (mendRnvWorkerCleanup above) only deletes
-# files created since the current process started (find -newercc), so it never
-# reclaims orphans from earlier pod lifetimes, like the July backlog that filled the
-# inode table. Same image as the main container (already on the node).
+# Purge the package caches on every pod start. They are pure cache and rebuild in one
+# run. CE's own cleanup (mendRnvWorkerCleanup above) only deletes files created since
+# the current process started (find -newercc), so whatever a pod cached on its last
+# day outlives it, and each restart left up to ~1.2 GB behind. That filled the PVC
+# twice: inodes in July 2026 (~3.5 months of no PRs), and space on 2026-11-23
+# (osv-offline 667 MB + npm 527 MB + logs; every job failed with SQLITE_FULL for 2
+# days). All of cache/, not just cache/renovate. The caches stay on the PVC (Longhorn
+# data disk) rather than an emptyDir so they don't use worker-01's /var. Same image
+# as the main container (already on the node).
 initContainers:
   - name: purge-package-cache
-    image: ghcr.io/mend/renovate-ce:14.8.0-full
-    command: ["sh", "-c", "rm -rf /tmp/renovate/cache/renovate"]
+    image: ghcr.io/mend/renovate-ce:15.12.0-full
+    command: ["sh", "-c", "rm -rf /tmp/renovate/cache/*"]
     volumeMounts:
       - name: renovate-ce-cache-volume
         mountPath: /tmp/renovate
 
-# Persist the SQLite job queue + repo cache across restarts.
+# SQLite job queue, job logs (7-day TTL above) and package caches. Steady state is
+# about one pod lifetime of cache (~1.2 GB) + ~200 MB; 5Gi leaves room for cache
+# growth between restarts. Was 2Gi. Longhorn expands it online
+# (allowVolumeExpansion: true); KubePersistentVolumeUsageHigh warns at 80%.
 cachePersistence:
   enabled: true
   storageClass: "longhorn"
   accessModes:
     - ReadWriteOnce
-  size: 2Gi
+  size: 5Gi
 
 # Container runs as uid/gid 12021; fsGroup makes the PVC writable.
 podSecurityContext:
@@ -97,7 +109,9 @@ podSecurityContext:
 resources:
   requests:
     cpu: 250m
-    memory: 1Gi
+    # ~290 MiB between runs (2026-11-21); scan bursts go above the request, up
+    # to the 4 GiB limit.
+    memory: 512Mi
   limits:
     cpu: "2"
     memory: 4Gi

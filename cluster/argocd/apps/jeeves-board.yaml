@@ -1,0 +1,65 @@
+---
+# jeeves-board — the Jeeves board (`jeeves board`): the realtime kanban board that
+# is Jeeves' ticket surface, shared by the jeeves + jeeves-dev instances. Deployed
+# from the private `jeeves-board` Helm chart (released with jeeves; Renovate PR is
+# grouped with prod). Formerly named `flock` (namespace, StatefulSet, Service);
+# renamed 2026-11 by re-binding the SQLite PV to data-jeeves-board-0.
+# NEVER delete/rename this Application casually: its finalizer + prune would take
+# the board's StatefulSet with it, and the PVC holds the board data. Own namespace
+# `jeeves-board`, ingress host jeeves.arsenikki.casa. In-cluster API:
+# http://jeeves-board.jeeves-board.svc.cluster.local:8099.
+# Wave 6 — after ESO/1Password + Longhorn, like jeeves.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jeeves-board
+  namespace: argocd
+  annotations:
+    # Diff via server-side dry-run: SSA apps otherwise show permanent OutOfSync
+    # on server-defaulted fields (ESO nullBytePolicy, STS maxUnavailable).
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+    argocd.argoproj.io/sync-wave: "6"
+    # The chart is PRIVATE, so the in-CI "Render ArgoCD diff" preview (an
+    # ephemeral ArgoCD with no registry creds) can't pull it. Skip this app there;
+    # the live ArgoCD has the arsenikki-charts OCI repository credential.
+    argocd-diff-preview/ignore: "true"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    # Private OCI chart published by every jeeves release (no oci:// prefix).
+    # Chart X.Y.Z runs image vX.Y.Z. Renovate bumps targetRevision.
+    - repoURL: ghcr.io/arsenikki/charts
+      chart: jeeves-board
+      targetRevision: 1.69.0
+      helm:
+        releaseName: jeeves-board
+        valueFiles:
+          - $values/cluster/apps/jeeves/values-board.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+    # Transition shim: keeps the old flock.flock.svc URL resolving (ExternalName)
+    # for agents/docs that still use it. Remove once nothing calls it.
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/jeeves/board-legacy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jeeves-board
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    # Auto-sync doesn't re-attempt a failed sync of the same commit; retry rides
+    # out transient OCI pull failures.
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

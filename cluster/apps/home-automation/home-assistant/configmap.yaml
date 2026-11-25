@@ -39,7 +39,7 @@ data:
             - light
             - switch
           exclude_entity_globs:
-            - switch.adaptive_lighting_adapt_*
+            - switch.adaptive_lighting_*_adapt_*
             - switch.*_do_not_disturb
       - name: virtual_accessories
         port: 21065
@@ -77,6 +77,12 @@ data:
           - light.lobby_candle_light_01
           - light.lobby_candle_light_02
           - light.lobby_candle_light_03
+      # Master bedroom bathroom (packages/bathroom_lights.yaml)
+      - platform: group
+        name: "bathroom_all_lights"
+        entities:
+          - light.bathroom_light_01
+          - light.bathroom_light_02
 
     # Configure selectors
     input_select:
@@ -94,12 +100,14 @@ data:
           - cleaning
           - spinning
         initial: normal
-      bathroom_mood_light_mode:
+      # White tone of the bathroom lights, see packages/bathroom_lights.yaml.
+      bathroom_light_tone:
         options:
-          - cold
+          - auto
+          - candle
           - warm
-          - hot
-          - violet
+          - soft
+          - bright
 
     # Homelab infra reachability checks (up/down). Internal svc URLs bypass
     # Authentik; LAN hosts use verify_ssl:false for self-signed certs.
@@ -136,11 +144,13 @@ data:
         value_template: "{{ true }}"
         timeout: 10
         scan_interval: 60
+      # The router (gw, NixOS; replaced OPNSense 2026-11-23). No web UI, so probe its
+      # node-exporter, which answers on the LAN. unique_id kept so the entity
+      # (binary_sensor.opnsense) and its history stay.
       - platform: rest
-        name: "OPNSense"
+        name: "Router (gw)"
         unique_id: infra_opnsense
-        resource: "https://192.168.1.1"
-        verify_ssl: false
+        resource: "http://192.168.1.1:9100/metrics"
         device_class: connectivity
         value_template: "{{ true }}"
         timeout: 10
@@ -199,72 +209,127 @@ data:
             json_attributes:
               - items
 
+    # Living-room gaming remote control (Bazzite Moonlight launcher + Sunshine probe).
+    rest_command:
+      bazzite_gaming_status:
+        url: "http://192.168.1.51:8765/status"
+        method: GET
+        timeout: 5
+      bazzite_gaming_start:
+        # Optional data: profile (auto|1080p|4k_hdr), app, restart. No data keeps the old defaults.
+        url: "http://192.168.1.51:8765/start?profile={{ profile | default('auto') | urlencode }}&app={{ app | default('Steam Big Picture') | urlencode }}&restart={{ 'true' if (restart | default(false) | string | lower) in ['true', '1', 'yes', 'on'] else 'false' }}"
+        method: POST
+        timeout: 15
+      bazzite_gaming_stop:
+        url: "http://192.168.1.51:8765/stop"
+        method: POST
+        timeout: 15
+      sunshine_serverinfo:
+        url: "http://192.168.1.52:47989/serverinfo?uniqueid=0123456789ABCDEF&uuid=b34cf743351f4d1c8ee0911711f662d3"
+        method: GET
+        timeout: 2
+
+    # Toggle Formovie projector Game Mode via ADB (trusted keypair in /config/.storage/adbkey{,.pub}).
+    shell_command:
+      projector_game_mode_on: >-
+        python3 -c 'from adb_shell.adb_device import AdbDeviceTcp;
+        from adb_shell.auth.sign_pythonrsa import PythonRSASigner;
+        s = PythonRSASigner(open("/config/.storage/adbkey.pub").read(), open("/config/.storage/adbkey").read());
+        d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
+        d.connect(rsa_keys=[s], auth_timeout_s=5);
+        d.shell("settings put global tv_picture_video_game_mode 1");
+        d.close()'
+      projector_game_mode_off: >-
+        python3 -c 'from adb_shell.adb_device import AdbDeviceTcp;
+        from adb_shell.auth.sign_pythonrsa import PythonRSASigner;
+        s = PythonRSASigner(open("/config/.storage/adbkey.pub").read(), open("/config/.storage/adbkey").read());
+        d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
+        d.connect(rsa_keys=[s], auth_timeout_s=5);
+        d.shell("settings put global tv_picture_video_game_mode 0");
+        d.close()'
+      projector_game_mode_toggle: >-
+        python3 -c 'from adb_shell.adb_device import AdbDeviceTcp;
+        from adb_shell.auth.sign_pythonrsa import PythonRSASigner;
+        s = PythonRSASigner(open("/config/.storage/adbkey.pub").read(), open("/config/.storage/adbkey").read());
+        d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
+        d.connect(rsa_keys=[s], auth_timeout_s=5);
+        cur = (d.shell("settings get global tv_picture_video_game_mode") or "").strip();
+        d.shell("settings put global tv_picture_video_game_mode " + ("0" if cur == "1" else "1"));
+        d.close()'
+      # Switch Samsung HW-Q990H (reserved at .152) via local HTTPS JSON-RPC (port 1516).
+      soundbar_input_hdmi1: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "HDMI_IN1"})'
+      soundbar_input_arc: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "ARC"})'
+
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
+  # One Adaptive Lighting switch per zone. Brightness/colour ranges below are the
+  # "medium" level (bathroom: always "maximum"); packages/adaptive_lighting.yaml
+  # re-applies the selected
+  # input_select.adaptive_lighting_level (and the cozy sleep settings) to every
+  # zone with adaptive_lighting.change_switch_settings. Sleep mode is "cozy":
+  # bedroom and bathroom from 21:00 to 06:00. pause_changed: a brightness bump
+  # only pauses brightness, the colour keeps adapting (and vice versa).
   adaptive_lighting_config.yaml: |
-    - name: "Low"
-      lights: &lights [
-        light.kitchen_led_strip_01,
-        light.kitchen_led_strip_02,
-        light.living_room_corner_light_01,
-        light.living_room_corner_light_02,
-        light.lobby_candle_light_01,
-        light.lobby_candle_light_02,
-        light.lobby_candle_light_03,
-        light.bedroom_light_01
-      ]
-      prefer_rgb_color: false
-      transition: 45
-      initial_transition: 1
-      interval: 90
-      min_brightness: 1
-      max_brightness: 10
-      min_color_temp: 2500
-      max_color_temp: 3000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
-      take_over_control: true
-      detect_non_ha_changes: false
-      adapt_only_on_bare_turn_on: true
-
-    - name: "Medium"
-      lights: *lights
+    - name: "Living"
+      lights:
+        - light.kitchen_led_strip_01
+        - light.kitchen_led_strip_02
+        - light.living_room_corner_light_01
+        - light.living_room_corner_light_02
+        - light.lobby_candle_light_01
+        - light.lobby_candle_light_02
+        - light.lobby_candle_light_03
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
       interval: 90
       min_brightness: 5
-      max_brightness: 40
+      max_brightness: 60
       min_color_temp: 2500
       max_color_temp: 4000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
-    - name: "High"
-      lights: *lights
+    - name: "Bedroom"
+      lights:
+        - light.bedroom_light_01
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
       interval: 90
-      min_brightness: 10
-      max_brightness: 80
+      min_brightness: 5
+      max_brightness: 60
       min_color_temp: 2500
-      max_color_temp: 5000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      max_color_temp: 4000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
-    - name: "Maximum"
-      lights: *lights
+    - name: "Bathroom"
+      lights:
+        - light.bathroom_light_01
+        - light.bathroom_light_02
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
@@ -273,8 +338,9 @@ data:
       max_brightness: 100
       min_color_temp: 2500
       max_color_temp: 5000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true

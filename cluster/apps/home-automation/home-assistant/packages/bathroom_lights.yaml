@@ -1,0 +1,201 @@
+---
+# Master bedroom bathroom: Gledopto MR16 bulbs (light.bathroom_all_lights, group
+# in configuration.yaml) on a Hue dimmer switch gen 2 (zigbee2mqtt
+# bathroom_wall_switch). White tones only. Its own Adaptive Lighting zone, always
+# on the maximum range (switch.adaptive_lighting_bathroom, cozy from 21:00, see
+# adaptive_lighting.yaml),
+# so a bump here only touches the bathroom.
+#   power press     toggle (Adaptive Lighting sets brightness, and tone on auto)
+#   power hold      cozy mode on/off now (the 21:00 / 06:00 schedule still applies)
+#   up / down       brightness +/- 10 % (hold to keep going); the colour keeps
+#                   adapting, Adaptive Lighting takes the brightness back at off
+#   hue press       next tone: auto -> candle -> warm -> soft -> auto
+#   hue hold        bright work light and back to auto
+# input_select.bathroom_light_tone holds the tone; changing it (UI) applies it
+# while the lights are on. Auto hands brightness and tone back to Adaptive
+# Lighting; the bright work light reverts to auto when the lights go off.
+script:
+  bathroom_lights_apply_tone:
+    alias: "Bathroom: apply light tone"
+    mode: restart
+    fields:
+      reset:
+        description: >-
+          Hand the bulbs back to Adaptive Lighting first (turning on, or leaving
+          the work light) instead of keeping a brightness bump.
+        selector:
+          boolean:
+    variables:
+      al: switch.adaptive_lighting_bathroom
+      bulbs: [light.bathroom_light_01, light.bathroom_light_02]
+      tone: "{{ states('input_select.bathroom_light_tone') }}"
+      kelvin: {candle: 2000, warm: 2400, soft: 2900}
+      # set_manual_control with an attribute name replaces the manual set rather
+      # than adding to it, so read a brightness bump before touching the bulbs.
+      bumped: "{{ bulbs | select('in', state_attr(al, 'manual_control_brightness') or []) | list | count > 0 }}"
+    sequence:
+      - if:
+          - "{{ tone == 'bright' }}"
+        then:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ bulbs }}"
+            data:
+              color_temp_kelvin: 4000
+              brightness_pct: 100
+              transition: 1
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: "{{ al }}"
+              lights: "{{ bulbs }}"
+              manual_control: true
+          - stop: Work light on
+
+      - if:
+          - "{{ tone == 'auto' or reset | default(false) }}"
+        then:
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: "{{ al }}"
+              lights: "{{ bulbs }}"
+              manual_control: false
+          - action: adaptive_lighting.apply
+            data:
+              entity_id: "{{ al }}"
+              lights: "{{ bulbs }}"
+              turn_on_lights: true
+              adapt_color: "{{ tone == 'auto' }}"
+              transition: 1
+
+      # A fixed tone pauses only the colour; brightness keeps adapting.
+      - if:
+          - "{{ tone in kelvin }}"
+        then:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ bulbs }}"
+            data:
+              color_temp_kelvin: "{{ kelvin[tone] }}"
+              transition: 1
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: "{{ al }}"
+              lights: "{{ bulbs }}"
+              manual_control: "{{ true if bumped and not reset | default(false) else 'color' }}"
+
+automation:
+  - id: bathroom_wall_switch
+    alias: "Bathroom: wall switch"
+    mode: queued
+    max: 10
+    max_exceeded: silent
+    triggers:
+      - trigger: mqtt
+        topic: zigbee2mqtt/bathroom_wall_switch/action
+    variables:
+      press: "{{ trigger.payload }}"
+      bulbs: [light.bathroom_light_01, light.bathroom_light_02]
+      lights_on: "{{ is_state('light.bathroom_all_lights', 'on') }}"
+      tone: "{{ states('input_select.bathroom_light_tone') }}"
+      tones_cycle: [auto, candle, warm, soft]
+      # Read before the bump: set_manual_control replaces the manual set.
+      tone_pinned: "{{ bulbs | select('in', state_attr('switch.adaptive_lighting_bathroom', 'manual_control_color') or []) | list | count > 0 }}"
+    actions:
+      - choose:
+          # Power and hue buttons act on release, so a hold isn't also a press.
+          - conditions: "{{ press == 'on_press_release' }}"
+            sequence:
+              - if:
+                  - "{{ lights_on }}"
+                then:
+                  - action: light.turn_off
+                    target:
+                      entity_id: light.bathroom_all_lights
+                    data:
+                      transition: 1
+                else:
+                  - action: script.bathroom_lights_apply_tone
+                    data:
+                      reset: true
+
+          - conditions: "{{ press == 'on_hold' }}"
+            sequence:
+              - action: switch.toggle
+                target:
+                  entity_id: switch.adaptive_lighting_bathroom_sleep_mode
+
+          - conditions: "{{ press in ['off_press_release', 'off_hold'] }}"
+            sequence:
+              - variables:
+                  next_tone: >-
+                    {% if press == 'off_hold' %}
+                      {{ 'auto' if tone == 'bright' else 'bright' }}
+                    {% elif tone in tones_cycle %}
+                      {{ tones_cycle[(tones_cycle.index(tone) + 1) % tones_cycle | length] }}
+                    {% else %}
+                      auto
+                    {% endif %}
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.bathroom_light_tone
+                data:
+                  option: "{{ next_tone }}"
+              # While on, the tone change below applies it; from off, turn on here.
+              - if:
+                  - "{{ not lights_on }}"
+                then:
+                  - action: script.bathroom_lights_apply_tone
+                    data:
+                      reset: true
+
+          # Up/down fire on press and repeat while held. Only while on, and never
+          # below 1 %: a brightness step to 0 would switch the lights off.
+          - conditions: "{{ press in ['up_press', 'up_hold', 'down_press', 'down_hold'] and lights_on }}"
+            sequence:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ bulbs }}"
+                data:
+                  brightness_pct: >-
+                    {% set current = state_attr('light.bathroom_all_lights', 'brightness') | int(0) / 2.55 %}
+                    {% set step = 10 if press.startswith('up') else -10 %}
+                    {{ ([1, (current + step) | round, 100] | sort)[1] }}
+                  transition: 0.4
+              - action: adaptive_lighting.set_manual_control
+                data:
+                  entity_id: switch.adaptive_lighting_bathroom
+                  lights: "{{ bulbs }}"
+                  manual_control: "{{ true if tone_pinned else 'brightness' }}"
+
+  - id: bathroom_tone_changed
+    alias: "Bathroom: apply tone when changed"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.bathroom_light_tone
+    conditions:
+      - condition: state
+        entity_id: light.bathroom_all_lights
+        state: "on"
+    actions:
+      - action: script.bathroom_lights_apply_tone
+        data:
+          reset: "{{ trigger.from_state.state == 'bright' }}"
+
+  - id: bathroom_bright_reverts_to_auto
+    alias: "Bathroom: work light back to auto when the lights go off"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: light.bathroom_all_lights
+        to: "off"
+    conditions:
+      - condition: state
+        entity_id: input_select.bathroom_light_tone
+        state: bright
+    actions:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.bathroom_light_tone
+        data:
+          option: auto

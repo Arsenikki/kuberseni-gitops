@@ -8,5 +8,29 @@ pre_commit: prek.toml
 required_checks: ["yaml", "Render ArgoCD diff"]
 verify:
   - { name: yamllint, cmd: "yamllint -c .github/yamllint.config.yaml ./cluster/", required: true }
-# No no_automerge_paths: cluster/** stays advisor-judged so routine Renovate bumps keep
-# auto-merging, while the review advisor holds genuinely high-blast-radius infra.
+# cluster/** stays advisor-judged so routine Renovate bumps keep auto-merging, while the
+# review advisor holds genuinely high-blast-radius infra.
+#
+# These always need a human merge, whatever the advisor says (enforced by the autonomy
+# gate). The router (infra/nixos) carries every LAN/WAN/VPN packet, and scripts/deploy.sh
+# deploys only PRs merged by the owner, so an agent-merged router change would just sit
+# undeployable. .sops.yaml decides who can decrypt secrets. The NixOS workflow is the
+# router's test gate. And this file can't loosen its own rules.
+no_automerge_paths:
+  - ".jeeves.yaml"
+  - ".sops.yaml"
+  - "infra/nixos/**"
+  - ".github/workflows/nixos.yaml"
+# Shown to Jeeves' review advisor (jeeves#285). It narrows what "deploys on merge"
+# means here; Jeeves' guardrails, majors, CRDs, storage, networking and auth are
+# still flagged regardless.
+review_policy: |
+  This is a GitOps repository: every merge to main is deployed by ArgoCD, so
+  deploying on merge is routine here and is not by itself a reason for
+  extra_risky. Routine Renovate patch, minor and digest bumps of images, charts
+  and tools that change no CRDs, storage, networking, auth/SSO or secrets
+  wiring may get extra_risky=false. Treat as high blast radius: Longhorn and
+  anything storage-related, Cilium/CNI, Traefik/ingress, cert-manager,
+  external-dns, ArgoCD itself, authentik, the monitoring stack (Mimir, Loki,
+  Alloy, Grafana), databases (postgres, postgis), Talos/Kubernetes versions,
+  and anything that deletes resources or namespaces.

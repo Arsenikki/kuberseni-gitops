@@ -1,7 +1,53 @@
 ---
-# input_select.adaptive_lighting_level picks which Adaptive Lighting profile
-# (switch.adaptive_lighting_<level>, see adaptive_lighting_config.yaml) is active,
-# then re-applies it to that profile's lights. Ported from the Node-RED "Lights" tab.
+# Adaptive Lighting zones (switch.adaptive_lighting_<zone>, see
+# adaptive_lighting_config.yaml in configmap.yaml): living (kitchen, living room,
+# lobby), bedroom and bathroom. input_select.adaptive_lighting_level sets the
+# brightness/colour range of living and bedroom (the bathroom stays on maximum:
+# bright by day, dimming after sunset); switches bump a single zone's lights
+# (manual brightness control, cleared when the light turns off).
+# Cozy = sleep mode in the bedroom and bathroom from 21:00 to 06:00, dimmed to a
+# night light from 00:30.
+# change_switch_settings doesn't survive a restart or reload, so it is re-applied
+# then too. Cozy switching, the 00:30 step and level changes re-adapt the zone,
+# overriding a bump or a fixed bathroom tone that is active at that moment; a
+# cozy toggled off by hand turns back on at 00:30.
+script:
+  adaptive_lighting_apply_zones:
+    alias: "Adaptive lighting: apply level and cozy settings to every zone"
+    mode: queued
+    max: 5
+    variables:
+      level: "{{ states('input_select.adaptive_lighting_level') }}"
+      ranges:
+        low: {min_brightness: 1, max_brightness: 10, max_color_temp: 3000}
+        medium: {min_brightness: 5, max_brightness: 60, max_color_temp: 4000}
+        high: {min_brightness: 10, max_brightness: 80, max_color_temp: 5000}
+        maximum: {min_brightness: 20, max_brightness: 100, max_color_temp: 5000}
+      # The bathroom is always on maximum (bright in the day, dimming after
+      # sunset); its cozy and night light still follow the level.
+      zone_level:
+        living: "{{ level }}"
+        bedroom: "{{ level }}"
+        bathroom: maximum
+      # Cozy is no brighter than the normal curve at 21:00 (about 20 % on medium)
+      # and warmer (2200K vs 2500K); late night is a night light.
+      cozy_brightness: {low: 5, medium: 15, high: 30, maximum: 50}
+      late_night: "{{ today_at('00:30') <= now() < today_at('06:00') }}"
+      sleep_settings:
+        sleep_brightness: "{{ 3 if late_night else cozy_brightness.get(level, 15) }}"
+        sleep_color_temp: "{{ 2000 if late_night else 2200 }}"
+    sequence:
+      - repeat:
+          for_each: [living, bedroom, bathroom]
+          sequence:
+            - action: adaptive_lighting.change_switch_settings
+              target:
+                entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
+              data: >-
+                {{ dict(ranges.get(zone_level[repeat.item], ranges.medium),
+                        use_defaults='current', **sleep_settings) }}
+              continue_on_error: true
+
 automation:
   - id: adaptive_lighting_level_select
     alias: "Adaptive lighting: apply selected level"
@@ -10,28 +56,34 @@ automation:
       - trigger: state
         entity_id: input_select.adaptive_lighting_level
         to: [low, medium, high, maximum]
-    variables:
-      level: "{{ trigger.to_state.state }}"
     actions:
-      - repeat:
-          for_each: [low, medium, high, maximum]
-          sequence:
-            - action: "switch.turn_{{ 'on' if repeat.item == level else 'off' }}"
-              target:
-                entity_id: "switch.adaptive_lighting_{{ repeat.item }}"
-      - delay:
-          seconds: 1
-      # Apply the selected profile to the lights it is configured for. (Node-RED
-      # passed every light, which also adapted lights Adaptive Lighting does not
-      # manage, e.g. the bedroom light and the light groups.)
-      - action: adaptive_lighting.apply
-        data:
-          entity_id: "switch.adaptive_lighting_{{ level }}"
+      - action: script.adaptive_lighting_apply_zones
+
+  - id: adaptive_lighting_cozy_schedule
+    alias: "Adaptive lighting: cozy bedroom and bathroom 21:00-06:00"
+    mode: queued
+    triggers:
+      - trigger: time
+        at: ["21:00:00", "00:30:00", "06:00:00"]
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: automation_reloaded
+    variables:
+      cozy: "{{ now() >= today_at('21:00') or now() < today_at('06:00') }}"
+    actions:
+      # Settings first, so sleep mode turns on with tonight's cozy brightness.
+      - action: script.adaptive_lighting_apply_zones
+      - action: "switch.turn_{{ 'on' if cozy else 'off' }}"
+        target:
+          entity_id:
+            - switch.adaptive_lighting_bedroom_sleep_mode
+            - switch.adaptive_lighting_bathroom_sleep_mode
         continue_on_error: true
 
   - id: lights_nightly_reset
     alias: "Lights: nightly reset (04:00)"
-    description: Scene back to normal and adaptive lighting back to medium every night.
+    description: Scene back to normal, adaptive lighting back to medium, and movie lights toggle cleared every night.
     mode: single
     triggers:
       - trigger: time
@@ -47,3 +99,6 @@ automation:
           entity_id: input_select.adaptive_lighting_level
         data:
           option: medium
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.living_room_movie_lights_active

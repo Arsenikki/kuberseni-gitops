@@ -204,3 +204,29 @@ automation:
                         target:
                           entity_id: media_player.q_series_soundbar
                         continue_on_error: true
+
+  # The Bedroom tablet (kiosk-satellite app) opens its Music Library, and the
+  # dashboard's album-art tap, on the player it follows, which it otherwise only
+  # changes when someone picks one in the app. Follow the zone so the library
+  # plays where the zone does: the soundbar for "Living Room", the bedroom player
+  # for every other zone (it leads the bedroom + living room group).
+  # media_player_set takes the Music Assistant player id, which is the unique_id
+  # of media_player.bedroom (up3e781558) and media_player.q_series_soundbar
+  # (upf1a5202a).
+  - id: bedroom_tablet_follows_music_zone
+    alias: "Bedroom tablet: library follows music zone"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.bedroom_music_zone
+        not_to:
+          - unavailable
+          - unknown
+    actions:
+      - action: esphome.ks_samsung_sm_t585_media_player_set
+        data:
+          source: music_assistant
+          player: >-
+            {{ 'upf1a5202a' if trigger.to_state.state == 'Living Room' else 'up3e781558' }}
+        # The tablet may be asleep or offline; the next zone change catches up.
+        continue_on_error: true

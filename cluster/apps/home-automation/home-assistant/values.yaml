@@ -15,6 +15,8 @@ env:
 envFrom:
   - secretRef:
       name: argocd-dashboard
+  - secretRef:
+      name: home-assistant-gemini
 
 hostNetwork: true
 
@@ -140,24 +142,8 @@ sidecars:
 
 # Household-critical: rank HA last for kubelet node-pressure eviction (it was
 # evicted alongside paseo-generic when worker-01 hit DiskPressure 2026-11-10)
-# and let it preempt lower-priority pods if it has to fall back to worker-02.
+# and let it preempt lower-priority pods if its node is short on room.
 priorityClassName: kuberseni-critical
-
-# Prefer anything but worker-02: a 3-vCPU VM on the 4-core "nas" Proxmox host
-# (7 vCPUs on 4 cores; 2026-11-10: load 61, 32% steal, 90% CPU PSI). There the
-# HA python process got ~9s of CPU per 68s wall and never bound :8123 inside the
-# startup window -> 15 restarts. Soft, so HA still schedules if worker-01 is
-# down or tainted (same pattern as authentik).
-affinity:
-  nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: NotIn
-              values:
-                - worker-02
 
 # Default startup budget is 5s x 30 = 150s with a 1s TCP timeout; on a starved
 # node HA core needs longer, and probe dials time out ("i/o timeout"). Give it

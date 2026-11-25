@@ -12,10 +12,10 @@ metadata:
 data:
   config.yaml: |
     timezone: Europe/London
-    about_me: ""
+    about_me: ""  # see README "Rollout checklist"
 
     actions:
-      enabled: false  # flip once a week of proposed replies/tasks in the notes look right
+      enabled: false  # flip once a week of proposed replies/tasks in the notes look right (README "Rollout checklist")
       create_tasks: true
       task_list_name: AI suggested
 
@@ -25,17 +25,17 @@ data:
         token_file: /secrets/google/personal.json
         include_email: true
         drafts_enabled: true
-        gmail_query: "newer_than:1d -category:promotions -category:social -category:forums"
+        gmail_query: "in:inbox newer_than:1d -category:promotions -category:social -category:forums"
         max_emails: 40
-        vip_senders: []
+        vip_senders: []  # see README "Rollout checklist"
         # Add the work calendar once it's shared to this account as free/busy only:
         # busy_only_calendars: [you@work.example.com]
-        busy_only_calendars: []
+        busy_only_calendars: []  # see README "Rollout checklist"
 
     # "What got built": merged PRs from the Jeeves board activity log (no AI).
     jeeves:
       enabled: true
-      board_url: http://flock.flock.svc.cluster.local:8099/api/v1
+      board_url: http://jeeves-board.jeeves-board.svc.cluster.local:8099/api/v1
       lookback_hours: 24
 
     news:

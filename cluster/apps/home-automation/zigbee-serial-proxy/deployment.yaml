@@ -19,6 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: zigbee-serial-proxy
     spec:
+      priorityClassName: kuberseni-critical
       nodeSelector:
         kubernetes.io/hostname: "control-plane-01"
       tolerations:
@@ -48,13 +49,18 @@ spec:
               mountPath: /etc/ser2net/ser2net.yaml
               subPath: ser2net.yaml
               readOnly: true
-            - name: usb
-              mountPath: /dev/serial/by-id
+            # Mount the host's /dev (devtmpfs) rather than /dev/serial/by-id.
+            # udev removes /dev/serial/by-id whenever the last USB serial device
+            # disconnects and creates a new inode when it re-enumerates; a bind
+            # mount on /dev/serial/by-id stays pinned to the unlinked empty dir
+            # and also misses new /dev/ttyACM* device nodes.
+            - name: dev
+              mountPath: /dev
       volumes:
         - name: config
           configMap:
             name: zigbee-serial-proxy-config
-        - name: usb
+        - name: dev
           hostPath:
-            path: /dev/serial/by-id
+            path: /dev
             type: Directory

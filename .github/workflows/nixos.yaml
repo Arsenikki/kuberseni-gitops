@@ -1,0 +1,78 @@
+name: NixOS
+on: # yamllint disable-line rule:truthy
+  # Every PR, so "NixOS router" can be a required check (branch protection and
+  # .jeeves.yaml); the job skips the heavy steps when nothing router-related changed.
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - infra/nixos/**
+      - .github/workflows/nixos.yaml
+  workflow_dispatch:
+    inputs:
+      images:
+        description: Also build the Proxmox .vma images and upload them
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nixos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: NixOS router
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: infra/nixos
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Did anything router-related change?
+        id: changes
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != pull_request ]; then
+            echo "relevant=true" >>"$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/$BASE...HEAD" |
+            grep -qE '^(infra/nixos/|infra/terraform/[^/]+\.tf$|\.sops\.yaml$|\.github/workflows/nixos\.yaml$)'; then
+            echo "relevant=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >>"$GITHUB_OUTPUT"
+            echo "No router-related changes; nothing to test."
+          fi
+
+      - name: DHCP reservations and pool match OpenTofu
+        if: steps.changes.outputs.relevant == 'true'
+        run: python3 scripts/check-reservations.py
+
+      # Enables KVM on the runner, so the router VM test runs at native speed.
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+        if: steps.changes.outputs.relevant == 'true'
+
+      - name: Build hosts and run the router VM test
+        if: steps.changes.outputs.relevant == 'true'
+        run: nix flake check --print-build-logs
+
+      - name: Build Proxmox images
+        if: github.event_name == 'workflow_dispatch' && inputs.images
+        run: |
+          nix build --print-build-logs --out-link vma-gw .#gw-vma
+          nix build --print-build-logs --out-link vma-gw-staging .#gw-staging-vma
+
+      - name: Upload Proxmox images
+        if: github.event_name == 'workflow_dispatch' && inputs.images
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: proxmox-images
+          path: infra/nixos/vma-*/*.vma.zst
+          retention-days: 14
+          compression-level: 0 # already zstd

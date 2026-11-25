@@ -71,10 +71,11 @@ resource "restapi_object" "kea_dhcpv4_general" {
     opnsense_kea_dhcpv4_reservation.usw_flex,
     opnsense_kea_dhcpv4_reservation.u6_pro,
     opnsense_kea_dhcpv4_reservation.desktop_main,
-    opnsense_kea_dhcpv4_reservation.laptop,
     opnsense_kea_dhcpv4_reservation.bazzite_chromebook,
     opnsense_kea_dhcpv4_reservation.philips_purifier,
     opnsense_kea_dhcpv4_reservation.formovie_projector,
+    opnsense_kea_dhcpv4_reservation.q990h_soundbar,
+    opnsense_kea_dhcpv4_reservation.stadia_controller,
     opnsense_kea_dhcpv4_reservation.bedroom_pi,
   ]
 }
@@ -159,14 +160,6 @@ resource "opnsense_kea_dhcpv4_reservation" "desktop_main" {
   description = "Windows Desktop"
 }
 
-resource "opnsense_kea_dhcpv4_reservation" "laptop" {
-  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
-  mac_address = "6c:7e:67:c8:b5:a5"
-  ip_address  = "192.168.1.53"
-  hostname    = "AutLaptopALMBP2"
-  description = "Laptop"
-}
-
 # Trusted static block (.50-.99). It sat at .105 (inside the dynamic pool) from
 # #782 but was never applied; Kea then leased .105 to the new USW Flex Mini.
 resource "opnsense_kea_dhcpv4_reservation" "bazzite_chromebook" {
@@ -221,6 +214,24 @@ resource "opnsense_kea_dhcpv4_reservation" "formovie_projector" {
   ip_address  = "192.168.1.151"
   hostname    = "formovie-projector"
   description = "Formovie Theater Premium projector (Android TV, wifi) — see Arsenikki/codex android-tv/"
+}
+
+resource "opnsense_kea_dhcpv4_reservation" "q990h_soundbar" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "cc:20:ac:49:9e:f9"
+  ip_address  = "192.168.1.152"
+  hostname    = "q990h-soundbar"
+  description = "Samsung HW-Q990H soundbar (wifi; local JSON-RPC on tcp/1516)"
+}
+
+# Stadia Controller on Wi-Fi firmware (StadiaCast): gw overrides DHCP DNS (option 6)
+# for this reservation to 192.168.1.52 (Windows gaming PC running StadiaCast DNS sink).
+resource "opnsense_kea_dhcpv4_reservation" "stadia_controller" {
+  subnet_id   = opnsense_kea_dhcpv4_subnet.lan.id
+  mac_address = "f0:ef:86:1b:65:d0"
+  ip_address  = "192.168.1.153"
+  hostname    = "stadia-controller"
+  description = "Stadia Controller (Wi-Fi mode, DNS overridden to 192.168.1.52 in gw for StadiaCast)"
 }
 
 # ── State migration — rename old individual resources to for_each ──────────────
