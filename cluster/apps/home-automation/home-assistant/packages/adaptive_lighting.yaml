@@ -31,7 +31,7 @@ automation:
 
   - id: lights_nightly_reset
     alias: "Lights: nightly reset (04:00)"
-    description: Scene back to normal and adaptive lighting back to medium every night.
+    description: Scene back to normal, adaptive lighting back to medium, and movie lights toggle cleared every night.
     mode: single
     triggers:
       - trigger: time
@@ -47,3 +47,6 @@ automation:
           entity_id: input_select.adaptive_lighting_level
         data:
           option: medium
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.living_room_movie_lights_active
