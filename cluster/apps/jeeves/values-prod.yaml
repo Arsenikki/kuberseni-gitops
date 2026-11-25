@@ -8,6 +8,9 @@ config:
   # Log PRs merged on managed repos by anyone to the board activity log. Prod only,
   # so each merge is polled once.
   JEEVES_ACTIVITY_MERGE_POLL: 2m
+  # Sweep unlinked non-Renovate open PRs across managed repos and file
+  # undispatched backlog triage cards for hanging/broken PRs. Prod only (shared board).
+  JEEVES_PR_SWEEP_INTERVAL: "6h"
   # Background QA audit, findings to the morning digest. ONE instance only.
   JEEVES_AUDIT_MODE: digest
   # Always audit kuberseni-gitops (where parallel sessions collide most). Read-only.
