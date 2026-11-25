@@ -39,7 +39,7 @@ data:
             - light
             - switch
           exclude_entity_globs:
-            - switch.adaptive_lighting_adapt_*
+            - switch.adaptive_lighting_*_adapt_*
             - switch.*_do_not_disturb
       - name: virtual_accessories
         port: 21065
