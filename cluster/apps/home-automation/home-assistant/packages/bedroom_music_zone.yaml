@@ -5,11 +5,13 @@
 input_select:
   bedroom_music_zone:
     name: "Bedroom music zone"
+    # No `initial`: with one, Home Assistant skips restoring the last zone and
+    # every restart reset it to "Bedroom" while the music kept playing elsewhere.
+    # Without a saved zone it starts on the first option.
     options:
       - "Living Room"
       - "Bedroom"
       - "Living Room + Bedroom"
-    initial: "Bedroom"
     icon: mdi:speaker-multiple
 
 input_text:
@@ -120,16 +122,19 @@ automation:
                       - condition: template
                         value_template: "{{ soundbar_is_leader }}"
                     then:
+                      # Leave the group first, so the queue moves to a bedroom
+                      # player that is no longer the soundbar's member.
+                      - action: media_player.unjoin
+                        target:
+                          entity_id: media_player.bedroom
+                        continue_on_error: true
+                      - delay: "00:00:01"
                       - action: music_assistant.transfer_queue
                         target:
                           entity_id: media_player.bedroom
                         data:
                           source_player: media_player.q_series_soundbar
-                          auto_play: "{{ is_state('media_player.q_series_soundbar', 'playing') }}"
-                        continue_on_error: true
-                      - action: media_player.unjoin
-                        target:
-                          entity_id: media_player.bedroom
+                          auto_play: "{{ soundbar_playing }}"
                         continue_on_error: true
                   - action: media_player.unjoin
                     target:
@@ -147,31 +152,47 @@ automation:
                           source_player: media_player.q_series_soundbar
                           auto_play: "{{ is_state('media_player.q_series_soundbar', 'playing') }}"
 
+          # The living room leads: the soundbar owns the queue and the bedroom
+          # player joins it. Music Assistant redirects playback commands sent to
+          # a member (the Tap Dial, the tablet's bedroom card) to the leader;
+          # volume stays per player, and an announcement on the bedroom player
+          # plays there alone and re-joins it afterwards.
           - conditions:
               - condition: template
                 value_template: "{{ zone == 'Living Room + Bedroom' }}"
             sequence:
               - if:
                   - condition: template
-                    value_template: "{{ not is_grouped }}"
+                    value_template: "{{ not soundbar_is_leader }}"
                 then:
+                  # Grouped the other way round (the bedroom leading): split, so
+                  # the queue can move to the soundbar on its own.
                   - if:
                       - condition: template
-                        value_template: "{{ soundbar_playing and not bedroom_playing }}"
+                        value_template: "{{ is_grouped }}"
+                    then:
+                      - action: media_player.unjoin
+                        target:
+                          entity_id: media_player.q_series_soundbar
+                        continue_on_error: true
+                      - delay: "00:00:01"
+                  - if:
+                      - condition: template
+                        value_template: "{{ bedroom_playing and not soundbar_playing }}"
                     then:
                       - action: music_assistant.transfer_queue
                         target:
-                          entity_id: media_player.bedroom
+                          entity_id: media_player.q_series_soundbar
                         data:
-                          source_player: media_player.q_series_soundbar
+                          source_player: media_player.bedroom
                           auto_play: true
                       - delay: "00:00:01"
                   - action: media_player.join
                     target:
-                      entity_id: media_player.bedroom
+                      entity_id: media_player.q_series_soundbar
                     data:
                       group_members:
-                        - media_player.q_series_soundbar
+                        - media_player.bedroom
 
           - conditions:
               - condition: template
@@ -181,9 +202,11 @@ automation:
                   - condition: template
                     value_template: "{{ is_grouped or bedroom_active }}"
                 then:
+                  # Move the queue only when the bedroom player owns it: as the
+                  # soundbar's member it reports playing too, but has no queue.
                   - if:
                       - condition: template
-                        value_template: "{{ bedroom_active or bedroom_is_leader }}"
+                        value_template: "{{ bedroom_is_leader or (bedroom_active and not is_grouped) }}"
                     then:
                       - action: music_assistant.transfer_queue
                         target:
@@ -208,8 +231,8 @@ automation:
   # The Bedroom tablet (kiosk-satellite app) opens its Music Library, and the
   # dashboard's album-art tap, on the player it follows, which it otherwise only
   # changes when someone picks one in the app. Follow the zone so the library
-  # plays where the zone does: the soundbar for "Living Room", the bedroom player
-  # for every other zone (it leads the bedroom + living room group).
+  # plays where the zone does: the bedroom player for "Bedroom", the soundbar for
+  # the others (it leads the living room + bedroom group).
   # media_player_set takes the Music Assistant player id, which is the unique_id
   # of media_player.bedroom (up3e781558) and media_player.q_series_soundbar
   # (upf1a5202a).
@@ -227,6 +250,6 @@ automation:
         data:
           source: music_assistant
           player: >-
-            {{ 'upf1a5202a' if trigger.to_state.state == 'Living Room' else 'up3e781558' }}
+            {{ 'up3e781558' if trigger.to_state.state == 'Bedroom' else 'upf1a5202a' }}
         # The tablet may be asleep or offline; the next zone change catches up.
         continue_on_error: true
