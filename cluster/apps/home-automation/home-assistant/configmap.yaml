@@ -99,13 +99,13 @@ data:
           - cleaning
           - spinning
         initial: normal
-      # Mood for the bathroom lights, see packages/bathroom_lights.yaml.
-      bathroom_mood_light_mode:
+      # White tone of the bathroom lights, see packages/bathroom_lights.yaml.
+      bathroom_light_tone:
         options:
-          - cold
+          - candle
           - warm
-          - hot
-          - violet
+          - soft
+          - bright
 
     # Homelab infra reachability checks (up/down). Internal svc URLs bypass
     # Authentik; LAN hosts use verify_ssl:false for self-signed certs.
