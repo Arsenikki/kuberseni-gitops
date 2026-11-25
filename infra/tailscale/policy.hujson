@@ -1,0 +1,51 @@
+// Tailnet policy, applied with ./apply.sh (validate, show the diff, apply).
+// Edit here, not in the admin console: a console edit gets overwritten by the next apply.
+//
+// The NixOS router (gw, infra/nixos) is the tailnet's way into the home network: it
+// advertises the LAN zones as subnet routes and is an exit node. Who can use that is
+// decided here, not on the router, whose firewall lets the tailnet in to every zone.
+{
+  "tagOwners": {
+    // The router's node. Only admins can apply this tag.
+    "tag:router": ["autogroup:admin"],
+  },
+
+  // gw's routes and exit node are approved by this file, not by a click in the console.
+  "autoApprovers": {
+    "routes": {
+      "192.168.1.0/24": ["tag:router"],  // MGMT (untagged LAN)
+      "192.168.10.0/24": ["tag:router"], // TRUSTED (VLAN 10)
+      "192.168.20.0/24": ["tag:router"], // IoT (VLAN 20)
+    },
+    "exitNode": ["tag:router"],
+  },
+
+  "grants": [
+    // Admins (the owner): everything, including the whole home network and the exit node.
+    {"src": ["autogroup:admin"], "dst": ["*"], "ip": ["*"]},
+
+    // Every member: their own devices.
+    {"src": ["autogroup:member"], "dst": ["autogroup:self"], "ip": ["*"]},
+
+    // Every member: the home's user-facing services (the k8s LoadBalancer IPs: Plex .220,
+    // Traefik ingress .222, Music Assistant .223, spare .224-.229; not MQTT .221) and
+    // the router's DNS, the same as the TRUSTED Wi-Fi zone. And the exit node.
+    {
+      "src": ["autogroup:member"],
+      "dst": ["192.168.1.220/32", "192.168.1.222/31", "192.168.1.224/30", "192.168.1.228/31"],
+      "ip": ["tcp:*", "udp:*"],
+    },
+    {"src": ["autogroup:member"], "dst": ["192.168.1.1/32"], "ip": ["tcp:53", "udp:53"]},
+    {"src": ["autogroup:member"], "dst": ["autogroup:internet"], "ip": ["*"]},
+  ],
+
+  "ssh": [
+    // Tailscale SSH to your own devices, re-checked every 12h (the default policy).
+    {
+      "action": "check",
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:self"],
+      "users": ["autogroup:nonroot", "root"],
+    },
+  ],
+}

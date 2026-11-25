@@ -12,5 +12,10 @@ creation_rules:
     age: "age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9"
     encrypted_regex: ^(.*secret.*|.*token.*|.*key.*|.*password.*|crt|bootstraptoken|secretboxencryptionsecret)$
 
+  # gw (infra/nixos): the repo key plus gw's own key, whose private half is in
+  # infra/nixos/hosts/gw/age-key.sops.json (repo key only).
+  - path_regex: infra/nixos/hosts/gw/secrets\.yaml$
+    age: "age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9,age157k3rcemft0tcyg7rgzcx7gwt93a066l6arqafm9678e9fpwk3nsa5qmxf"
+
   - path_regex: infra/
     age: "age17ax8w6axmjplnnf38t8qlqtz2uj2k685fwnl6uy6u8q2rwsjmd6qa6ddv9"

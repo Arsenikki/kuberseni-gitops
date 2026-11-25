@@ -8,8 +8,19 @@ pre_commit: prek.toml
 required_checks: ["yaml", "Render ArgoCD diff"]
 verify:
   - { name: yamllint, cmd: "yamllint -c .github/yamllint.config.yaml ./cluster/", required: true }
-# No no_automerge_paths: cluster/** stays advisor-judged so routine Renovate bumps keep
-# auto-merging, while the review advisor holds genuinely high-blast-radius infra.
+# cluster/** stays advisor-judged so routine Renovate bumps keep auto-merging, while the
+# review advisor holds genuinely high-blast-radius infra.
+#
+# These always need a human merge, whatever the advisor says (enforced by the autonomy
+# gate). The router (infra/nixos) carries every LAN/WAN/VPN packet, and scripts/deploy.sh
+# deploys only PRs merged by the owner, so an agent-merged router change would just sit
+# undeployable. .sops.yaml decides who can decrypt secrets. The NixOS workflow is the
+# router's test gate. And this file can't loosen its own rules.
+no_automerge_paths:
+  - ".jeeves.yaml"
+  - ".sops.yaml"
+  - "infra/nixos/**"
+  - ".github/workflows/nixos.yaml"
 # Shown to Jeeves' review advisor (jeeves#285). It narrows what "deploys on merge"
 # means here; Jeeves' guardrails, majors, CRDs, storage, networking and auth are
 # still flagged regardless.

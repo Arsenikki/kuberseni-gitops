@@ -67,6 +67,7 @@ here is a deploy. Past collisions: duplicate fixes for the same problem (#774/#8
 
 - `cluster/` — ArgoCD apps: `bootstrap/`, `argocd/`, `core/` (cilium, cert-manager, traefik, longhorn, eso, authentik), `apps/` (user apps by namespace).
 - `infra/tofu/` — OpenTofu (Proxmox VMs, OPNSense). `infra/talos/` — topf config (`topf.yaml`, patch folders, SOPS `secrets.yaml`).
+- `infra/nixos/` — NixOS router `gw` (VM 101 on `router`; replaced OPNSense on 2026-11-23). See its README.
 
 ## Gotchas
 

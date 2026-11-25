@@ -136,11 +136,13 @@ data:
         value_template: "{{ true }}"
         timeout: 10
         scan_interval: 60
+      # The router (gw, NixOS; replaced OPNSense 2026-11-23). No web UI, so probe its
+      # node-exporter, which answers on the LAN. unique_id kept so the entity
+      # (binary_sensor.opnsense) and its history stay.
       - platform: rest
-        name: "OPNSense"
+        name: "Router (gw)"
         unique_id: infra_opnsense
-        resource: "https://192.168.1.1"
-        verify_ssl: false
+        resource: "http://192.168.1.1:9100/metrics"
         device_class: connectivity
         value_template: "{{ true }}"
         timeout: 10
@@ -206,7 +208,8 @@ data:
         method: GET
         timeout: 5
       bazzite_gaming_start:
-        url: "http://192.168.1.51:8765/start"
+        # Optional data: profile (auto|1080p|4k_hdr), app, restart. No data keeps the old defaults.
+        url: "http://192.168.1.51:8765/start?profile={{ profile | default('auto') | urlencode }}&app={{ app | default('Steam Big Picture') | urlencode }}&restart={{ 'true' if (restart | default(false) | string | lower) in ['true', '1', 'yes', 'on'] else 'false' }}"
         method: POST
         timeout: 15
       bazzite_gaming_stop:
@@ -236,6 +239,28 @@ data:
         d.connect(rsa_keys=[s], auth_timeout_s=5);
         d.shell("settings put global tv_picture_video_game_mode 0");
         d.close()'
+      projector_game_mode_toggle: >-
+        python3 -c 'from adb_shell.adb_device import AdbDeviceTcp;
+        from adb_shell.auth.sign_pythonrsa import PythonRSASigner;
+        s = PythonRSASigner(open("/config/.storage/adbkey.pub").read(), open("/config/.storage/adbkey").read());
+        d = AdbDeviceTcp("192.168.1.151", 5555, default_transport_timeout_s=5);
+        d.connect(rsa_keys=[s], auth_timeout_s=5);
+        cur = (d.shell("settings get global tv_picture_video_game_mode") or "").strip();
+        d.shell("settings put global tv_picture_video_game_mode " + ("0" if cur == "1" else "1"));
+        d.close()'
+      # Switch Samsung HW-Q990H (reserved at .152) via local HTTPS JSON-RPC (port 1516).
+      soundbar_input_hdmi1: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "HDMI_IN1"})'
+      soundbar_input_arc: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "ARC"})'
 
     # Import other configs
     adaptive_lighting: !include adaptive_lighting_config.yaml
