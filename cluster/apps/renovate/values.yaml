@@ -35,7 +35,7 @@ renovate:
   # every hourly run cold. Quoted: a bare `off` would parse as a YAML boolean.
   mendRnvWorkerCleanup: "0 0 * * *"
   # One job log per hourly run (~1 MB each). At the default 30-day TTL that's
-  # ~700 MB, a third of the old 2Gi PVC; 7 days keeps it around 170 MB. Set the
+  # ~700 MB, a third of the 2Gi PVC; 7 days keeps it around 170 MB. Set the
   # dir explicitly so the TTL cleanup applies to where the logs actually go.
   mendRnvLogHistoryDir: "/tmp/renovate/logs"
   mendRnvLogHistoryTTLDays: "7"
@@ -70,14 +70,26 @@ renovate:
       ],
     };
 
-# Purge the caches on every pod start. They are pure cache and rebuild in one
-# run. Needed because CE's own cleanup (mendRnvWorkerCleanup above) only deletes
-# files created since the current process started (find -newercc), so it never
-# reclaims orphans from earlier pod lifetimes, like the July backlog that filled the
-# inode table. All of cache/, not just cache/renovate: on 2026-11-23 the leftover
-# osv-offline (667 MB) and npm (527 MB) caches plus job logs filled the PVC, and
-# every job failed with SQLITE_FULL for 2 days. Same image as the main container
-# (already on the node).
+# Package caches live on pod-local scratch space, not the PVC. They used to share
+# the PVC with the SQLite queue and job logs, and CE's own cleanup (mendRnvWorkerCleanup
+# above) only deletes files created since the current process started (find
+# -newercc), so whatever a pod cached on its last day outlived it. That filled the
+# PVC twice: inodes in July 2026 (~3.5 months of no PRs), and space on 2026-11-23
+# (osv-offline 667 MB + npm 527 MB + logs; every job failed with SQLITE_FULL for 2
+# days). On an emptyDir the caches vanish with the pod, and if one outgrows the
+# sizeLimit the kubelet evicts the pod and the restart clears it, instead of
+# silently breaking every job. Uses worker-01's /var (~1-2 GB of its 83 GB).
+extraVolumes:
+  - name: renovate-package-cache
+    emptyDir:
+      sizeLimit: 3Gi
+extraVolumeMounts:
+  - name: renovate-package-cache
+    mountPath: /tmp/renovate/cache
+
+# The emptyDir above hides the PVC's old cache/ directory but doesn't free it, so
+# clear it from the PVC itself on start. A no-op once the leftovers are gone. Same
+# image as the main container (already on the node).
 initContainers:
   - name: purge-package-cache
     image: ghcr.io/mend/renovate-ce:15.12.0-full
@@ -86,15 +98,14 @@ initContainers:
       - name: renovate-ce-cache-volume
         mountPath: /tmp/renovate
 
-# Persist the SQLite job queue + repo cache across restarts.
+# Persists the SQLite job queue and job logs (7-day TTL above) across restarts:
+# ~200 MB, so 2Gi is plenty now that package caches are on the emptyDir.
 cachePersistence:
   enabled: true
   storageClass: "longhorn"
   accessModes:
     - ReadWriteOnce
-  # Was 2Gi: osv-offline + npm caches (~1.2 GB) and job logs filled it on
-  # 2026-11-23. Longhorn expands it online (allowVolumeExpansion: true).
-  size: 4Gi
+  size: 2Gi
 
 # Container runs as uid/gid 12021; fsGroup makes the PVC writable.
 podSecurityContext:
