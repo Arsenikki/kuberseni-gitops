@@ -51,6 +51,18 @@ spec:
             - port: "4318"   # OTLP HTTP
               protocol: TCP
 
+    # Self-metrics scrape (serviceMonitor in values.yaml) by the k8s-monitoring
+    # alloy-metrics collector. Without this, up{job="alloy-jeeves"} has been 0
+    # since #721 made this policy enforce, and the alloy-jeeves alerts were blind.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: alloy-metrics
+      toPorts:
+        - ports:
+            - port: "12345"  # http-metrics
+              protocol: TCP
+
   # ======================================================================
   # EGRESS  (default-deny; DNS + the three telemetry backends only)
   # ======================================================================

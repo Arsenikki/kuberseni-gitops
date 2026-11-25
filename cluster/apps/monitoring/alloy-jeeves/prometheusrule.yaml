@@ -13,9 +13,11 @@ spec:
   groups:
     - name: alloy-jeeves
       rules:
+        # Alloy labels ServiceMonitor targets job="<service name>", not "<ns>/<name>";
+        # the old job="monitoring/alloy-jeeves" matched nothing, so these never fired.
         - alert: AlloyJeevesGatewayDown
           expr: |
-            up{job="monitoring/alloy-jeeves"} == 0
+            up{job="alloy-jeeves"} == 0
           for: 10m
           labels:
             severity: critical
@@ -23,9 +25,9 @@ spec:
             summary: "Jeeves OTLP gateway (alloy-jeeves) is down"
         - alert: AlloyJeevesExporterFailures
           expr: |
-            sum(rate(otelcol_exporter_send_failed_spans_total{job="monitoring/alloy-jeeves"}[10m]))
-              + sum(rate(otelcol_exporter_send_failed_log_records_total{job="monitoring/alloy-jeeves"}[10m]))
-              + sum(rate(otelcol_exporter_send_failed_metric_points_total{job="monitoring/alloy-jeeves"}[10m]))
+            sum(rate(otelcol_exporter_send_failed_spans_total{job="alloy-jeeves"}[10m]))
+              + sum(rate(otelcol_exporter_send_failed_log_records_total{job="alloy-jeeves"}[10m]))
+              + sum(rate(otelcol_exporter_send_failed_metric_points_total{job="alloy-jeeves"}[10m]))
               > 0
           for: 15m
           labels:
