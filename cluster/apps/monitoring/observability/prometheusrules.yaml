@@ -12,6 +12,17 @@ metadata:
     app.kubernetes.io/part-of: monitoring
 spec:
   groups:
+    # Always firing. Alertmanager routes it to an external dead-man switch
+    # (healthchecks.io), never to Telegram; the alert stopping is what pages.
+    - name: meta
+      rules:
+        - alert: Watchdog
+          expr: vector(1)
+          labels:
+            severity: none
+          annotations:
+            summary: "Alerting pipeline heartbeat (ruler → Alertmanager → healthchecks.io)"
+
     - name: nodes
       rules:
         - alert: KubeNodeNotReady
