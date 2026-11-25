@@ -39,7 +39,7 @@ data:
             - light
             - switch
           exclude_entity_globs:
-            - switch.adaptive_lighting_adapt_*
+            - switch.adaptive_lighting_*_adapt_*
             - switch.*_do_not_disturb
       - name: virtual_accessories
         port: 21065
@@ -77,7 +77,7 @@ data:
           - light.lobby_candle_light_01
           - light.lobby_candle_light_02
           - light.lobby_candle_light_03
-      # Master bedroom bathroom, outside Adaptive Lighting (packages/bathroom_lights.yaml)
+      # Master bedroom bathroom (packages/bathroom_lights.yaml)
       - platform: group
         name: "bathroom_all_lights"
         entities:
@@ -103,6 +103,7 @@ data:
       # White tone of the bathroom lights, see packages/bathroom_lights.yaml.
       bathroom_light_tone:
         options:
+          - auto
           - candle
           - warm
           - soft
@@ -275,34 +276,22 @@ data:
     script: !include scripts.yaml
     scene: !include scenes.yaml
 
+  # One Adaptive Lighting switch per zone. Brightness/colour ranges below are the
+  # "medium" level; packages/adaptive_lighting.yaml re-applies the selected
+  # input_select.adaptive_lighting_level (and the cozy sleep settings) to every
+  # zone with adaptive_lighting.change_switch_settings. Sleep mode is "cozy":
+  # bedroom and bathroom from 21:00 to 06:00. pause_changed: a brightness bump
+  # only pauses brightness, the colour keeps adapting (and vice versa).
   adaptive_lighting_config.yaml: |
-    - name: "Low"
-      lights: &lights [
-        light.kitchen_led_strip_01,
-        light.kitchen_led_strip_02,
-        light.living_room_corner_light_01,
-        light.living_room_corner_light_02,
-        light.lobby_candle_light_01,
-        light.lobby_candle_light_02,
-        light.lobby_candle_light_03,
-        light.bedroom_light_01
-      ]
-      prefer_rgb_color: false
-      transition: 45
-      initial_transition: 1
-      interval: 90
-      min_brightness: 1
-      max_brightness: 10
-      min_color_temp: 2500
-      max_color_temp: 3000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
-      take_over_control: true
-      detect_non_ha_changes: false
-      adapt_only_on_bare_turn_on: true
-
-    - name: "Medium"
-      lights: *lights
+    - name: "Living"
+      lights:
+        - light.kitchen_led_strip_01
+        - light.kitchen_led_strip_02
+        - light.living_room_corner_light_01
+        - light.living_room_corner_light_02
+        - light.lobby_candle_light_01
+        - light.lobby_candle_light_02
+        - light.lobby_candle_light_03
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
@@ -311,40 +300,46 @@ data:
       max_brightness: 40
       min_color_temp: 2500
       max_color_temp: 4000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
-    - name: "High"
-      lights: *lights
+    - name: "Bedroom"
+      lights:
+        - light.bedroom_light_01
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
       interval: 90
-      min_brightness: 10
-      max_brightness: 80
+      min_brightness: 5
+      max_brightness: 40
       min_color_temp: 2500
-      max_color_temp: 5000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      max_color_temp: 4000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
 
-    - name: "Maximum"
-      lights: *lights
+    - name: "Bathroom"
+      lights:
+        - light.bathroom_light_01
+        - light.bathroom_light_02
       prefer_rgb_color: false
       transition: 45
       initial_transition: 1
       interval: 90
-      min_brightness: 20
-      max_brightness: 100
+      min_brightness: 5
+      max_brightness: 40
       min_color_temp: 2500
-      max_color_temp: 5000
-      sleep_brightness: 1
-      sleep_color_temp: 1000
+      max_color_temp: 4000
+      sleep_brightness: 15
+      sleep_color_temp: 2200
       take_over_control: true
+      take_over_control_mode: pause_changed
       detect_non_ha_changes: false
       adapt_only_on_bare_turn_on: true
