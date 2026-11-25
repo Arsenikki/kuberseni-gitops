@@ -2,15 +2,16 @@
 # Master bedroom bathroom: Gledopto MR16 bulbs (light.bathroom_all_lights, group
 # in configuration.yaml) on a Hue dimmer switch gen 2 (zigbee2mqtt
 # bathroom_wall_switch). White tones only. Its own Adaptive Lighting zone, always
-# on maximum brightness up to 4000K (switch.adaptive_lighting_bathroom, cozy from 21:00, see
-# adaptive_lighting.yaml),
-# so a bump here only touches the bathroom.
-#   power press     toggle (Adaptive Lighting sets brightness, and tone on auto)
-#   power hold      cozy mode on/off now (the 21:00 / 06:00 schedule still applies)
+# on maximum brightness up to 4000K (switch.adaptive_lighting_bathroom, cozy from
+# 21:00, see adaptive_lighting.yaml), so a bump here only touches the bathroom.
+#   power press     toggle, on the press itself (Adaptive Lighting sets the
+#                   brightness, and the tone on auto)
+#   power hold      on release: cozy mode on/off now, lights on (the 21:00 / 06:00 schedule
+#                   still applies)
 #   up / down       brightness +/- 10 % (hold to keep going); the colour keeps
 #                   adapting, Adaptive Lighting takes the brightness back at off
 #   hue press       next tone: auto -> candle -> warm -> soft -> auto
-#   hue hold        bright work light and back to auto
+#   hue hold        on release: bright work light and back to auto
 # input_select.bathroom_light_tone holds the tone; changing it (UI) applies it
 # while the lights are on. Auto hands brightness and tone back to Adaptive
 # Lighting; the bright work light reverts to auto when the lights go off.
@@ -30,6 +31,7 @@ script:
       bulbs: [light.bathroom_light_01, light.bathroom_light_02]
       tone: "{{ states('input_select.bathroom_light_tone') }}"
       kelvin: {candle: 2000, warm: 2400, soft: 2900}
+      reset_first: "{{ reset | default(false) }}"
       # set_manual_control with an attribute name replaces the manual set rather
       # than adding to it, so read a brightness bump before touching the bulbs.
       bumped: "{{ bulbs | select('in', state_attr(al, 'manual_control_brightness') or []) | list | count > 0 }}"
@@ -43,7 +45,7 @@ script:
             data:
               color_temp_kelvin: 4000
               brightness_pct: 100
-              transition: 1
+              transition: 0.3
           - action: adaptive_lighting.set_manual_control
             data:
               entity_id: "{{ al }}"
@@ -52,36 +54,59 @@ script:
           - stop: Work light on
 
       - if:
-          - "{{ tone == 'auto' or reset | default(false) }}"
+          - "{{ tone == 'auto' or reset_first }}"
         then:
           - action: adaptive_lighting.set_manual_control
             data:
               entity_id: "{{ al }}"
               lights: "{{ bulbs }}"
               manual_control: false
-          - action: adaptive_lighting.apply
-            data:
-              entity_id: "{{ al }}"
-              lights: "{{ bulbs }}"
-              turn_on_lights: true
-              adapt_color: "{{ tone == 'auto' }}"
-              transition: 1
 
-      # A fixed tone pauses only the colour; brightness keeps adapting.
-      - if:
-          - "{{ tone in kelvin }}"
-        then:
-          - action: light.turn_on
-            target:
-              entity_id: "{{ bulbs }}"
-            data:
-              color_temp_kelvin: "{{ kelvin[tone] }}"
-              transition: 1
-          - action: adaptive_lighting.set_manual_control
-            data:
-              entity_id: "{{ al }}"
-              lights: "{{ bulbs }}"
-              manual_control: "{{ true if bumped and not reset | default(false) else 'color' }}"
+      # Every branch sends one command per bulb: an Adaptive Lighting apply
+      # followed straight away by a separate colour command queued up on Zigbee
+      # and took ~3 s to turn the bulbs on.
+      - choose:
+          - conditions: "{{ tone == 'auto' }}"
+            sequence:
+              - action: adaptive_lighting.apply
+                data:
+                  entity_id: "{{ al }}"
+                  lights: "{{ bulbs }}"
+                  turn_on_lights: true
+                  transition: 0.3
+
+          # Turning on (or leaving the work light) with a fixed tone: Adaptive
+          # Lighting's current brightness and the tone in one command. A fixed
+          # tone pauses only the colour; brightness keeps adapting.
+          - conditions: "{{ tone in kelvin and reset_first }}"
+            sequence:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ bulbs }}"
+                data:
+                  brightness_pct: "{{ state_attr(al, 'brightness_pct') | int(40) }}"
+                  color_temp_kelvin: "{{ kelvin[tone] }}"
+                  transition: 0.3
+              - action: adaptive_lighting.set_manual_control
+                data:
+                  entity_id: "{{ al }}"
+                  lights: "{{ bulbs }}"
+                  manual_control: color
+
+          # Changing the tone while on: colour only, keeping a brightness bump.
+          - conditions: "{{ tone in kelvin }}"
+            sequence:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ bulbs }}"
+                data:
+                  color_temp_kelvin: "{{ kelvin[tone] }}"
+                  transition: 1
+              - action: adaptive_lighting.set_manual_control
+                data:
+                  entity_id: "{{ al }}"
+                  lights: "{{ bulbs }}"
+                  manual_control: "{{ true if bumped else 'color' }}"
 
 automation:
   - id: bathroom_wall_switch
@@ -102,8 +127,9 @@ automation:
       tone_pinned: "{{ bulbs | select('in', state_attr('switch.adaptive_lighting_bathroom', 'manual_control_color') or []) | list | count > 0 }}"
     actions:
       - choose:
-          # Power and hue buttons act on release, so a hold isn't also a press.
-          - conditions: "{{ press == 'on_press_release' }}"
+          # Power acts on the press, not the release, so it feels instant. A hold
+          # (released after ~1 s) then toggles cozy and makes sure the lights are on.
+          - conditions: "{{ press == 'on_press' }}"
             sequence:
               - if:
                   - "{{ lights_on }}"
@@ -112,23 +138,29 @@ automation:
                     target:
                       entity_id: light.bathroom_all_lights
                     data:
-                      transition: 1
+                      transition: 0.3
                 else:
                   - action: script.bathroom_lights_apply_tone
                     data:
                       reset: true
 
-          - conditions: "{{ press == 'on_hold' }}"
+          # Hold messages repeat while the button is held, so the toggles act once,
+          # on the release after a hold.
+          - conditions: "{{ press == 'on_hold_release' }}"
             sequence:
               - action: switch.toggle
                 target:
                   entity_id: switch.adaptive_lighting_bathroom_sleep_mode
+              - action: script.bathroom_lights_apply_tone
+                data:
+                  reset: true
 
-          - conditions: "{{ press in ['off_press_release', 'off_hold'] }}"
+          # The hue button acts on release, so a hold (work light) isn't also a press.
+          - conditions: "{{ press in ['off_press_release', 'off_hold_release'] }}"
             sequence:
               - variables:
                   next_tone: >-
-                    {% if press == 'off_hold' %}
+                    {% if press == 'off_hold_release' %}
                       {{ 'auto' if tone == 'bright' else 'bright' }}
                     {% elif tone in tones_cycle %}
                       {{ tones_cycle[(tones_cycle.index(tone) + 1) % tones_cycle | length] }}
