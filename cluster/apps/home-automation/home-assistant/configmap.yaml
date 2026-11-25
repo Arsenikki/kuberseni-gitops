@@ -77,6 +77,11 @@ data:
           - light.lobby_candle_light_01
           - light.lobby_candle_light_02
           - light.lobby_candle_light_03
+      # Master bedroom bathroom, outside Adaptive Lighting (packages/bathroom_lights.yaml)
+      - platform: group
+        name: "bathroom_all_lights"
+        entities:
+          - light.bathroom_light_01
 
     # Configure selectors
     input_select:
@@ -94,12 +99,13 @@ data:
           - cleaning
           - spinning
         initial: normal
-      bathroom_mood_light_mode:
+      # White tone of the bathroom lights, see packages/bathroom_lights.yaml.
+      bathroom_light_tone:
         options:
-          - cold
+          - candle
           - warm
-          - hot
-          - violet
+          - soft
+          - bright
 
     # Homelab infra reachability checks (up/down). Internal svc URLs bypass
     # Authentik; LAN hosts use verify_ssl:false for self-signed certs.
