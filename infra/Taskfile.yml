@@ -221,17 +221,36 @@ tasks:
 
   # topf upgrades control planes one at a time (etcd quorum), drains/uncordons each
   # node, and targets the installer image from the assembled config (schematic + version).
+  # Each upgrade drains a node, so first check the other nodes can take its pods
+  # (talos:drain-check). FORCE=1 upgrades anyway.
   talos:upgrade:
-    desc: Upgrade Talos on all nodes to the installer image in the config (DRY=1 to preview)
+    desc: Upgrade Talos on all nodes to the installer image in the config (DRY=1 to preview, FORCE=1 skips the capacity check)
     dir: "{{.TALOS_DIR}}"
+    vars:
+      NODES:
+        sh: yq '.nodes[].host' {{.TALOS_DIR}}/topf.yaml
     cmds:
-      - topf upgrade {{if .DRY}}--dry-run{{end}}
+      - for: { var: NODES }
+        task: talos:drain-check
+        vars: { HOSTNAME: "{{.ITEM}}", FORCE: "{{if .DRY}}1{{else}}{{.FORCE}}{{end}}" }
+      # exit code 2 = upgrades pending, which is the expected dry-run result
+      - topf upgrade {{if .DRY}}--dry-run || [ $? -eq 2 ]{{end}}
 
   talos:upgrade:node:
-    desc: Upgrade Talos on a single node (HOSTNAME=control-plane-01)
+    desc: Upgrade Talos on a single node (HOSTNAME=control-plane-01, FORCE=1 skips the capacity check)
     dir: "{{.TALOS_DIR}}"
     cmds:
+      - task: talos:drain-check
+        vars: { HOSTNAME: "{{.HOSTNAME}}", FORCE: "{{.FORCE}}" }
       - topf upgrade --nodes-filter '^{{.HOSTNAME}}$'
+
+  talos:drain-check:
+    desc: Check the other nodes can take a node's pods before it is drained (HOSTNAME=worker-01)
+    dir: "{{.TALOS_DIR}}"
+    requires:
+      vars: [HOSTNAME]
+    cmds:
+      - FORCE={{.FORCE | default "0"}} bash {{.ROOT_DIR}}/scripts/talos-drain-check.sh {{.HOSTNAME}}
 
   # ── NixOS router (infra/nixos) ────────────────────────────────────────────
 
