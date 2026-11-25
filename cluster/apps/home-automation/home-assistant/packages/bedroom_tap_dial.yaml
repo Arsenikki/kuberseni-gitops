@@ -113,5 +113,9 @@ automation:
                 data:
                   entity_id: switch.adaptive_lighting_bedroom
                   lights: light.bedroom_light_01
-                  manual_control: brightness
+                  # set_manual_control replaces the manual set: keep a pinned colour.
+                  manual_control: >-
+                    {{ true if 'light.bedroom_light_01' in
+                         (state_attr('switch.adaptive_lighting_bedroom', 'manual_control_color') or [])
+                       else 'brightness' }}
                 continue_on_error: true

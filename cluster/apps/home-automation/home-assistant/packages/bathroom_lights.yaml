@@ -29,6 +29,9 @@ script:
       bulbs: [light.bathroom_light_01, light.bathroom_light_02]
       tone: "{{ states('input_select.bathroom_light_tone') }}"
       kelvin: {candle: 2000, warm: 2400, soft: 2900}
+      # set_manual_control with an attribute name replaces the manual set rather
+      # than adding to it, so read a brightness bump before touching the bulbs.
+      bumped: "{{ bulbs | select('in', state_attr(al, 'manual_control_brightness') or []) | list | count > 0 }}"
     sequence:
       - if:
           - "{{ tone == 'bright' }}"
@@ -77,7 +80,7 @@ script:
             data:
               entity_id: "{{ al }}"
               lights: "{{ bulbs }}"
-              manual_control: color
+              manual_control: "{{ true if bumped and not reset | default(false) else 'color' }}"
 
 automation:
   - id: bathroom_wall_switch
@@ -94,6 +97,8 @@ automation:
       lights_on: "{{ is_state('light.bathroom_all_lights', 'on') }}"
       tone: "{{ states('input_select.bathroom_light_tone') }}"
       tones_cycle: [auto, candle, warm, soft]
+      # Read before the bump: set_manual_control replaces the manual set.
+      tone_pinned: "{{ bulbs | select('in', state_attr('switch.adaptive_lighting_bathroom', 'manual_control_color') or []) | list | count > 0 }}"
     actions:
       - choose:
           # Power and hue buttons act on release, so a hold isn't also a press.
@@ -159,7 +164,7 @@ automation:
                 data:
                   entity_id: switch.adaptive_lighting_bathroom
                   lights: "{{ bulbs }}"
-                  manual_control: brightness
+                  manual_control: "{{ true if tone_pinned else 'brightness' }}"
 
   - id: bathroom_tone_changed
     alias: "Bathroom: apply tone when changed"
