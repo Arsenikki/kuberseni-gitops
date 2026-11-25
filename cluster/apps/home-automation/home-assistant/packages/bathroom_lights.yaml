@@ -2,7 +2,7 @@
 # Master bedroom bathroom: Gledopto MR16 bulbs (light.bathroom_all_lights, group
 # in configuration.yaml) on a Hue dimmer switch gen 2 (zigbee2mqtt
 # bathroom_wall_switch). White tones only. Its own Adaptive Lighting zone, always
-# on the maximum range (switch.adaptive_lighting_bathroom, cozy from 21:00, see
+# on maximum brightness up to 4000K (switch.adaptive_lighting_bathroom, cozy from 21:00, see
 # adaptive_lighting.yaml),
 # so a bump here only touches the bathroom.
 #   power press     toggle (Adaptive Lighting sets brightness, and tone on auto)
