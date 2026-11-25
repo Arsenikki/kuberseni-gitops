@@ -77,6 +77,11 @@ data:
           - light.lobby_candle_light_01
           - light.lobby_candle_light_02
           - light.lobby_candle_light_03
+      # Master bedroom bathroom, outside Adaptive Lighting (packages/bathroom_lights.yaml)
+      - platform: group
+        name: "bathroom_all_lights"
+        entities:
+          - light.bathroom_light_01
 
     # Configure selectors
     input_select:
@@ -94,6 +99,7 @@ data:
           - cleaning
           - spinning
         initial: normal
+      # Mood for the bathroom lights, see packages/bathroom_lights.yaml.
       bathroom_mood_light_mode:
         options:
           - cold
