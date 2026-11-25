@@ -69,3 +69,11 @@ resources:
 
 # Tier: see cluster/apps/priority-classes/priority-classes.yaml
 priorityClassName: kuberseni-critical
+
+# In-cluster ClusterIP Service `traefik-metrics` (port `metrics`, :9100) for the
+# traefik ServiceMonitor in cluster/apps/monitoring/observability/servicemonitors.yaml.
+# The main `traefik` Service is the public LoadBalancer, so metrics stay off it.
+metrics:
+  prometheus:
+    service:
+      enabled: true

@@ -7,7 +7,9 @@
 # the Prometheus/Alloy targets page). A non-matching ServiceMonitor scrapes nothing
 # (harmless), it does not error.
 
-# Traefik — metrics entrypoint on :9100 (enabled in cluster/apps/traefik/values.yaml).
+# Traefik — metrics entrypoint on :9100, exposed by the chart's `traefik-metrics`
+# ClusterIP Service (metrics.prometheus.service in cluster/apps/traefik/values.yaml).
+# The main `traefik` Service is the public LoadBalancer and has no metrics port.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -19,13 +21,15 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: traefik
+      app.kubernetes.io/component: metrics
   endpoints:
     - port: metrics
       scheme: http
       interval: 30s
 ---
-# ArgoCD — metrics services (argocd-metrics, argocd-server-metrics, argocd-repo-server)
-# expose a `metrics` port by default.
+# ArgoCD — the *-metrics Services (application-controller, server, repo-server; enabled
+# by `metrics.enabled` in cluster/bootstrap/argocd/values.yaml) name their port
+# `http-metrics`. The other argocd Services have no such port, so they're skipped.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -40,11 +44,11 @@ spec:
         operator: In
         values: [argocd]
   endpoints:
-    - port: metrics
+    - port: http-metrics
       scheme: http
       interval: 30s
 ---
-# cert-manager — metrics on :9402 (service port name tcp-prometheus-servlet).
+# cert-manager — metrics on :9402 (the chart's Service names the port http-metrics).
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -58,7 +62,7 @@ spec:
       app.kubernetes.io/name: cert-manager
       app.kubernetes.io/component: controller
   endpoints:
-    - port: tcp-prometheus-servlet
+    - port: http-metrics
       scheme: http
       interval: 30s
 ---

@@ -32,6 +32,10 @@ configs:
       g, authentik Admins, role:admin
 
 server:
+  # Exposes argocd-server-metrics (port http-metrics) for the argocd ServiceMonitor
+  # in cluster/apps/monitoring/observability/servicemonitors.yaml.
+  metrics:
+    enabled: true
   ingress:
     enabled: true
     ingressClassName: traefik
@@ -313,6 +317,9 @@ extraObjects:
 
 # Run ArgoCD components on control-plane nodes
 controller:
+  # argocd-application-controller-metrics (sync/health per app) for the ServiceMonitor.
+  metrics:
+    enabled: true
   # 2026-10-11 incident: with NO resource requests set, the controller was
   # OOM/SIGKILLed (exit 137) under load and crashlooped, halting ALL syncs.
   # Requests give it guaranteed memory + QoS priority so it's not the first
@@ -330,6 +337,9 @@ controller:
       operator: Exists
 
 repoServer:
+  # argocd-repo-server-metrics for the ServiceMonitor.
+  metrics:
+    enabled: true
   # 2026-10-11 incident: repo-server was liveness-probe-killed (context deadline
   # exceeded on /healthz, ~494x over 41d) while rendering manifests for ~70 apps,
   # starving the controller and cascading into the sync outage. Relax the probe
