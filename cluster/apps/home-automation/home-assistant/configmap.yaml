@@ -300,7 +300,7 @@ data:
       max_brightness: 40
       min_color_temp: 2500
       max_color_temp: 4000
-      sleep_brightness: 25
+      sleep_brightness: 15
       sleep_color_temp: 2200
       take_over_control: true
       take_over_control_mode: pause_changed
@@ -318,7 +318,7 @@ data:
       max_brightness: 40
       min_color_temp: 2500
       max_color_temp: 4000
-      sleep_brightness: 25
+      sleep_brightness: 15
       sleep_color_temp: 2200
       take_over_control: true
       take_over_control_mode: pause_changed
@@ -337,7 +337,7 @@ data:
       max_brightness: 40
       min_color_temp: 2500
       max_color_temp: 4000
-      sleep_brightness: 25
+      sleep_brightness: 15
       sleep_color_temp: 2200
       take_over_control: true
       take_over_control_mode: pause_changed
