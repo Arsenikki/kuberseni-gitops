@@ -5,8 +5,9 @@ automation:
   - id: kitchen_wall_switch
     alias: "Kitchen: wall switch"
     description: >-
-      on = toggle kitchen LED strips together; up/down = next/previous
-      adaptive lighting level (no wrap-around); off = nothing.
+      on = toggle kitchen LED strips together; up/down = brightness +/- 10 % on
+      the kitchen and living room lights that are on (only the living Adaptive
+      Lighting zone, until they turn off); off = nothing.
     mode: queued
     triggers:
       - trigger: mqtt
@@ -18,20 +19,36 @@ automation:
               - action: script.lights_sync_toggle
                 data:
                   entities: [light.kitchen_led_strip_01, light.kitchen_led_strip_02]
-          - conditions: "{{ trigger.payload == 'up_press' }}"
+          # Never below 1 %: a brightness step to 0 would switch a light off.
+          - conditions: "{{ trigger.payload in ['up_press', 'down_press'] }}"
             sequence:
-              - action: input_select.select_next
-                target:
-                  entity_id: input_select.adaptive_lighting_level
-                data:
-                  cycle: false
-          - conditions: "{{ trigger.payload == 'down_press' }}"
-            sequence:
-              - action: input_select.select_previous
-                target:
-                  entity_id: input_select.adaptive_lighting_level
-                data:
-                  cycle: false
+              - variables:
+                  step: "{{ 10 if trigger.payload == 'up_press' else -10 }}"
+                  lights: >-
+                    {{ ['light.kitchen_led_strip_01', 'light.kitchen_led_strip_02',
+                        'light.living_room_corner_light_01', 'light.living_room_corner_light_02']
+                       | select('is_state', 'on') | list }}
+                  # set_manual_control replaces the manual set, so read which
+                  # lights have a pinned colour before bumping and keep it.
+                  color_pinned: "{{ state_attr('switch.adaptive_lighting_living', 'manual_control_color') or [] }}"
+              - condition: template
+                value_template: "{{ lights | count > 0 }}"
+              - repeat:
+                  for_each: "{{ lights }}"
+                  sequence:
+                    - action: light.turn_on
+                      target:
+                        entity_id: "{{ repeat.item }}"
+                      data:
+                        brightness_pct: >-
+                          {% set current = state_attr(repeat.item, 'brightness') | int(0) / 2.55 %}
+                          {{ ([1, (current + step) | round, 100] | sort)[1] }}
+                        transition: 0.4
+                    - action: adaptive_lighting.set_manual_control
+                      data:
+                        entity_id: switch.adaptive_lighting_living
+                        lights: "{{ repeat.item }}"
+                        manual_control: "{{ true if repeat.item in color_pinned else 'brightness' }}"
 
   - id: living_room_wall_switch
     alias: "Living room: wall switch"
