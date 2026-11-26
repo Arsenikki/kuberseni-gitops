@@ -104,6 +104,13 @@ spec:
             # restarts, idle shutdown). One-time kernel login: agy-acp-muzzle --login.
             - name: PASEO_AGY_MUZZLE
               value: "1"
+            # Disable built-in tools that are unsafe or noisy over ACP:
+            # - run_workflow (muzzle default): prevents workspace SKILL.md pollution
+            # - invoke_subagent: avoids premature end_turn / idle-stop mid-subagent;
+            #   use Paseo subagents when fan-out is needed.
+            # (paseo-generic keeps defaults since it is used manually.)
+            - name: AGY_ACP_MUZZLE_DISABLED_TOOLS
+              value: run_workflow,invoke_subagent
             # Host-header allowlist: the agent-runner (prod + dev, cross-namespace)
             # dials this Service's FQDN, so those names must be allow-listed. The
             # entrypoint always adds loopback + the pod hostname.

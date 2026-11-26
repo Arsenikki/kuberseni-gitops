@@ -89,6 +89,13 @@ spec:
             # shell/exec. (paseo-generic leaves this unset so its debug shell is full.)
             - name: AGY_FORCE_SANDBOX
               value: "1"
+            # AGY_FORCE_SANDBOX only wraps the legacy `agy` CLI; when apps use
+            # `agy-muzzle` in open mode (to keep MCP servers that AGY_LOCKDOWN=1
+            # strips), disable shell/edit/write/web-search/subagent built-ins here
+            # so app agents stay bounded to MCP + read_url_content (mirrors
+            # resepti-workspace.yaml).
+            - name: AGY_ACP_MUZZLE_DISABLED_TOOLS
+              value: run_workflow,invoke_subagent,run_command,edit_file,create_file,search_web
             # Daemon Host-header allowlist: the paseo daemon 403s a TCP client whose
             # Host isn't listed. This is a SEPARATE layer from the PASEO_PASSWORD bearer
             # auth above — a client must satisfy BOTH (allow-listed Host AND password).
