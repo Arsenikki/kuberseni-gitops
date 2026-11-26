@@ -1,21 +1,40 @@
 ---
-# Lobby candle lights follow the front-door motion sensor. Ported from the
-# Node-RED "Lights" tab (front_door_motion_sensor): on with motion, off 2 minutes
-# after motion clears; new motion within those 2 minutes keeps them on.
+# Lobby candle lights follow the two lobby motion sensors (lobby_motion_sensor_01,
+# formerly front_door_motion_sensor, and lobby_motion_sensor_02): on when either
+# sees motion, off once neither has seen any for 2 minutes. Ported from the
+# Node-RED "Lights" tab.
 automation:
   - id: lobby_lights_follow_motion
-    alias: "Lobby: lights follow front door motion"
+    alias: "Lobby: lights follow motion"
     mode: restart
     triggers:
       - trigger: state
-        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        entity_id:
+          - binary_sensor.lobby_motion_sensor_01_occupancy
+          - binary_sensor.lobby_motion_sensor_02_occupancy
         to: "on"
         id: motion
+      # Each sensor going quiet is a candidate; the condition below only lets the
+      # last one through, once both have been clear for the full 2 minutes.
       - trigger: state
-        entity_id: binary_sensor.front_door_motion_sensor_occupancy
+        entity_id:
+          - binary_sensor.lobby_motion_sensor_01_occupancy
+          - binary_sensor.lobby_motion_sensor_02_occupancy
         to: "off"
         for: "00:02:00"
         id: clear
+    conditions:
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: motion
+          - condition: state
+            entity_id:
+              - binary_sensor.lobby_motion_sensor_01_occupancy
+              - binary_sensor.lobby_motion_sensor_02_occupancy
+            # A dead or missing sensor must not keep the lobby lit.
+            state: ["off", "unavailable", "unknown"]
+            for: "00:02:00"
     actions:
       - action: "light.turn_{{ 'on' if trigger.id == 'motion' else 'off' }}"
         target:
@@ -37,14 +56,18 @@ automation:
         event_type: automation_reloaded
     conditions:
       - condition: state
-        entity_id: binary_sensor.front_door_motion_sensor_occupancy
-        state: "off"
+        entity_id:
+          - binary_sensor.lobby_motion_sensor_01_occupancy
+          - binary_sensor.lobby_motion_sensor_02_occupancy
+        state: ["off", "unavailable", "unknown"]
       - condition: state
         entity_id: [light.lobby_candle_light_01, light.lobby_candle_light_02, light.lobby_candle_light_03]
         match: any
         state: "on"
     actions:
-      - wait_template: "{{ is_state('binary_sensor.front_door_motion_sensor_occupancy', 'on') }}"
+      - wait_template: >-
+          {{ is_state('binary_sensor.lobby_motion_sensor_01_occupancy', 'on')
+             or is_state('binary_sensor.lobby_motion_sensor_02_occupancy', 'on') }}
         timeout: "00:02:00"
         continue_on_timeout: true
       - if:
