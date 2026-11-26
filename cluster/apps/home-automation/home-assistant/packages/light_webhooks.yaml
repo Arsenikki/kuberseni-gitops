@@ -6,35 +6,77 @@
 #   GET /api/webhook/living_room_christmas_lights_toggle
 #   GET|POST /api/webhook/living_room_movie_lights
 # local_only: these IDs are public in this repo, so only LAN clients may call them.
+input_boolean:
+  living_room_movie_lights_active:
+    name: "Living room movie lights active"
+    icon: mdi:movie-open-outline
+    initial: false
+
 script:
   living_room_movie_lights:
-    alias: "Lights: movie mode (kitchen & living room minimum brightness)"
+    alias: "Lights: toggle movie mode (kitchen & living room minimum brightness)"
     mode: single
     sequence:
-      - action: light.turn_on
-        target:
-          entity_id:
-            - light.kitchen_led_strip_01
-            - light.kitchen_led_strip_02
-            - light.living_room_corner_light_01
-            - light.living_room_corner_light_02
-        data:
-          brightness_pct: 1
-          transition: 2
-        continue_on_error: true
-      - repeat:
-          for_each:
-            - light.kitchen_countertop_lights
-            - light.living_room_christmas_lights
-          sequence:
-            - if:
-                - condition: template
-                  value_template: "{{ is_state(repeat.item, 'on') }}"
-              then:
-                - action: light.turn_off
-                  target:
-                    entity_id: "{{ repeat.item }}"
-                  continue_on_error: true
+      - if:
+          - condition: state
+            entity_id: input_boolean.living_room_movie_lights_active
+            state: "on"
+          - condition: template
+            value_template: "{{ states('scene.living_room_movie_lights_before') not in ['unknown', 'unavailable'] }}"
+        then:
+          - action: scene.turn_on
+            target:
+              entity_id: scene.living_room_movie_lights_before
+            continue_on_error: true
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.living_room_movie_lights_active
+        else:
+          - variables:
+              available_lights: >-
+                {{ [
+                     'light.kitchen_led_strip_01',
+                     'light.kitchen_led_strip_02',
+                     'light.living_room_corner_light_01',
+                     'light.living_room_corner_light_02',
+                     'light.kitchen_countertop_lights',
+                     'light.living_room_christmas_lights'
+                   ] | reject('is_state', 'unavailable') | reject('is_state', 'unknown') | list }}
+          - if:
+              - condition: template
+                value_template: "{{ available_lights | count > 0 }}"
+            then:
+              - action: scene.create
+                data:
+                  scene_id: living_room_movie_lights_before
+                  snapshot_entities: "{{ available_lights }}"
+          - action: light.turn_on
+            target:
+              entity_id:
+                - light.kitchen_led_strip_01
+                - light.kitchen_led_strip_02
+                - light.living_room_corner_light_01
+                - light.living_room_corner_light_02
+            data:
+              brightness_pct: 1
+              transition: 2
+            continue_on_error: true
+          - repeat:
+              for_each:
+                - light.kitchen_countertop_lights
+                - light.living_room_christmas_lights
+              sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ is_state(repeat.item, 'on') }}"
+                  then:
+                    - action: light.turn_off
+                      target:
+                        entity_id: "{{ repeat.item }}"
+                      continue_on_error: true
+          - action: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.living_room_movie_lights_active
 
 automation:
   - id: light_webhooks

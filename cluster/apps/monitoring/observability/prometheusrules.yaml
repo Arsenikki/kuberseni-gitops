@@ -74,6 +74,16 @@ spec:
             severity: warning
           annotations:
             summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} below 10% free"
+        # Early warning, days before the 10% alert above. renovate-ce's PVC went
+        # from fine to full (SQLITE_FULL, no Renovate runs for 2 days) in 2026-11.
+        - alert: KubePersistentVolumeUsageHigh
+          expr: |
+            1 - kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes > 0.80
+          for: 1h
+          labels:
+            severity: info
+          annotations:
+            summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is over 80% used"
         - alert: TargetDown
           expr: up == 0
           for: 10m
