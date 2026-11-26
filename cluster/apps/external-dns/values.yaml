@@ -34,3 +34,6 @@ resources:
 sources: ["crd", "ingress"]
 txtOwnerId: main
 txtPrefix: "k8s."
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml (public DNS records).
+priorityClassName: kuberseni-critical

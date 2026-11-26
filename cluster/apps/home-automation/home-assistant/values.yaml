@@ -166,7 +166,9 @@ resources:
     # Was 10m -> cgroup cpu.weight ~1, so HA lost every CPU contention. 250m
     # still fits worker-02's remaining requestable CPU for the soft fallback.
     cpu: 250m
-    memory: 100Mi
+    # Peak working set 1.35Gi over 14d (2026-11-26). 100Mi let the scheduler place
+    # HA on a node that couldn't actually hold it (e.g. during a worker drain).
+    memory: 1280Mi
   limits:
     memory: 2000Mi
 

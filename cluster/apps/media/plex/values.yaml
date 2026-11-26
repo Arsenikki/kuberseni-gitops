@@ -58,10 +58,12 @@ podSecurityContext:
 
 resources:
   requests:
-    cpu: 2
-    # ~70 MiB idle (2026-11-21). Transcoding is on the iGPU with an on-disk
-    # transcode dir, so 1 GiB covers streams; the 8 GiB limit covers bursts.
-    memory: 1Gi
+    # 14d p99 1.07 cores, max 1.6 (2026-11-26). No CPU limit, so bursts still get
+    # the node's spare CPU; was 2, which reserved more than it ever used.
+    cpu: 1
+    # ~70 MiB idle (2026-11-21), 490 MiB peak over 14d. Transcoding is on the iGPU
+    # with an on-disk transcode dir; the 8 GiB limit covers bursts.
+    memory: 512Mi
   limits:
     memory: 8192Mi
     # Intel Iris Xe iGPU (worker-01 passthrough) for hardware transcoding.

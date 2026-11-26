@@ -26,3 +26,6 @@ resources:
     memory: 64Mi
   limits:
     memory: 256Mi
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml (CI only).
+priorityClassName: kuberseni-low

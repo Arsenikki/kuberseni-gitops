@@ -20,6 +20,7 @@ spec:
         runAsGroup: 101
         seccompProfile:
           type: RuntimeDefault
+      priorityClassName: kuberseni-low
       containers:
         - name: docs
           # Built from docs/site by the docs-build workflow; content is docs/homelab.

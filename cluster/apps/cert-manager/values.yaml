@@ -15,3 +15,7 @@ ingressShim:
   defaultIssuerName: "letsencrypt-prod"
   defaultIssuerKind: "ClusterIssuer"
   defaultIssuerGroup: "cert-manager.io"
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml (TLS for every ingress).
+global:
+  priorityClassName: kuberseni-critical

@@ -175,8 +175,12 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "1" # observed steady ~0.8-1 core; 100m let the scheduler overpack a node
-              memory: 1Gi # observed ~800Mi idle-ish, ~1.5Gi under agent load
+              # 14d to 2026-11-26: p95 95m, p99 242m, max 2 cores (bursts use the limit).
+              # Was "1", which reserved a whole core and stopped worker drains fitting.
+              cpu: 300m
+              # Peak working set 3Gi (the limit) over 14d; was 1Gi, which let the
+              # scheduler pack it onto a node without the memory it really uses.
+              memory: 2Gi
             # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
             # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
             limits:

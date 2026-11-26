@@ -44,6 +44,9 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/part-of: paseo-homelab
+      # Tier: see cluster/apps/priority-classes. Serves the 06:30 digest and app
+      # agents; it can wait Pending while a worker is drained.
+      priorityClassName: kuberseni-low
       containers:
         - name: paseo
           image: ghcr.io/arsenikki/paseo-homelab:0.15.4-9
@@ -123,7 +126,8 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 512Mi
+              # Peak working set ~1Gi over 14d (2026-11-26); was 512Mi.
+              memory: 1Gi
             # agy/antigravity agents are memory-heavy (the agy.real binary alone is
             # ~214MB resident + node runtime + model/streaming context on top of the
             # paseo daemon). 1Gi OOMKilled the pod under agent load; 3Gi gives a single

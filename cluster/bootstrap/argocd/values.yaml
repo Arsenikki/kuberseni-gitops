@@ -1,5 +1,8 @@
 ---
 global:
+  # Tier: see cluster/apps/priority-classes/priority-classes.yaml. Everything
+  # else is deployed through ArgoCD, so it keeps running when a worker is drained.
+  priorityClassName: kuberseni-critical
   domain: argocd.arsenikki.casa
 
 configs:
@@ -348,7 +351,8 @@ repoServer:
   replicas: 2
   resources:
     requests:
-      cpu: 250m
+      # 14d p99 65m, max 134m per replica (2026-11-26); was 250m.
+      cpu: 100m
       # 65-90 MiB each when idle (2026-11-21); renders burst above the request.
       memory: 256Mi
   livenessProbe:

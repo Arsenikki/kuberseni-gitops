@@ -15,10 +15,10 @@ controllers:
         # 1704/1705 of the node IP whatever the Service below exposes.
         resources:
           requests:
-            # About its real use while streaming (0.2-0.5 cores), so the
-            # scheduler and CPU shares account for it.
-            cpu: 300m
-            memory: 256Mi
+            # 14d p99 97m, max 139m (2026-11-26); memory peak 568Mi. Was 300m /
+            # 256Mi, sized from an estimate of 0.2-0.5 cores while streaming.
+            cpu: 100m
+            memory: 640Mi
           limits:
             # Leak fuse: MA 2.7.x has open OOM/RAM-ramp reports (#4263/#4991/#5089).
             # Cap so a leak restarts only MA, not the node that also hosts Home Assistant.
@@ -38,6 +38,9 @@ controllers:
 # keeps the stable 192.168.1.223 for web clients (MA's base URL, Companion App)
 # regardless of the node.
 defaultPodOptions:
+  # Tier: see cluster/apps/priority-classes/priority-classes.yaml. Voice + music
+  # are nice-to-have; they yield first when a worker is drained.
+  priorityClassName: kuberseni-low
   hostNetwork: true
   dnsPolicy: ClusterFirstWithHostNet
   nodeSelector:

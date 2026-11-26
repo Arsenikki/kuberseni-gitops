@@ -69,3 +69,7 @@ persistence:
 
 serviceAccount:
   create: true
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+defaultPodOptions:
+  priorityClassName: kuberseni-low

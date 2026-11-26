@@ -82,3 +82,6 @@ resources:
   limits:
     # Headroom for the one-time Whisper transcription pass per book.
     memory: 2Gi
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml
+priorityClassName: kuberseni-low

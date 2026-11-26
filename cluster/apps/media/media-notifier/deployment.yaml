@@ -29,6 +29,7 @@ spec:
         runAsGroup: 65534
         seccompProfile:
           type: RuntimeDefault
+      priorityClassName: kuberseni-low
       containers:
         - name: media-notifier
           image: python:3.12-alpine

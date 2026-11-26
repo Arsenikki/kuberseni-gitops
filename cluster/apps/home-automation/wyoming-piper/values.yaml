@@ -27,6 +27,9 @@ controllers:
             memory: 1Gi
 
 defaultPodOptions:
+  # Tier: see cluster/apps/priority-classes/priority-classes.yaml. Voice + music
+  # are nice-to-have; they yield first when a worker is drained.
+  priorityClassName: kuberseni-low
   nodeSelector:
     kubernetes.io/hostname: worker-01
 
