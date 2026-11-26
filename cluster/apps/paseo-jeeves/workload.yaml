@@ -255,6 +255,14 @@ spec:
         - name: workspaces
           persistentVolumeClaim:
             claimName: paseo-jeeves-workspaces
+  # /data/paseo holds CLAUDE_CONFIG_DIR (session transcripts), MISE_DATA_DIR (every
+  # tool version Renovate bumps to), antigravity conversations and the local-speech
+  # models (~1G). It reached 86% of 5Gi on 2026-11-26 (paseo-generic filled the same
+  # 5Gi on 2026-11-21, #974); `mise prune` freed 1G, this gives room to grow.
+  # volumeClaimTemplates are immutable: to resize, patch the live PVC (Longhorn
+  # expands online), then change this and
+  # `kubectl delete sts paseo-jeeves -n paseo-jeeves --cascade=orphan` so ArgoCD
+  # can recreate the StatefulSet (the pod keeps running).
   volumeClaimTemplates:
     - metadata: { name: data }
       spec:
@@ -262,7 +270,7 @@ spec:
         storageClassName: longhorn
         resources:
           requests:
-            storage: 5Gi
+            storage: 15Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
