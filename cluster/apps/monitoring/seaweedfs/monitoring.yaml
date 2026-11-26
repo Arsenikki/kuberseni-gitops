@@ -1,0 +1,59 @@
+---
+# Scrape the S3 gateway's own metrics (`-metricsPort 9327`, exposed by the chart as the
+# `metrics` port on the seaweedfs-s3 Service). Discovered by Alloy
+# (prometheusOperatorObjects feature), like pve-exporter.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: seaweedfs-s3
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: seaweedfs
+      app.kubernetes.io/component: s3
+  endpoints:
+    - port: metrics
+      interval: 60s
+---
+# Loki, Mimir (blocks, ruler, alertmanager) and Tempo all store their data through
+# this one gateway. On 2026-11-23 it kept a stale volume map after SeaweedFS restarted
+# ("volume 286 not found" while the master had it): reads of those volumes failed for
+# 2 days, mimir-ruler crash-looped on startup, and no alert fired. A gateway restart
+# fixed it.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: seaweedfs-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: monitoring
+spec:
+  groups:
+    - name: seaweedfs
+      rules:
+        - alert: SeaweedFSS3Errors
+          # Server-side errors per bucket. A stale volume map may also surface as
+          # truncated 200 responses, which this can't see; the Watchdog dead-man
+          # switch covers the case where it takes down the ruler.
+          expr: |
+            sum by (bucket) (rate(SeaweedFS_s3_request_total{code=~"5.."}[10m])) > 0.01
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "SeaweedFS S3 bucket {{ $labels.bucket }} is returning 5xx errors"
+            description: |
+              If the gateway logs "volume N not found" while
+              `curl seaweedfs-master.monitoring:9333/dir/lookup?volumeId=N` finds it, its
+              volume map is stale: `kubectl rollout restart deploy/seaweedfs-s3 -n monitoring`.
+        - alert: SeaweedFSS3MetricsMissing
+          # The scrape itself broke (gateway down or ServiceMonitor not matching).
+          expr: absent(SeaweedFS_s3_bucket_object_count)
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "No SeaweedFS S3 gateway metrics for 30m (gateway down or not scraped)"
