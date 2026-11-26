@@ -18,6 +18,7 @@ configMapGenerator:
       - packages/bedroom_speakers.yaml
       - packages/bedroom_tap_dial.yaml
       - packages/gaming.yaml
+      - packages/kitchen_panel.yaml
       - packages/light_webhooks.yaml
       - packages/lights_common.yaml
       - packages/lobby_lights.yaml
