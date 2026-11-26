@@ -58,6 +58,9 @@ spec:
             - name: templates
               mountPath: /etc/alertmanager-templates
               readOnly: true
+            - name: deadman
+              mountPath: /etc/alertmanager-deadman
+              readOnly: true
             - name: data
               mountPath: /alertmanager
             # readOnlyRootFilesystem leaves no writable temp dir — give AM one.
@@ -88,6 +91,11 @@ spec:
         - name: templates
           configMap:
             name: alertmanager-templates
+        # Dead-man switch ping URL; optional so the pod still starts without it.
+        - name: deadman
+          secret:
+            secretName: alertmanager-deadman
+            optional: true
         - name: data
           persistentVolumeClaim:
             claimName: alertmanager-data
