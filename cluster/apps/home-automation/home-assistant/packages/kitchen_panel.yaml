@@ -1,0 +1,219 @@
+---
+# Kitchen tablet dashboard backend: the recipe shown on the panel (fetched from
+# resepti's in-cluster API, no Authentik in the path) and the kitchen timer.
+#
+# Picking a recipe: input_select.kitchen_recipe on the dashboard, or POST
+# {"slug": "<recipe-slug>"} to the local-only webhook "resepti-kitchen-show"
+# (meant for a "Show on kitchen panel" button in resepti). An empty slug clears it.
+rest:
+  - resource: http://resepti-api.resepti.svc.cluster.local/api/recipes
+    scan_interval: 900
+    sensor:
+      - name: "Resepti recipes"
+        unique_id: resepti_recipes
+        icon: mdi:book-open-variant
+        value_template: "{{ value_json.recipes | count }}"
+        json_attributes:
+          - recipes
+  - resource_template: >-
+      http://resepti-api.resepti.svc.cluster.local/api/recipes/{{ states('input_text.kitchen_recipe_slug') | urlencode }}
+    # Refreshed on demand by kitchen_panel_recipe_refresh when the slug changes.
+    scan_interval: 3600
+    sensor:
+      - name: "Kitchen recipe"
+        unique_id: kitchen_recipe
+        icon: mdi:chef-hat
+        availability: "{{ states('input_text.kitchen_recipe_slug') not in ['', 'unknown', 'unavailable'] }}"
+        value_template: "{{ value_json.title }}"
+        json_attributes:
+          - slug
+          - description
+          - servings
+          - prepMinutes
+          - cookMinutes
+          - ingredients
+          - steps
+          - notesMd
+
+input_text:
+  kitchen_recipe_slug:
+    name: "Kitchen recipe slug"
+    max: 255
+    icon: mdi:chef-hat
+
+input_select:
+  kitchen_recipe:
+    name: "Kitchen recipe"
+    # Real options are set from sensor.resepti_recipes by
+    # kitchen_panel_recipe_options; "None" means nothing is shown.
+    options:
+      - "None"
+    icon: mdi:book-open-variant
+
+timer:
+  kitchen:
+    name: "Kitchen timer"
+    icon: mdi:timer-outline
+    restore: true
+
+script:
+  kitchen_timer_start:
+    alias: "Kitchen: start timer"
+    mode: restart
+    fields:
+      minutes:
+        description: Timer length in minutes.
+        required: true
+        selector:
+          number:
+            min: 1
+            max: 240
+            unit_of_measurement: min
+    sequence:
+      - action: timer.start
+        target:
+          entity_id: timer.kitchen
+        data:
+          duration: "{{ '%02d:%02d:00' % ((minutes | int) // 60, (minutes | int) % 60) }}"
+
+  kitchen_timer_add_minute:
+    alias: "Kitchen: timer +1 min"
+    mode: queued
+    sequence:
+      - if:
+          - condition: state
+            entity_id: timer.kitchen
+            state: "idle"
+        then:
+          - action: script.kitchen_timer_start
+            data:
+              minutes: 1
+        else:
+          - action: timer.change
+            target:
+              entity_id: timer.kitchen
+            data:
+              duration: "00:01:00"
+
+  kitchen_recipe_clear:
+    alias: "Kitchen: clear recipe"
+    mode: single
+    sequence:
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.kitchen_recipe_slug
+        data:
+          value: ""
+
+automation:
+  - id: kitchen_panel_recipe_options
+    alias: "Kitchen panel: recipe list"
+    description: Keep the dashboard's recipe picker in sync with resepti.
+    mode: queued
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: sensor.resepti_recipes
+    conditions:
+      - condition: template
+        value_template: "{{ state_attr('sensor.resepti_recipes', 'recipes') is iterable }}"
+    actions:
+      - variables:
+          titles: "{{ state_attr('sensor.resepti_recipes', 'recipes') | map(attribute='title') | sort | list }}"
+          current: "{{ states('input_select.kitchen_recipe') }}"
+      - action: input_select.set_options
+        target:
+          entity_id: input_select.kitchen_recipe
+        data:
+          options: "{{ ['None'] + titles }}"
+      # set_options falls back to the first option; keep the selection if it still exists.
+      - if:
+          - condition: template
+            value_template: "{{ current in titles }}"
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.kitchen_recipe
+            data:
+              option: "{{ current }}"
+
+  - id: kitchen_panel_recipe_picked
+    alias: "Kitchen panel: recipe picked"
+    description: Map the picked title to its resepti slug.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.kitchen_recipe
+    actions:
+      - variables:
+          picked: "{{ states('input_select.kitchen_recipe') }}"
+          slug: >-
+            {{ (state_attr('sensor.resepti_recipes', 'recipes') or [])
+               | selectattr('title', 'eq', picked) | map(attribute='slug') | first | default('') }}
+      - condition: template
+        value_template: "{{ slug != states('input_text.kitchen_recipe_slug') }}"
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.kitchen_recipe_slug
+        data:
+          value: "{{ slug }}"
+
+  - id: kitchen_panel_recipe_refresh
+    alias: "Kitchen panel: load recipe"
+    description: Fetch the recipe and keep the picker in step when the slug changes (e.g. via the webhook).
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_text.kitchen_recipe_slug
+    actions:
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.kitchen_recipe
+      - variables:
+          slug: "{{ states('input_text.kitchen_recipe_slug') }}"
+          title: >-
+            {{ (state_attr('sensor.resepti_recipes', 'recipes') or [])
+               | selectattr('slug', 'eq', slug) | map(attribute='title') | first | default('None') }}
+      - if:
+          - condition: template
+            value_template: "{{ states('input_select.kitchen_recipe') != title and title in state_attr('input_select.kitchen_recipe', 'options') }}"
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.kitchen_recipe
+            data:
+              option: "{{ title }}"
+
+  - id: kitchen_panel_recipe_webhook
+    alias: "Kitchen panel: show recipe (webhook)"
+    description: 'POST {"slug": "..."} from resepti to show a recipe on the kitchen panel.'
+    mode: restart
+    triggers:
+      - trigger: webhook
+        webhook_id: resepti-kitchen-show
+        allowed_methods:
+          - POST
+        local_only: true
+    actions:
+      - action: input_text.set_value
+        target:
+          entity_id: input_text.kitchen_recipe_slug
+        data:
+          value: "{{ (trigger.json.slug | default('')) | string | trim }}"
+
+  - id: kitchen_panel_timer_finished
+    alias: "Kitchen panel: timer finished"
+    description: Flash the kitchen lights when the kitchen timer ends.
+    mode: single
+    triggers:
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.kitchen
+    actions:
+      - action: light.turn_on
+        target:
+          entity_id: light.kitchen_all_lights
+        data:
+          flash: long
