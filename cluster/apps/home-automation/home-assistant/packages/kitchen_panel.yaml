@@ -50,6 +50,16 @@ input_select:
       - "None"
     icon: mdi:book-open-variant
 
+  kitchen_music_zone:
+    name: "Kitchen music zone"
+    # Which player the Kitchen dashboard shows and controls. "Kitchen" is the
+    # tablet's own Kiosk Satellite (Sendspin) player.
+    options:
+      - "Kitchen"
+      - "Living Room"
+      - "Bedroom"
+    icon: mdi:speaker-multiple
+
 timer:
   kitchen:
     name: "Kitchen timer"
@@ -95,6 +105,28 @@ script:
             data:
               duration: "00:01:00"
 
+  kitchen_timer_pause_resume:
+    alias: "Kitchen: pause/resume timer"
+    mode: queued
+    sequence:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: timer.kitchen
+                state: "active"
+            sequence:
+              - action: timer.pause
+                target:
+                  entity_id: timer.kitchen
+          - conditions:
+              - condition: state
+                entity_id: timer.kitchen
+                state: "paused"
+            sequence:
+              - action: timer.start
+                target:
+                  entity_id: timer.kitchen
+
   kitchen_recipe_clear:
     alias: "Kitchen: clear recipe"
     mode: single
@@ -115,6 +147,10 @@ automation:
         event: start
       - trigger: state
         entity_id: sensor.resepti_recipes
+      # Also re-sync periodically: after a package reload the sensor may appear
+      # without a state change this automation sees.
+      - trigger: time_pattern
+        minutes: "/15"
     conditions:
       - condition: template
         value_template: "{{ state_attr('sensor.resepti_recipes', 'recipes') is iterable }}"

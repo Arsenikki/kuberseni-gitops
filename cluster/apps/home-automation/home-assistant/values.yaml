@@ -89,7 +89,7 @@ sidecars:
     args:
       - |
         HA=http://127.0.0.1:8123
-        DOMAINS="input_boolean input_button input_datetime input_number input_select input_text timer script scene automation"
+        DOMAINS="input_boolean input_button input_datetime input_number input_select input_text timer script scene rest automation"
         api() { wget -q -O - --header="Authorization: Bearer $HA_TOKEN" --header="Content-Type: application/json" --post-data="{}" "$HA/api/$1"; }
         last="$(readlink /packages/..data)"
         echo "watching /packages (current: $last)"
