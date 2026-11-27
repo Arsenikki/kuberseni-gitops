@@ -182,10 +182,13 @@ spec:
               # scheduler pack it onto a node without the memory it really uses.
               memory: 2Gi
             # 1536Mi OOMKilled the daemon (2026-10-29: 2 claude sessions + agy + go build hit
-            # ~1.5Gi). Match paseo-apps/paseo-jeeves (3Gi) — agy alone is ~200MB resident.
+            # ~1.5Gi). 3Gi OOMKilled it 4 times on 2026-11-24..27: each agy-muzzle agent is
+            # ~600MB (kernel + harness) for 3 min after its last turn, each running claude
+            # ~300MB, the daemon ~500MB, and after a restart every agy agent is restored
+            # at once (4 kernels = 2.3GB within a minute of start).
             limits:
               cpu: "2"
-              memory: 3Gi
+              memory: 6Gi
           volumeMounts:
             - name: data
               mountPath: /data/paseo
