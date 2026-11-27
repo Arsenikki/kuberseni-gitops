@@ -70,6 +70,17 @@ spec:
 
     - name: workloads
       rules:
+        # A container was OOMKilled (hit its memory limit). paseo-generic was killed 4
+        # times on 2026-11-24..27 and it only showed up as dropped agent sessions.
+        - alert: KubeContainerOOMKilled
+          expr: |
+            (increase(kube_pod_container_status_restarts_total[15m]) > 0)
+              and on (namespace, pod, container)
+            (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1)
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) was OOMKilled: raise its memory limit or find what grew"
         - alert: KubePodCrashLooping
           expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
           for: 10m
