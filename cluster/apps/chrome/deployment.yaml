@@ -42,6 +42,7 @@ spec:
         # documented requirement for this image; network isolation compensates.
         seccompProfile:
           type: Unconfined
+      priorityClassName: kuberseni-low
       containers:
         - name: chromium
           image: lscr.io/linuxserver/chromium:d2f5e718-ls58
@@ -83,7 +84,7 @@ spec:
             - { containerPort: 3000, name: http, protocol: TCP }
           resources:
             requests:
-              cpu: 500m
+              cpu: 250m # 14d p99 450m, p95 16m (2026-11-26); was 500m
               memory: 1Gi
             limits:
               cpu: "2"

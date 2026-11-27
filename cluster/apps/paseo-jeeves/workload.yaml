@@ -191,7 +191,8 @@ spec:
           # CPU throttled 43-58% at 2 cores. Request what it really uses; limit leaves room for
           # prod (3+2+2 agents) + dev (1+1+1) running at once.
           resources:
-            requests: { cpu: 500m, memory: 2Gi }
+            # cpu: 14d p99 402m (2026-11-26); memory peak 1.9Gi
+            requests: { cpu: 400m, memory: 2Gi }
             limits: { cpu: "4", memory: 8Gi }
         # Token broker (#68): holds the GitHub App private key and mints short-lived
         # installation tokens on a unix socket, so the durable key lives ONLY here.

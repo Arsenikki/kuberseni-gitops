@@ -18,6 +18,7 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-credentials
+      priorityClassName: kuberseni-low
       containers:
         - name: bot
           image: ghcr.io/arsenikki/captain-core:v0.12.0

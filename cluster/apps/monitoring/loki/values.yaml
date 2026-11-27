@@ -51,6 +51,11 @@ loki:
 # S3 creds — global.extraEnvFrom doesn't reach singleBinary; must set here directly.
 singleBinary:
   replicas: 1
+  # Was unset (BestEffort): 611Mi peak working set, 25m p95 CPU over 14d (2026-11-26).
+  resources:
+    requests:
+      cpu: 50m
+      memory: 640Mi
   extraEnvFrom:
     - secretRef:
         name: seaweedfs-s3

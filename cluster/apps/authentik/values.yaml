@@ -33,7 +33,7 @@ server:
   resources:
     requests:
       cpu: 150m
-      memory: 512Mi
+      memory: 768Mi # 698Mi peak over 14d (2026-11-26); was 512Mi
   # /-/health/live/ runs the DB-touching tenant/brand middleware, so slow Postgres
   # made it exceed the chart's 3s x3 budget and get killed while alive; every
   # restart re-runs the proxy_set_defaults provider sweep, feeding the loop.
@@ -83,8 +83,9 @@ postgresql:
     priorityClassName: kuberseni-critical
     resources:
       requests:
-        cpu: 250m
-        memory: 256Mi
+        # 14d p99 105m, max 189m; 366Mi peak memory (2026-11-26). Was 250m / 256Mi.
+        cpu: 150m
+        memory: 384Mi
     # Fast shutdown under starvation exceeded 30s and was SIGKILLed (11-07 11:34).
     terminationGracePeriodSeconds: 120
     livenessProbe:

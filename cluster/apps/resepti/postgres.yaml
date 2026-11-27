@@ -66,8 +66,9 @@ spec:
             periodSeconds: 15
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              # 14d: p95 <=12m CPU, <=88Mi memory (2026-11-26). Was 100m / 256Mi.
+              cpu: 25m
+              memory: 128Mi
             limits:
               cpu: "1"
               memory: 1Gi

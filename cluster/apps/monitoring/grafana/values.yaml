@@ -1,6 +1,12 @@
 ---
 # Grafana — Mimir + Loki datasources, Authentik OIDC SSO, dashboards-as-code.
 
+# Was unset (BestEffort): 417Mi peak working set, 13m p95 CPU over 14d (2026-11-26).
+resources:
+  requests:
+    cpu: 25m
+    memory: 448Mi
+
 persistence:
   enabled: true
   size: 2Gi
@@ -178,3 +184,7 @@ sidecar:
       foldersFromFilesStructure: true
   datasources:
     enabled: false # provisioned inline above
+
+# Tier: see cluster/apps/priority-classes/priority-classes.yaml. Dashboards can wait
+# Pending while a worker is drained.
+priorityClassName: kuberseni-low

@@ -74,17 +74,39 @@ mimir:
       alertmanager_url: http://alertmanager.monitoring.svc.cluster.local:9093
 
 # ---- component sizing / storage ----
+# Requests from 14d usage (2026-11-26): every component used <=41m CPU and well under
+# the chart defaults (100m / 128-512Mi) except the ingester (605Mi peak).
 distributor:
   replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
 querier:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
 query_frontend:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 160Mi
 query_scheduler:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
 
 ingester:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 768Mi
   zoneAwareReplication:
     enabled: false
   persistentVolume:
@@ -94,6 +116,10 @@ ingester:
 
 store_gateway:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 192Mi
   zoneAwareReplication:
     enabled: false
   persistentVolume:
@@ -103,6 +129,10 @@ store_gateway:
 
 compactor:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 192Mi
   persistentVolume:
     enabled: true
     size: 10Gi
@@ -110,6 +140,15 @@ compactor:
 
 ruler:
   replicas: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+overrides_exporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
 
 # Mimir's bundled Alertmanager is DISABLED. It vendors Grafana's alertmanager fork,
 # whose Telegram config has no `message_thread_id` field — it cannot post to a forum

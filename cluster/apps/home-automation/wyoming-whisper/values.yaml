@@ -23,12 +23,16 @@ controllers:
           TZ: Europe/London
         resources:
           requests:
-            cpu: 500m
-            memory: 1Gi
+            # 14d p99 ~0, max 147m; 750Mi peak memory (2026-11-26). Was 500m / 1Gi.
+            cpu: 50m
+            memory: 768Mi
           limits:
             memory: 2Gi
 
 defaultPodOptions:
+  # Tier: see cluster/apps/priority-classes/priority-classes.yaml. Voice + music
+  # are nice-to-have; they yield first when a worker is drained.
+  priorityClassName: kuberseni-low
   nodeSelector:
     kubernetes.io/hostname: worker-01
 

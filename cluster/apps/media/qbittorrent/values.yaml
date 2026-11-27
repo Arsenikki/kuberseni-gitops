@@ -154,7 +154,7 @@ podSecurityContext:
 
 resources:
   requests:
-    cpu: 500m
+    cpu: 100m # 14d p99 75m, max 116m (2026-11-26); was 500m
     # ~100 MiB in use (2026-11-21). Kept low on purpose: kuberseni-low tier, so
     # it should be first in line under node memory pressure.
     memory: 256Mi

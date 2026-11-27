@@ -31,6 +31,7 @@ spec:
             - sh
             - -c
             - "until pg_isready -h coachi-postgres -U coachi -d coachi; do echo waiting for db; sleep 2; done"
+      priorityClassName: kuberseni-low
       containers:
         - name: api
           image: ghcr.io/arsenikki/coachi:0.1.22
