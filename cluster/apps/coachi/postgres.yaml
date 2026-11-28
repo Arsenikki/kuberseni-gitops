@@ -38,7 +38,7 @@ spec:
       priorityClassName: kuberseni-low
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: postgres:19-alpine
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
