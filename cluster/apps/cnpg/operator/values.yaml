@@ -1,0 +1,11 @@
+---
+# CloudNativePG operator (chart cloudnative-pg 0.29.1 -> appVersion 1.30.1).
+# Cluster-wide install; the chart installs the CRDs (Cluster, Pooler, etc).
+# Resource override: the chart default leaves the manager limit low enough to OOM
+# once it reconciles real clusters, so set a modest, explicit budget.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi

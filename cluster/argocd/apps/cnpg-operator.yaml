@@ -1,0 +1,42 @@
+---
+# CloudNativePG operator + CRDs (Cluster, Pooler, ...). Wave 1 so the CRDs exist
+# before any app references a Cluster (wave 5). The git directory source also
+# applies the longhorn-cnpg StorageClass (excludes the Helm values file).
+# ServerSideApply: the CNPG CRDs exceed the 262KB client-side apply annotation limit
+# (same reason as prometheus-operator-crds / grafana).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: kuberseni
+  sources:
+    - repoURL: https://cloudnative-pg.github.io/charts
+      chart: cloudnative-pg
+      targetRevision: 0.29.1
+      helm:
+        valueFiles:
+          - $values/cluster/apps/cnpg/operator/values.yaml
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/Arsenikki/kuberseni-gitops
+      targetRevision: main
+      path: cluster/apps/cnpg/operator
+      directory:
+        exclude: "values.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cnpg-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
