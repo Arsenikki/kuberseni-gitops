@@ -1,8 +1,8 @@
 ---
 # Living-room gaming automation & PC state sync:
 # - qBittorrent slow mode while the gaming PC is on (ported from Node-RED).
-# - Start / Stop / Toggle living-room gaming via Bazzite Moonlight + Formovie HDMI 3 + WoL.
-# - Stream profile (auto / 1080p / 4k_hdr), Windows Desktop launch, standalone Game Mode
+# - Start / Stop / Toggle living-room gaming via Bazzite Punktfunk (Moonlight fallback) + Formovie HDMI 3 + Q990H HDMI_IN2 + WoL.
+# - Stream profile (auto / 1080p / 4k_hdr / pyrowave), Windows Desktop launch, standalone Game Mode
 #   and HTPC input toggles for the Formovie tvQuickActions.
 # - Auto-cleanup when the projector turns off or the session ends outside HA
 #   (controller / Steam exit, PC shut down), and living-room light dim / restore.
@@ -12,6 +12,7 @@
 #     GET/POST /api/webhook/living_room_gaming_stop
 #     GET/POST /api/webhook/living_room_gaming_1080p
 #     GET/POST /api/webhook/living_room_gaming_4k
+#     GET/POST /api/webhook/living_room_gaming_pyrowave
 #     GET/POST /api/webhook/living_room_gaming_desktop
 #     GET/POST /api/webhook/projector_game_mode_toggle
 #     GET/POST /api/webhook/living_room_htpc_toggle
@@ -25,6 +26,7 @@ input_select:
       - "auto"
       - "1080p"
       - "4k_hdr"
+      - "pyrowave"
     initial: "auto"
 
 input_boolean:
@@ -45,7 +47,7 @@ input_boolean:
     initial: false
 
 input_datetime:
-  # Last (re)start of Moonlight; the external-exit cleanup gives it a grace period.
+  # Last (re)start of the stream client; the external-exit cleanup gives it a grace period.
   living_room_gaming_started_at:
     name: "Living room gaming started at"
     icon: mdi:clock-start
@@ -53,7 +55,7 @@ input_datetime:
     has_time: true
 
 input_text:
-  # Sunshine app of the current session, kept on in-place profile restarts.
+  # Host app of the current session, kept on in-place profile restarts.
   living_room_gaming_app:
     name: "Living room gaming app"
     icon: mdi:application
@@ -64,17 +66,17 @@ script:
     mode: single
     fields:
       profile:
-        description: "Stream profile (auto, 1080p, 4k_hdr). Defaults to input_select.living_room_gaming_profile."
+        description: "Stream profile (auto, 1080p, 4k_hdr, pyrowave). Defaults to input_select.living_room_gaming_profile."
         example: "4k_hdr"
         selector:
           text:
       app:
-        description: "Sunshine app to launch. Defaults to Steam Big Picture."
+        description: "Host app to launch. Defaults to Steam Big Picture."
         example: "Desktop"
         selector:
           text:
       restart:
-        description: "Restart Moonlight if it is already running."
+        description: "Restart the stream client if it is already running."
         selector:
           boolean:
     sequence:
@@ -85,12 +87,12 @@ script:
             {%- endif %}
           target_app: "{{ app | default('Steam Big Picture') }}"
           target_restart: "{{ restart | default(false) }}"
-      - action: rest_command.sunshine_serverinfo
-        response_variable: sunshine_init
+      - action: rest_command.bazzite_gaming_host_ready
+        response_variable: host_init
         continue_on_error: true
       - if:
           - condition: template
-            value_template: "{{ sunshine_init is not defined or sunshine_init.get('status') != 200 }}"
+            value_template: "{{ host_init is not defined or host_init.get('status') != 200 }}"
         then:
           - action: wake_on_lan.send_magic_packet
             data:
@@ -108,15 +110,15 @@ script:
           activity: "content://android.media.tv/passthrough/com.mediatek.tvinput%2F.hdmi.HDMIInputService%2FHW6"
       - if:
           - condition: template
-            value_template: "{{ sunshine_init is not defined or sunshine_init.get('status') != 200 }}"
+            value_template: "{{ host_init is not defined or host_init.get('status') != 200 }}"
         then:
           - repeat:
               sequence:
                 - delay: 2
-                - action: rest_command.sunshine_serverinfo
-                  response_variable: sunshine
+                - action: rest_command.bazzite_gaming_host_ready
+                  response_variable: host_probe
                   continue_on_error: true
-              until: "{{ (sunshine is defined and sunshine.get('status') == 200) or repeat.index >= 20 }}"
+              until: "{{ (host_probe is defined and host_probe.get('status') == 200) or repeat.index >= 25 }}"
       - action: rest_command.bazzite_gaming_start
         data:
           profile: "{{ target_profile }}"
@@ -137,7 +139,7 @@ script:
           entity_id: input_boolean.living_room_gaming_active
       - action: shell_command.projector_game_mode_on
         continue_on_error: true
-      - action: shell_command.soundbar_input_hdmi1
+      - action: shell_command.soundbar_input_hdmi2
         continue_on_error: true
       # Dim the room for contrast; the snapshot is restored by living_room_gaming_stop.
       - if:
@@ -251,6 +253,7 @@ script:
               - "auto"
               - "1080p"
               - "4k_hdr"
+              - "pyrowave"
     sequence:
       - action: input_select.select_option
         target:
@@ -260,7 +263,7 @@ script:
       - action: rest_command.bazzite_gaming_status
         response_variable: gaming_status
         continue_on_error: true
-      # Already streaming: restart Moonlight in place (no WoL / projector / lights),
+      # Already streaming: restart client in place (no WoL / projector / lights),
       # keeping the session's app (e.g. Desktop).
       - if:
           - condition: template
@@ -301,6 +304,14 @@ script:
         data:
           profile: "4k_hdr"
 
+  living_room_gaming_pyrowave:
+    alias: "Gaming: living room 4K HDR PyroWave"
+    mode: single
+    sequence:
+      - action: script.living_room_gaming_set_profile
+        data:
+          profile: "pyrowave"
+
   living_room_gaming_desktop:
     alias: "Gaming: living room Windows desktop"
     mode: single
@@ -336,7 +347,7 @@ script:
           entity_id: remote.living_room_tv
         data:
           activity: "content://android.media.tv/passthrough/com.mediatek.tvinput%2F.hdmi.HDMIInputService%2FHW6"
-      - action: shell_command.soundbar_input_hdmi1
+      - action: shell_command.soundbar_input_hdmi2
         continue_on_error: true
       - action: input_boolean.turn_on
         target:
@@ -437,6 +448,11 @@ automation:
         local_only: true
         id: profile_4k
       - trigger: webhook
+        webhook_id: living_room_gaming_pyrowave
+        allowed_methods: [GET, POST]
+        local_only: true
+        id: profile_pyrowave
+      - trigger: webhook
         webhook_id: living_room_gaming_desktop
         allowed_methods: [GET, POST]
         local_only: true
@@ -485,6 +501,11 @@ automation:
               - action: script.living_room_gaming_4k
           - conditions:
               - condition: trigger
+                id: profile_pyrowave
+            sequence:
+              - action: script.living_room_gaming_pyrowave
+          - conditions:
+              - condition: trigger
                 id: desktop
             sequence:
               - action: script.living_room_gaming_desktop
@@ -523,7 +544,7 @@ automation:
       - action: script.living_room_gaming_stop
 
   # Session ended outside HA (controller / Steam exit, PC shut down): clean up.
-  # The 25s grace after each (re)start avoids racing Moonlight before it spawns.
+  # The 25s grace after each (re)start avoids racing the stream client before it spawns.
   - id: living_room_gaming_cleanup_on_external_exit
     alias: "Gaming: clean up living room after external exit"
     mode: single

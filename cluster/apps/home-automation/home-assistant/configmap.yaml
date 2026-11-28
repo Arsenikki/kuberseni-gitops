@@ -209,14 +209,18 @@ data:
             json_attributes:
               - items
 
-    # Living-room gaming remote control (Bazzite Moonlight launcher + Sunshine probe).
+    # Living-room gaming remote control (Bazzite launcher + Punktfunk/Apollo host probes).
     rest_command:
       bazzite_gaming_status:
         url: "http://192.168.1.51:8765/status"
         method: GET
         timeout: 5
+      bazzite_gaming_host_ready:
+        url: "http://192.168.1.51:8765/host-ready"
+        method: GET
+        timeout: 8
       bazzite_gaming_start:
-        # Optional data: profile (auto|1080p|4k_hdr), app, restart. No data keeps the old defaults.
+        # Optional data: profile (auto|1080p|4k_hdr|pyrowave), app, restart. No data keeps the old defaults.
         url: "http://192.168.1.51:8765/start?profile={{ profile | default('auto') | urlencode }}&app={{ app | default('Steam Big Picture') | urlencode }}&restart={{ 'true' if (restart | default(false) | string | lower) in ['true', '1', 'yes', 'on'] else 'false' }}"
         method: POST
         timeout: 15
@@ -263,6 +267,12 @@ data:
         rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
         tok = rpc("createAccessToken")["result"]["AccessToken"];
         rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "HDMI_IN1"})'
+      soundbar_input_hdmi2: >-
+        python3 -c 'import urllib.request, ssl, json;
+        ctx = ssl._create_unverified_context();
+        rpc = lambda m, p=None: json.loads(urllib.request.urlopen(urllib.request.Request("https://192.168.1.152:1516/", data=json.dumps({"jsonrpc": "2.0", "method": m, "id": 1, **({"params": p} if p is not None else {})}, separators=(",", ":")).encode(), headers={"Content-Type": "application/json", "Accept": "application/json"}), context=ctx, timeout=5).read());
+        tok = rpc("createAccessToken")["result"]["AccessToken"];
+        rpc("inputSelectControl", {"AccessToken": tok, "inputSource": "HDMI_IN2"})'
       soundbar_input_arc: >-
         python3 -c 'import urllib.request, ssl, json;
         ctx = ssl._create_unverified_context();
