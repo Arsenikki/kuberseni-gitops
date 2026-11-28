@@ -286,6 +286,8 @@ in
 
     with subtest("LAN can manage the router and scrape Kea"):
         client.succeed("nc -z -w 3 192.168.1.1 22")
+        # Nothing listens for LLMNR/mDNS on the router (systemd-resolved is off).
+        router.fail("ss -H -tulpn | grep -E ':(5353|5355) '")
         router.wait_for_open_port(9547)
         client.succeed("curl -fsS --max-time 5 http://192.168.1.1:9547/metrics | grep '^kea_dhcp4' >/dev/null")
 
